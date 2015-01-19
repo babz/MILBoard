@@ -297,30 +297,6 @@ namespace BodyExtractionAndHightlighting
                 if (biFrame != null)
                 {
                     biFrame.CopyFrameDataToArray(biDataSource);
-                    /*
-                    for (int i = 0; i < biDataSource.Length; ++i)
-                    {
-                        if (biDataSource[i] > 5)
-                        {
-                            //Bg
-                            biBuffer[i] = 0x000000FF;
-                            biImageBuffer[i] = 0xFFFFFFFF;
-                            stencilBuffer[i] = 0;
-                        }
-                        else
-                        {
-                            biImageBuffer[i] = BodyColor[biDataSource[i]];
-                            stencilBuffer[i] = 1;
-                        }
-                    }
-                    
-                    this.biBitmap.WritePixels(
-                    new Int32Rect(0, 0, this.biBitmap.PixelWidth, this.biBitmap.PixelHeight),
-                    biImageBuffer,
-                    biBitmap.PixelWidth * sizeof(int),
-                    0
-                    );
-                     * */
                 }
             }
 
@@ -410,26 +386,6 @@ namespace BodyExtractionAndHightlighting
                 {
                     FrameDescription fdColor = colorFrame.FrameDescription;
 
-                    /*
-                    using (KinectBuffer colorBuffer = colorFrame.LockRawImageBuffer())
-                    {
-                        this.colorBitmap.Lock();
-
-                        // verify data and write the new color frame data to the display bitmap
-                        if ((fdColor.Width == this.colorBitmap.PixelWidth) && (fdColor.Height == this.colorBitmap.PixelHeight))
-                        {
-                            colorFrame.CopyConvertedFrameDataToIntPtr(
-                                this.colorBitmap.BackBuffer,
-                                (uint)(fdColor.Width * fdColor.Height * 4),
-                                ColorImageFormat.Bgra);
-
-                            this.colorBitmap.AddDirtyRect(new Int32Rect(0, 0, this.colorBitmap.PixelWidth, this.colorBitmap.PixelHeight));
-                        }
-
-                        this.colorBitmap.Unlock();
-                    }
-                    */
-
                     // cut out color frame according to stencil mask
                     if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra) {
                         colorFrame.CopyRawFrameDataToArray(combiColorBuffer);
@@ -461,12 +417,14 @@ namespace BodyExtractionAndHightlighting
                                 combiColorBuffer[i * 4 + 2] = 0;
                                 combiColorBuffer[i * 4 + 3] = 30;
                             }
+                            else
+                            {
+                                combiColorBuffer[i * 4 + 3] = 100; //alpha of person
+                            }
                         } 
                     }
                     //combiColorBuffer contains all required information
                     combiBitmap.WritePixels(new Int32Rect(0, 0, this.combiBitmap.PixelWidth, this.combiBitmap.PixelHeight), combiColorBuffer, combiBitmap.PixelWidth * sizeof(int), 0);
-
-
 
                 }
             }
