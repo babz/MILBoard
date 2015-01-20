@@ -123,7 +123,7 @@ namespace BodyExtractionAndHightlighting
         WriteableBitmap biBitmap;
 
         //-----XAML variables-----
-        private bool isFullHD = true;
+        //private bool isFullHD = true;
 
 
         private static readonly uint[] BodyColor = 
@@ -602,5 +602,17 @@ namespace BodyExtractionAndHightlighting
                 this.sensor = null;
             }
         }
+        
+        private void ResolutionRButton_Checked(object sender, RoutedEventArgs e)
+        {
+            var radioButton = sender as RadioButton;
+            if (radioButton == null)
+            {
+                return;
+            }
+            //Console.Out.WriteLine("button value = " + radioButton.Content.ToString());
+            Console.Out.WriteLine("button value = " + radioButton.Name + " " + radioButton.IsChecked);
+        }
+         
     }
 }

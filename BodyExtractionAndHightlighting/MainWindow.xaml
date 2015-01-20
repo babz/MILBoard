@@ -21,11 +21,10 @@
         <Label Grid.Row="0" Grid.Column="2" Content="Background:" />
 
         <!--Dynamic Content-->
-        <!--<RadioButton Grid.Row="1" Grid.Column="0" Content="1080p" GroupName="Resolution" IsChecked="{Binding BooleanProperty, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static src:MainWindow.BooleanFalse}}" />-->
-        <RadioButton Grid.Row="1" Grid.Column="0" Content="1080p" GroupName="Resolution" />
-        <RadioButton Grid.Row="2" Grid.Column="0" Content="800x600" GroupName="Resolution" IsChecked="True"/>
-
-        <Slider Grid.Row="2" Grid.Column="1" Value="150" Maximum="255" TickFrequency="10" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" />
+        <RadioButton Name="fullHD" Grid.Row="1" Grid.Column="0" Content="1080p" GroupName="Resolution" Checked="ResolutionRButton_Checked"/>
+        <RadioButton Name="nonFullHD" Grid.Row="2" Grid.Column="0" Content="800x600" GroupName="Resolution" IsChecked="True" Checked="ResolutionRButton_Checked"/>
+        
+        <Slider Grid.Row="2" Grid.Column="1" Value="150" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" />
 
         <RadioButton Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" />
         <RadioButton Grid.Row="2" Grid.Column="2" Content="White" GroupName="Background" />
