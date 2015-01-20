@@ -26,9 +26,9 @@
         
         <Slider Grid.Row="2" Grid.Column="1" Value="150" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" />
 
-        <RadioButton Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" />
-        <RadioButton Grid.Row="2" Grid.Column="2" Content="White" GroupName="Background" />
-        <RadioButton Grid.Row="3" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True"/>
+        <RadioButton Name="BlackBG" Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" Checked="BackgroundRButton_Checked"/>
+        <RadioButton Name="WhiteBG" Grid.Row="2" Grid.Column="2" Content="White" GroupName="Background" Checked="BackgroundRButton_Checked" />
+        <RadioButton Name="CustomBG" Grid.Row="3" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="BackgroundRButton_Checked" />
 
         <Canvas Grid.Row="4" Grid.ColumnSpan="3">
             <Canvas.Background>

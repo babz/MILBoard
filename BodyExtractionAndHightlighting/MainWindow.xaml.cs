@@ -613,6 +613,17 @@ namespace BodyExtractionAndHightlighting
             //Console.Out.WriteLine("button value = " + radioButton.Content.ToString());
             Console.Out.WriteLine("button value = " + radioButton.Name + " " + radioButton.IsChecked);
         }
+
+        private void BackgroundRButton_Checked(object sender, RoutedEventArgs e)
+        {
+            var radioButton = sender as RadioButton;
+            if (radioButton == null)
+            {
+                return;
+            }
+            //Console.Out.WriteLine("button content = " + radioButton.Content.ToString());
+            Console.Out.WriteLine("button name = " + radioButton.Name + " " + radioButton.IsChecked);
+        }
          
     }
 }
