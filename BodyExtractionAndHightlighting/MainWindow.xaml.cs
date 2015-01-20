@@ -408,7 +408,7 @@ namespace BodyExtractionAndHightlighting
                             combiColorBuffer[i * 4] = 255; //r
                             combiColorBuffer[i * 4 + 1] = 255; //b
                             combiColorBuffer[i * 4 + 2] = 255; //g
-                            combiColorBuffer[i * 4 + 3] = 255; //a
+                            combiColorBuffer[i * 4 + 3] = 0; //a
                         }
                         else
                         {

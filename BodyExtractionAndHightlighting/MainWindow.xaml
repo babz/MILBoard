@@ -30,7 +30,7 @@
         <RadioButton Name="WhiteBG" Grid.Row="2" Grid.Column="2" Content="White" GroupName="Background" Checked="BackgroundRButton_Checked" />
         <RadioButton Name="CustomBG" Grid.Row="3" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="BackgroundRButton_Checked" />
 
-        <Canvas Grid.Row="4" Grid.ColumnSpan="3">
+        <Canvas Grid.Row="4" Grid.ColumnSpan="3" Grid.ZIndex="1">
             <!--<Canvas.Background>
                 <ImageBrush ImageSource="Resources\sharedWorkspace.jpg" Stretch="Fill" />
             </Canvas.Background>-->
