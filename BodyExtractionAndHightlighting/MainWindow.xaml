@@ -19,15 +19,17 @@
         <Label Grid.Row="0" Grid.Column="0" Content="Resolution:" />
         <Label Grid.Row="0" Grid.Column="1" Content="Transparency of user:" />
         <Label Grid.Row="0" Grid.Column="2" Content="Background:" />
+
         <!--Dynamic Content-->
+        <!--<RadioButton Grid.Row="1" Grid.Column="0" Content="1080p" GroupName="Resolution" IsChecked="{Binding BooleanProperty, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static src:MainWindow.BooleanFalse}}" />-->
         <RadioButton Grid.Row="1" Grid.Column="0" Content="1080p" GroupName="Resolution" />
         <RadioButton Grid.Row="2" Grid.Column="0" Content="800x600" GroupName="Resolution" IsChecked="True"/>
-        
-        <Slider Grid.Row="2" Grid.Column="1" />
+
+        <Slider Grid.Row="2" Grid.Column="1" Value="150" Maximum="255" TickFrequency="10" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" />
 
         <RadioButton Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" />
         <RadioButton Grid.Row="2" Grid.Column="2" Content="White" GroupName="Background" />
-        <RadioButton Grid.Row="3" Grid.Column="2" Content="Custom" GroupName="Background" />
+        <RadioButton Grid.Row="3" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True"/>
 
         <Canvas Grid.Row="4" Grid.ColumnSpan="3">
             <Canvas.Background>

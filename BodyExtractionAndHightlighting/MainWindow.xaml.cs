@@ -122,6 +122,10 @@ namespace BodyExtractionAndHightlighting
         uint[] biImageBuffer; //tmp storage for frame data converted to color
         WriteableBitmap biBitmap;
 
+        //-----XAML variables-----
+        private bool isFullHD = true;
+
+
         private static readonly uint[] BodyColor = 
         {
             0xFF00FF04,
@@ -396,15 +400,15 @@ namespace BodyExtractionAndHightlighting
                     DepthSpacePoint[] colorIntoDepthSpace = new DepthSpacePoint[fdColor.LengthInPixels];
                     sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
 
-                    //after the loop, only pixels with a body index value that can be mapped to a depth value will remain in the buffer
+                    //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
                     for (int i = 0; i < colorIntoDepthSpace.Length; i++) {
                         //where color map has no corresponding value in the depth map due to resolution/sensor position, the pixels are set to black
                         if (Single.IsInfinity(colorIntoDepthSpace[i].Y) || Single.IsInfinity(colorIntoDepthSpace[i].X))
                         {
-                            combiColorBuffer[i * 4] = 0; //r
-                            combiColorBuffer[i * 4 + 1] = 0; //b
-                            combiColorBuffer[i * 4 + 2] = 0; //g
-                            combiColorBuffer[i * 4 + 3] = 30; //a
+                            combiColorBuffer[i * 4] = 255; //r
+                            combiColorBuffer[i * 4 + 1] = 255; //b
+                            combiColorBuffer[i * 4 + 2] = 255; //g
+                            combiColorBuffer[i * 4 + 3] = 255; //a
                         }
                         else
                         {
@@ -412,14 +416,15 @@ namespace BodyExtractionAndHightlighting
                             int idx = (int)(sensor.BodyIndexFrameSource.FrameDescription.Width * colorIntoDepthSpace[i].Y + colorIntoDepthSpace[i].X);
                             if ((biDataSource[idx] > 5) || (biDataSource[idx] < 0))
                             {
-                                combiColorBuffer[i * 4] = 0;
-                                combiColorBuffer[i * 4 + 1] = 0;
-                                combiColorBuffer[i * 4 + 2] = 0;
-                                combiColorBuffer[i * 4 + 3] = 30;
+                                combiColorBuffer[i * 4] = 255;
+                                combiColorBuffer[i * 4 + 1] = 255;
+                                combiColorBuffer[i * 4 + 2] = 255;
+                                combiColorBuffer[i * 4 + 3] = 0;
                             }
                             else
                             {
-                                combiColorBuffer[i * 4 + 3] = 100; //alpha of person
+                                //combiColorBuffer[i * 4 + 3] = 255; //alpha of person
+                                combiColorBuffer[i * 4 + 3] = (byte) userTransparency.Value;
                             }
                         } 
                     }
