@@ -140,15 +140,25 @@ namespace BodyExtractionAndHightlighting
         //ColorFrameReader colorReader = null;
         WriteableBitmap colorBitmap;
 
+        // depth
+        ushort[] depthDataSource;
+
         // combined color - bodyIndex
         ushort[] stencilBuffer;
+        byte[] combiColorBuffer1080p;
+        WriteableBitmap combiBitmap1080p;
+        // ------
         byte[] combiColorBuffer;
         WriteableBitmap combiBitmap;
-        ushort[] depthDataSource;
 
         //check performance in ticks
         const long TICKS_PER_SECOND = 10000000;
         long prevTick = 0;
+
+        //gui logic
+        bool isFullHD = false;
+        enum BackgroundType { Black, White, Custom};
+        BackgroundType bgType = BackgroundType.Custom;
 
         public MainWindow()
         {
@@ -165,23 +175,31 @@ namespace BodyExtractionAndHightlighting
             // color
             FrameDescription fdColor = sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
             colorBitmap = new WriteableBitmap(fdColor.Width, fdColor.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
-            //imageColor.Source = colorBitmap;
+            //imageColor.Source = colorBitmap; //color img only
 
             // body-index
             FrameDescription fdBi = sensor.BodyIndexFrameSource.FrameDescription;
             biDataSource = new byte[fdBi.LengthInPixels];
             biImageBuffer = new uint[fdBi.LengthInPixels];
             biBitmap = new WriteableBitmap(fdBi.Width, fdBi.Height, 96, 96, PixelFormats.Bgra32, null);
-            //imageBi.Source = biBitmap;
+            //imageBi.Source = biBitmap; //body index img only
 
-            // combination
+            // depth (same resolution as body index)
+            FrameDescription fdDepth = sensor.DepthFrameSource.FrameDescription;
+            depthDataSource = new ushort[fdDepth.LengthInPixels];
+
+            // combination 1080p
             stencilBuffer = new ushort[fdBi.LengthInPixels];
-            combiColorBuffer = new byte[fdColor.LengthInPixels * 4];
-            combiBitmap = new WriteableBitmap(fdColor.Width, fdColor.Height, 96, 96, PixelFormats.Bgra32, null);
-            imageCombi.Source = combiBitmap;
+            combiColorBuffer1080p = new byte[fdColor.LengthInPixels * 4];
+            combiBitmap1080p = new WriteableBitmap(fdColor.Width, fdColor.Height, 96, 96, PixelFormats.Bgra32, null);
+            //imageCombi1080p.Source = combiBitmap1080p; //img with 1080p-color of body index frame;
 
-            // depth
-            depthDataSource = new ushort[fdBi.LengthInPixels];
+            //combination 512x424 (depth resolution)
+            combiColorBuffer = new byte[fdDepth.LengthInPixels * 4];
+            combiBitmap = new WriteableBitmap(fdDepth.Width, fdDepth.Height, 96, 96, PixelFormats.Bgra32, null);
+            imageCombi.Source = combiBitmap; //img with 512x424-color of body index frame;
+
+            
 
             //############################################
 
@@ -248,7 +266,7 @@ namespace BodyExtractionAndHightlighting
             // Create the drawing group we'll use for drawing
             this.drawingGroup = new DrawingGroup();
 
-            imageBody.Source = new DrawingImage(this.drawingGroup);
+            //imageBody.Source = new DrawingImage(this.drawingGroup);
 
             // use the window object as the view model in this simple example
             this.DataContext = this;
@@ -391,46 +409,96 @@ namespace BodyExtractionAndHightlighting
                     FrameDescription fdColor = colorFrame.FrameDescription;
 
                     // cut out color frame according to stencil mask
-                    if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra) {
-                        colorFrame.CopyRawFrameDataToArray(combiColorBuffer);
-                    } else {
-                        colorFrame.CopyConvertedFrameDataToArray(combiColorBuffer, ColorImageFormat.Bgra);
+                    if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra)
+                    {
+                        colorFrame.CopyRawFrameDataToArray(combiColorBuffer1080p);
+                    }
+                    else
+                    {
+                        colorFrame.CopyConvertedFrameDataToArray(combiColorBuffer1080p, ColorImageFormat.Bgra);
                     }
 
+                    //########################################
+                    //TODO
+                    //if 1080p = false; (512x424)
+
+                    ColorSpacePoint[] depthIntoColorSpace = new ColorSpacePoint[depthDataSource.Length];
+                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
+
+                    //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+                    for (int i = 0; i < depthIntoColorSpace.Length; i++) {
+
+                        int colorPointX = (int)(depthIntoColorSpace[i].X + 0.5);
+                        int colorPointY = (int)(depthIntoColorSpace[i].Y + 0.5);
+
+                        if ((biDataSource[i] > 5) || (biDataSource[i] < 0))
+                        {
+                            combiColorBuffer[i * 4] = 255;
+                            combiColorBuffer[i * 4 + 1] = 255;
+                            combiColorBuffer[i * 4 + 2] = 255;
+                            combiColorBuffer[i * 4 + 3] = 0;
+                        }
+                        //where depth map has no corresponding value in the color map due to resolution/sensor position, the pixels are set to black
+                        else if (Single.IsInfinity(depthIntoColorSpace[i].Y) || Single.IsInfinity(depthIntoColorSpace[i].X)
+                            || (colorPointY >= fdColor.Height) || (colorPointX >= fdColor.Width) || (colorPointY < 0) || (colorPointX < 0) )
+                        {
+                            combiColorBuffer[i * 4] = 0; //r
+                            combiColorBuffer[i * 4 + 1] = 0; //b
+                            combiColorBuffer[i * 4 + 2] = 0; //g
+                            combiColorBuffer[i * 4 + 3] = 0; //a
+                        } 
+                        else
+                        {
+                            combiColorBuffer[i * 4] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4]; //r
+                            combiColorBuffer[i * 4 + 1] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 1]; //b
+                            combiColorBuffer[i * 4 + 2] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 2]; //g
+                            combiColorBuffer[i * 4 + 3] = (byte)userTransparency.Value; //alpha of person
+                        }
+                    }
+                    //combiColorBuffer1080p contains all required information
+                    combiBitmap.WritePixels(new Int32Rect(0, 0, this.combiBitmap.PixelWidth, this.combiBitmap.PixelHeight), combiColorBuffer, combiBitmap.PixelWidth * sizeof(int), 0);
+
+
+                    //########################################
+
+
+                    //TODO
+                    //if 1080p = true;
+                    /*
                     DepthSpacePoint[] colorIntoDepthSpace = new DepthSpacePoint[fdColor.LengthInPixels];
                     sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
 
                     //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
-                    for (int i = 0; i < colorIntoDepthSpace.Length; i++) {
+                    for (int i = 0; i < fdColor.LengthInPixels; i++) {
                         //where color map has no corresponding value in the depth map due to resolution/sensor position, the pixels are set to black
                         if (Single.IsInfinity(colorIntoDepthSpace[i].Y) || Single.IsInfinity(colorIntoDepthSpace[i].X))
                         {
-                            combiColorBuffer[i * 4] = 255; //r
-                            combiColorBuffer[i * 4 + 1] = 255; //b
-                            combiColorBuffer[i * 4 + 2] = 255; //g
-                            combiColorBuffer[i * 4 + 3] = 0; //a
+                            combiColorBuffer1080p[i * 4] = 255; //r
+                            combiColorBuffer1080p[i * 4 + 1] = 255; //b
+                            combiColorBuffer1080p[i * 4 + 2] = 255; //g
+                            combiColorBuffer1080p[i * 4 + 3] = 0; //a
                         }
                         else
                         {
                             //if bodyIndex pixel has no body assigned, draw a black pixel to the corresponding color pixel
-                            int idx = (int)(sensor.BodyIndexFrameSource.FrameDescription.Width * colorIntoDepthSpace[i].Y + colorIntoDepthSpace[i].X);
+                            int idx = (int)(sensor.BodyIndexFrameSource.FrameDescription.Width * colorIntoDepthSpace[i].Y + colorIntoDepthSpace[i].X); //2D to 1D
                             if ((biDataSource[idx] > 5) || (biDataSource[idx] < 0))
                             {
-                                combiColorBuffer[i * 4] = 255;
-                                combiColorBuffer[i * 4 + 1] = 255;
-                                combiColorBuffer[i * 4 + 2] = 255;
-                                combiColorBuffer[i * 4 + 3] = 0;
+                                combiColorBuffer1080p[i * 4] = 255;
+                                combiColorBuffer1080p[i * 4 + 1] = 255;
+                                combiColorBuffer1080p[i * 4 + 2] = 255;
+                                combiColorBuffer1080p[i * 4 + 3] = 0;
                             }
                             else
                             {
-                                //combiColorBuffer[i * 4 + 3] = 255; //alpha of person
-                                combiColorBuffer[i * 4 + 3] = (byte) userTransparency.Value;
+                                //combiColorBuffer1080p[i * 4 + 3] = 255; //alpha of person
+                                combiColorBuffer1080p[i * 4 + 3] = (byte) userTransparency.Value;
                             }
                         } 
                     }
-                    //combiColorBuffer contains all required information
-                    combiBitmap.WritePixels(new Int32Rect(0, 0, this.combiBitmap.PixelWidth, this.combiBitmap.PixelHeight), combiColorBuffer, combiBitmap.PixelWidth * sizeof(int), 0);
-
+                    //combiColorBuffer1080p contains all required information
+                    combiBitmap1080p.WritePixels(new Int32Rect(0, 0, this.combiBitmap1080p.PixelWidth, this.combiBitmap1080p.PixelHeight), combiColorBuffer1080p, combiBitmap1080p.PixelWidth * sizeof(int), 0);
+                    */
                 }
             }
 
@@ -603,26 +671,29 @@ namespace BodyExtractionAndHightlighting
             }
         }
         
-        private void ResolutionRButton_Checked(object sender, RoutedEventArgs e)
+        private void nonFullHD_Checked(object sender, RoutedEventArgs e)
         {
-            var radioButton = sender as RadioButton;
-            if (radioButton == null)
-            {
-                return;
-            }
-            //Console.Out.WriteLine("button value = " + radioButton.Content.ToString());
-            Console.Out.WriteLine("button value = " + radioButton.Name + " " + radioButton.IsChecked);
+            isFullHD = false;
         }
 
-        private void BackgroundRButton_Checked(object sender, RoutedEventArgs e)
+        private void fullHD_Checked(object sender, RoutedEventArgs e)
         {
-            var radioButton = sender as RadioButton;
-            if (radioButton == null)
-            {
-                return;
-            }
-            //Console.Out.WriteLine("button content = " + radioButton.Content.ToString());
-            Console.Out.WriteLine("button name = " + radioButton.Name + " " + radioButton.IsChecked);
+            isFullHD = true;
+        }
+
+        private void BlackBG_Checked(object sender, RoutedEventArgs e)
+        {
+            bgType = BackgroundType.Black;
+        }
+
+        private void WhiteBG_Checked(object sender, RoutedEventArgs e)
+        {
+            bgType = BackgroundType.White;
+        }
+
+        private void CustomBG_Checked(object sender, RoutedEventArgs e)
+        {
+            bgType = BackgroundType.Custom;
         }
          
     }
