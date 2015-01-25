@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 
 using Microsoft.Kinect;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace BodyExtractionAndHightlighting
 {  
@@ -125,6 +126,8 @@ namespace BodyExtractionAndHightlighting
         //-----XAML variables-----
         //private bool isFullHD = true;
 
+        ColorSpacePoint[] depthIntoColorSpace = null;
+        DepthSpacePoint[] colorIntoDepthSpace = null;
 
         private static readonly uint[] BodyColor = 
         {
@@ -159,6 +162,9 @@ namespace BodyExtractionAndHightlighting
         bool isFullHD = false;
         enum BackgroundType { Black, White, Custom};
         BackgroundType bgType = BackgroundType.Custom;
+        private bool extendArm = false;
+
+        Dictionary<JointType, Point> armJointPoints = new Dictionary<JointType, Point>();
 
         public MainWindow()
         {
@@ -192,14 +198,11 @@ namespace BodyExtractionAndHightlighting
             stencilBuffer = new ushort[fdBi.LengthInPixels];
             combiColorBuffer1080p = new byte[fdColor.LengthInPixels * 4];
             combiBitmap1080p = new WriteableBitmap(fdColor.Width, fdColor.Height, 96, 96, PixelFormats.Bgra32, null);
-            //imageCombi1080p.Source = combiBitmap1080p; //img with 1080p-color of body index frame;
 
             //combination 512x424 (depth resolution)
             combiColorBuffer = new byte[fdDepth.LengthInPixels * 4];
             combiBitmap = new WriteableBitmap(fdDepth.Width, fdDepth.Height, 96, 96, PixelFormats.Bgra32, null);
             imageCombi.Source = combiBitmap; //img with 512x424-color of body index frame;
-
-            
 
             //############################################
 
@@ -271,6 +274,9 @@ namespace BodyExtractionAndHightlighting
             // use the window object as the view model in this simple example
             this.DataContext = this;
 
+            depthIntoColorSpace = new ColorSpacePoint[depthDataSource.Length];
+            colorIntoDepthSpace = new DepthSpacePoint[fdColor.LengthInPixels];
+
 
             //############################################
 
@@ -292,184 +298,162 @@ namespace BodyExtractionAndHightlighting
                 return;
             }
 
-            //-----------------------
-            //check performance
-            long ticksNow = DateTime.Now.Ticks;
-            float fps = ((float)TICKS_PER_SECOND) / (ticksNow - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
-            Console.Out.WriteLine("fps: " + fps);
-            // store current tick as prevTick for next computation
-            prevTick = ticksNow;
-            //-----------------------
-            //return;
-
-
-
-            // depth frame (for body extraction)
-            using (DepthFrame dFrame = reference.DepthFrameReference.AcquireFrame())
+            using (var cFrame = reference.ColorFrameReference.AcquireFrame())
+            using (var dFrame = reference.DepthFrameReference.AcquireFrame())
+            using (var biFrame = reference.BodyIndexFrameReference.AcquireFrame())
+            using (var bodyFrame = reference.BodyFrameReference.AcquireFrame())
             {
-                if (dFrame != null)
-                {
-                    dFrame.CopyFrameDataToArray(depthDataSource);
+                if ((cFrame == null) || (dFrame == null) || (biFrame == null) || (bodyFrame == null)) {
+                    return;
                 }
-            }
-
-            // access body index frame
-            using (BodyIndexFrame biFrame = reference.BodyIndexFrameReference.AcquireFrame())
-            {
-                if (biFrame != null)
-                {
-                    biFrame.CopyFrameDataToArray(biDataSource);
-                }
-            }
-
-            // access body skeleton
-            using (BodyFrame bodyFrame = reference.BodyFrameReference.AcquireFrame())
-            {
-                bool dataReceived = false;
-
                 
-                if (bodyFrame != null)
-                {
-                    if (this.bodies == null)
-                    {
-                        this.bodies = new Body[bodyFrame.BodyCount];
-                    }
+                //-----------------------
+                //check performance
+                long ticksNow = DateTime.Now.Ticks;
+                float fps = ((float)TICKS_PER_SECOND) / (ticksNow - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
+                Console.Out.WriteLine("fps: " + fps);
+                // store current tick as prevTick for next computation
+                prevTick = ticksNow;
+                //-----------------------
+                //return;
 
-                    // The first time GetAndRefreshBodyData is called, Kinect will allocate each Body in the array.
-                    // As long as those body objects are not disposed and not set to null in the array,
-                    // those body objects will be re-used.
-                    bodyFrame.GetAndRefreshBodyData(this.bodies);
-                    dataReceived = true;
+
+                dFrame.CopyFrameDataToArray(depthDataSource);
+                biFrame.CopyFrameDataToArray(biDataSource);
+
+              
+                // body frame
+                if (this.bodies == null)
+                {
+                    this.bodies = new Body[bodyFrame.BodyCount];
+                }
+                // The first time GetAndRefreshBodyData is called, Kinect will allocate each Body in the array.
+                // As long as those body objects are not disposed and not set to null in the array,
+                // those body objects will be re-used.
+                bodyFrame.GetAndRefreshBodyData(this.bodies);
+
+                //DrawBodies();
+
+                //######################################### Get Right Arm ###############################################
+                bool isArmDetected = false;
+                if (extendArm)
+                {
+                    foreach (Body body in this.bodies)
+                    {
+                        if (body.IsTracked)
+                        {
+                            IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+                            // convert the joint points to depth (display) space
+                            
+                      
+                            Joint wristRight = joints[JointType.WristRight];
+                            CameraSpacePoint positionWrist = wristRight.Position;
+                            if (positionWrist.Z < 0)
+                            {
+                                positionWrist.Z = InferredZPositionClamp;
+                            }
+                            DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionWrist);
+                            this.armJointPoints[JointType.WristRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+
+                            Joint elbowRight = joints[JointType.ElbowRight];
+                            CameraSpacePoint positionElbow = wristRight.Position;
+                            if (positionElbow.Z < 0)
+                            {
+                                positionElbow.Z = InferredZPositionClamp;
+                            }
+                            depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionElbow);
+                            this.armJointPoints[JointType.ElbowRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+
+                            isArmDetected = true;
+                        }
+                    }
+                }
+                //##############################
+               
+
+                //-------------------------------------------------------------------
+                // Color Frame
+                FrameDescription fdColor = cFrame.FrameDescription;
+
+                // cut out color frame according to stencil mask
+                if (cFrame.RawColorImageFormat == ColorImageFormat.Bgra)
+                {
+                    cFrame.CopyRawFrameDataToArray(combiColorBuffer1080p);
+                }
+                else
+                {
+                    cFrame.CopyConvertedFrameDataToArray(combiColorBuffer1080p, ColorImageFormat.Bgra);
                 }
 
-                if (dataReceived)
+                if (!isFullHD)
                 {
-                    using (DrawingContext dc = this.drawingGroup.Open())
+                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
+                    Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
+
+
+                    unsafe
                     {
-                        // Draw a transparent background to set the render size
-                        Color tmpColor = new Color();
-                        tmpColor.R = 0;
-                        tmpColor.G = 0;
-                        tmpColor.B = 0;
-                        tmpColor.A = 0;
-
-
-                        Brush tmpBrush = new SolidColorBrush(tmpColor);
-                        dc.DrawRectangle(tmpBrush, null, new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
-
-                        int penIndex = 0;
-                        foreach (Body body in this.bodies)
+                        fixed (byte* ptrCombiColorBuffer = combiColorBuffer)
+                        fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
                         {
-                            Pen drawPen = this.bodyColors[penIndex++];
-
-                            if (body.IsTracked)
+                            //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+                            for (int i = 0; i < depthIntoColorSpace.Length; i++)
                             {
-                                this.DrawClippedEdges(body, dc);
 
-                                IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+                                int colorPointX = (int)(depthIntoColorSpace[i].X + 0.5);
+                                int colorPointY = (int)(depthIntoColorSpace[i].Y + 0.5);
+                                uint* intPtr = (uint*)(ptrCombiColorBuffer + i * 4);
 
-                                // convert the joint points to depth (display) space
-                                Dictionary<JointType, Point> jointPoints = new Dictionary<JointType, Point>();
-
-                                foreach (JointType jointType in joints.Keys)
+                                if ((biDataSource[i] != 0xff) &&
+                                    (colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
+                                    (colorPointY >= 0) && (colorPointX >= 0))
                                 {
-                                    // sometimes the depth(Z) of an inferred joint may show as negative
-                                    // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
-                                    CameraSpacePoint position = joints[jointType].Position;
-                                    if (position.Z < 0)
+                                    uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4);
+                                    *intPtr = *intPtr1080p;
+                                    *(((byte*)intPtr) + 3) = (byte)userTransparency.Value;
+                                    /*
+                                    combiColorBuffer[i * 4] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4]; //r
+                                    combiColorBuffer[i * 4 + 1] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 1]; //b
+                                    combiColorBuffer[i * 4 + 2] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 2]; //g
+                                    combiColorBuffer[i * 4 + 3] = (byte)userTransparency.Value; //alpha of person
+                                    */
+
+                                    if (isArmDetected)
                                     {
-                                        position.Z = InferredZPositionClamp;
+                                        Point pWrist = armJointPoints[JointType.WristRight];
+                                        Point pElbow = armJointPoints[JointType.ElbowRight];
+                                        int depthWidth = sensor.DepthFrameSource.FrameDescription.Width;
+                                        int depthHeight = sensor.DepthFrameSource.FrameDescription.Height;
+
+                                        if (i == pWrist.Y * depthWidth + pWrist.X)
+                                        {
+                                            *intPtr = 0xffff0000;
+                                        }
+                                        if (i == pElbow.Y * depthWidth + pElbow.X)
+                                        {
+                                            *intPtr = 0xffff0000;
+                                        }
                                     }
-
-                                    //DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(position);
-                                    //jointPoints[jointType] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
-                                    ColorSpacePoint colorSpacePoint = this.coordinateMapper.MapCameraPointToColorSpace(position);
-                                    jointPoints[jointType] = new Point(colorSpacePoint.X, colorSpacePoint.Y);
-
                                 }
 
-                                this.DrawBody(joints, jointPoints, dc, drawPen);
-
-                                this.DrawHand(body.HandLeftState, jointPoints[JointType.HandLeft], dc);
-                                this.DrawHand(body.HandRightState, jointPoints[JointType.HandRight], dc);
-                            }
+                            } // for loop                            
                         }
+                    } // unsafe
 
-                        // prevent drawing outside of our render area
-                        this.drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
-                    }
-                }
-            }
-
-            // access color frame
-            using (ColorFrame colorFrame = reference.ColorFrameReference.AcquireFrame())
-            {
-                if (colorFrame != null)
-                {
-                    FrameDescription fdColor = colorFrame.FrameDescription;
-
-                    // cut out color frame according to stencil mask
-                    if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra)
-                    {
-                        colorFrame.CopyRawFrameDataToArray(combiColorBuffer1080p);
-                    }
-                    else
-                    {
-                        colorFrame.CopyConvertedFrameDataToArray(combiColorBuffer1080p, ColorImageFormat.Bgra);
-                    }
-
-                    //########################################
-                    //TODO
-                    //if 1080p = false; (512x424)
-
-                    ColorSpacePoint[] depthIntoColorSpace = new ColorSpacePoint[depthDataSource.Length];
-                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
-
-                    //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
-                    for (int i = 0; i < depthIntoColorSpace.Length; i++) {
-
-                        int colorPointX = (int)(depthIntoColorSpace[i].X + 0.5);
-                        int colorPointY = (int)(depthIntoColorSpace[i].Y + 0.5);
-
-                        if ((biDataSource[i] > 5) || (biDataSource[i] < 0))
-                        {
-                            combiColorBuffer[i * 4] = 255;
-                            combiColorBuffer[i * 4 + 1] = 255;
-                            combiColorBuffer[i * 4 + 2] = 255;
-                            combiColorBuffer[i * 4 + 3] = 0;
-                        }
-                        //where depth map has no corresponding value in the color map due to resolution/sensor position, the pixels are set to black
-                        else if (Single.IsInfinity(depthIntoColorSpace[i].Y) || Single.IsInfinity(depthIntoColorSpace[i].X)
-                            || (colorPointY >= fdColor.Height) || (colorPointX >= fdColor.Width) || (colorPointY < 0) || (colorPointX < 0) )
-                        {
-                            combiColorBuffer[i * 4] = 0; //r
-                            combiColorBuffer[i * 4 + 1] = 0; //b
-                            combiColorBuffer[i * 4 + 2] = 0; //g
-                            combiColorBuffer[i * 4 + 3] = 0; //a
-                        } 
-                        else
-                        {
-                            combiColorBuffer[i * 4] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4]; //r
-                            combiColorBuffer[i * 4 + 1] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 1]; //b
-                            combiColorBuffer[i * 4 + 2] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 2]; //g
-                            combiColorBuffer[i * 4 + 3] = (byte)userTransparency.Value; //alpha of person
-                        }
-                    }
                     //combiColorBuffer1080p contains all required information
-                    combiBitmap.WritePixels(new Int32Rect(0, 0, this.combiBitmap.PixelWidth, this.combiBitmap.PixelHeight), combiColorBuffer, combiBitmap.PixelWidth * sizeof(int), 0);
-
-
-                    //########################################
-
-
-                    //TODO
-                    //if 1080p = true;
-                    /*
-                    DepthSpacePoint[] colorIntoDepthSpace = new DepthSpacePoint[fdColor.LengthInPixels];
+                    combiBitmap.Lock();
+                    //combiBitmap.WritePixels(new Int32Rect(0, 0, this.combiBitmap.PixelWidth, this.combiBitmap.PixelHeight), combiColorBuffer, combiBitmap.PixelWidth * sizeof(int), 0);
+                    Marshal.Copy(combiColorBuffer, 0, combiBitmap.BackBuffer, combiColorBuffer.Length);
+                    combiBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap.Width, (int)combiBitmap.Height));
+                    combiBitmap.Unlock();
+                }
+                else
+                {
                     sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
 
                     //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
-                    for (int i = 0; i < fdColor.LengthInPixels; i++) {
+                    for (int i = 0; i < fdColor.LengthInPixels; i++)
+                    {
                         //where color map has no corresponding value in the depth map due to resolution/sensor position, the pixels are set to black
                         if (Single.IsInfinity(colorIntoDepthSpace[i].Y) || Single.IsInfinity(colorIntoDepthSpace[i].X))
                         {
@@ -492,17 +476,77 @@ namespace BodyExtractionAndHightlighting
                             else
                             {
                                 //combiColorBuffer1080p[i * 4 + 3] = 255; //alpha of person
-                                combiColorBuffer1080p[i * 4 + 3] = (byte) userTransparency.Value;
+                                combiColorBuffer1080p[i * 4 + 3] = (byte)userTransparency.Value;
                             }
-                        } 
-                    }
+                        }
+                    } // for loop
                     //combiColorBuffer1080p contains all required information
                     combiBitmap1080p.WritePixels(new Int32Rect(0, 0, this.combiBitmap1080p.PixelWidth, this.combiBitmap1080p.PixelHeight), combiColorBuffer1080p, combiBitmap1080p.PixelWidth * sizeof(int), 0);
-                    */
+                } // full HD
+                // Color Frame
+                //-------------------------------------------------------------------
+                
+
+            } // using Frames
+        }
+
+        void DrawBodies()
+        {
+            using (DrawingContext dc = this.drawingGroup.Open())
+            {
+                // Draw a transparent background to set the render size
+                Color tmpColor = new Color();
+                tmpColor.R = 0;
+                tmpColor.G = 0;
+                tmpColor.B = 0;
+                tmpColor.A = 0;
+
+
+                Brush tmpBrush = new SolidColorBrush(tmpColor);
+                dc.DrawRectangle(tmpBrush, null, new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
+
+                int penIndex = 0;
+                foreach (Body body in this.bodies)
+                {
+                    Pen drawPen = this.bodyColors[penIndex++];
+
+                    if (body.IsTracked)
+                    {
+                        this.DrawClippedEdges(body, dc);
+
+                        IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+
+                        // convert the joint points to depth (display) space
+                        Dictionary<JointType, Point> jointPoints = new Dictionary<JointType, Point>();
+
+                        foreach (JointType jointType in joints.Keys)
+                        {
+                            // sometimes the depth(Z) of an inferred joint may show as negative
+                            // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
+                            CameraSpacePoint position = joints[jointType].Position;
+                            if (position.Z < 0)
+                            {
+                                position.Z = InferredZPositionClamp;
+                            }
+
+                            //DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(position);
+                            //jointPoints[jointType] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                            ColorSpacePoint colorSpacePoint = this.coordinateMapper.MapCameraPointToColorSpace(position);
+                            jointPoints[jointType] = new Point(colorSpacePoint.X, colorSpacePoint.Y);
+
+                        }
+
+                        this.DrawBody(joints, jointPoints, dc, drawPen);
+
+                        this.DrawHand(body.HandLeftState, jointPoints[JointType.HandLeft], dc);
+                        this.DrawHand(body.HandRightState, jointPoints[JointType.HandRight], dc);
+                    }
                 }
-            }
 
-
+                // prevent drawing outside of our render area
+                this.drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
+            } // using DrawingContext
+               
         }
                     
      
@@ -674,11 +718,19 @@ namespace BodyExtractionAndHightlighting
         private void nonFullHD_Checked(object sender, RoutedEventArgs e)
         {
             isFullHD = false;
+            if (imageCombi != null)
+            {
+                imageCombi.Source = combiBitmap; //img with 512x424-color of body index frame;
+            }
         }
 
         private void fullHD_Checked(object sender, RoutedEventArgs e)
         {
             isFullHD = true;
+            if (imageCombi != null)
+            {
+                imageCombi.Source = combiBitmap1080p; //img with 1080p-color of body index frame;
+            }
         }
 
         private void BlackBG_Checked(object sender, RoutedEventArgs e)
@@ -694,6 +746,16 @@ namespace BodyExtractionAndHightlighting
         private void CustomBG_Checked(object sender, RoutedEventArgs e)
         {
             bgType = BackgroundType.Custom;
+        }
+
+        private void checkBoxExtendArm_Checked(object sender, RoutedEventArgs e)
+        {
+            extendArm = true;
+        }
+
+        private void checkBoxExtendArm_Unchecked(object sender, RoutedEventArgs e)
+        {
+            extendArm = false;
         }
          
     }

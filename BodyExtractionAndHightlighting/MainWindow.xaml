@@ -21,14 +21,14 @@
         <Label Grid.Row="0" Grid.Column="2" Content="Background:" />
 
         <!--Dynamic Content-->
-        <RadioButton Name="fullHD" Grid.Row="1" Grid.Column="0" Content="1080p" GroupName="Resolution" Checked="fullHD_Checked"/>
-        <RadioButton Name="nonFullHD" Grid.Row="2" Grid.Column="0" Content="512x424" GroupName="Resolution" IsChecked="True" Checked="nonFullHD_Checked" />
-        
-        <Slider Grid.Row="2" Grid.Column="1" Value="150" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" />
+        <RadioButton Name="fullHD" Grid.Column="0" Content="1080p" GroupName="Resolution" Checked="fullHD_Checked" Margin="10,23,59,5" Grid.RowSpan="2"/>
+        <RadioButton Name="nonFullHD" Grid.Row="1" Grid.Column="0" Content="512x424" GroupName="Resolution" IsChecked="True" Checked="nonFullHD_Checked" Margin="10,0,59,7" Height="17" VerticalAlignment="Bottom" Grid.RowSpan="2" />
+
+        <Slider Grid.Column="1" Value="150" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" Margin="5,27,40,8" Grid.RowSpan="3" />
 
         <RadioButton Name="BlackBG" Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" Checked="BlackBG_Checked"/>
-        <RadioButton Name="WhiteBG" Grid.Row="2" Grid.Column="2" Content="White" GroupName="Background" Checked="WhiteBG_Checked" />
-        <RadioButton Name="CustomBG" Grid.Row="3" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" />
+        <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" Checked="WhiteBG_Checked" Margin="60,0,-60,16" Grid.RowSpan="2" />
+        <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" Margin="127,0,-127,0" RenderTransformOrigin="0.26,0.625" />
 
         <Canvas Grid.Row="4" Grid.ColumnSpan="3" Grid.ZIndex="1">
             <!--<Canvas.Background>
@@ -37,6 +37,7 @@
             <Image x:Name="imageCombi" Canvas.Left="20" Canvas.Top="10" Width="800" Height="600" />
             <!--<Image x:Name="imageBody" Canvas.Left="20" Canvas.Top="10" Width="800" Height="600" Canvas.ZIndex="1"/>-->
         </Canvas>
+        <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="250,10,-172,0" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked"/>
 
         <Grid.Background>
             <ImageBrush ImageSource="Resources\sharedWorkspace.jpg" Stretch="Uniform" />
