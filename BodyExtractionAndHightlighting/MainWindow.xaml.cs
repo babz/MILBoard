@@ -269,7 +269,8 @@ namespace BodyExtractionAndHightlighting
             // Create the drawing group we'll use for drawing
             this.drawingGroup = new DrawingGroup();
 
-            //imageBody.Source = new DrawingImage(this.drawingGroup);
+            // TODO draws skeleton
+            imageBody.Source = new DrawingImage(this.drawingGroup);
 
             // use the window object as the view model in this simple example
             this.DataContext = this;
@@ -332,42 +333,42 @@ namespace BodyExtractionAndHightlighting
                 // those body objects will be re-used.
                 bodyFrame.GetAndRefreshBodyData(this.bodies);
 
-                //DrawBodies();
+                DrawBodies();
 
                 //######################################### Get Right Arm ###############################################
                 bool isArmDetected = false;
-                if (extendArm)
-                {
-                    foreach (Body body in this.bodies)
-                    {
-                        if (body.IsTracked)
-                        {
-                            IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
-                            // convert the joint points to depth (display) space
+                //if (extendArm)
+                //{
+                //    foreach (Body body in this.bodies)
+                //    {
+                //        if (body.IsTracked)
+                //        {
+                //            IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+                //            // convert the joint points to depth (display) space
                             
                       
-                            Joint wristRight = joints[JointType.WristRight];
-                            CameraSpacePoint positionWrist = wristRight.Position;
-                            if (positionWrist.Z < 0)
-                            {
-                                positionWrist.Z = InferredZPositionClamp;
-                            }
-                            DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionWrist);
-                            this.armJointPoints[JointType.WristRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                //            Joint wristRight = joints[JointType.WristRight];
+                //            CameraSpacePoint positionWrist = wristRight.Position;
+                //            if (positionWrist.Z < 0)
+                //            {
+                //                positionWrist.Z = InferredZPositionClamp;
+                //            }
+                //            DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionWrist);
+                //            this.armJointPoints[JointType.WristRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
 
-                            Joint elbowRight = joints[JointType.ElbowRight];
-                            CameraSpacePoint positionElbow = wristRight.Position;
-                            if (positionElbow.Z < 0)
-                            {
-                                positionElbow.Z = InferredZPositionClamp;
-                            }
-                            depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionElbow);
-                            this.armJointPoints[JointType.ElbowRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                //            Joint elbowRight = joints[JointType.ElbowRight];
+                //            CameraSpacePoint positionElbow = wristRight.Position;
+                //            if (positionElbow.Z < 0)
+                //            {
+                //                positionElbow.Z = InferredZPositionClamp;
+                //            }
+                //            depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionElbow);
+                //            this.armJointPoints[JointType.ElbowRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
 
-                            isArmDetected = true;
-                        }
-                    }
-                }
+                //            isArmDetected = true;
+                //        }
+                //    }
+                //}
                 //##############################
                
 
