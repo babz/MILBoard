@@ -164,6 +164,9 @@ namespace BodyExtractionAndHightlighting
         BackgroundType bgType = BackgroundType.Custom;
         private bool extendArm = false;
 
+        // right lower arm detection for scaling
+        bool isArmDetected = false;
+        IReadOnlyDictionary<JointType, Joint> joints;
         Dictionary<JointType, Point> armJointPoints = new Dictionary<JointType, Point>();
 
         public MainWindow()
@@ -205,6 +208,7 @@ namespace BodyExtractionAndHightlighting
             imageCombi.Source = combiBitmap; //img with 512x424-color of body index frame;
 
             //############################################
+            // SKELETON
 
             // get the coordinate mapper
             this.coordinateMapper = this.sensor.CoordinateMapper;
@@ -270,7 +274,7 @@ namespace BodyExtractionAndHightlighting
             this.drawingGroup = new DrawingGroup();
 
             // TODO draws skeleton
-            imageBody.Source = new DrawingImage(this.drawingGroup);
+            //imageBody.Source = new DrawingImage(this.drawingGroup);
 
             // use the window object as the view model in this simple example
             this.DataContext = this;
@@ -336,41 +340,50 @@ namespace BodyExtractionAndHightlighting
                 DrawBodies();
 
                 //######################################### Get Right Arm ###############################################
-                bool isArmDetected = false;
-                //if (extendArm)
-                //{
-                //    foreach (Body body in this.bodies)
-                //    {
-                //        if (body.IsTracked)
-                //        {
-                //            IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
-                //            // convert the joint points to depth (display) space
-                            
-                      
-                //            Joint wristRight = joints[JointType.WristRight];
-                //            CameraSpacePoint positionWrist = wristRight.Position;
-                //            if (positionWrist.Z < 0)
-                //            {
-                //                positionWrist.Z = InferredZPositionClamp;
-                //            }
-                //            DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionWrist);
-                //            this.armJointPoints[JointType.WristRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                if (extendArm)
+                {
+                    foreach (Body body in this.bodies)
+                    {
+                        if (body.IsTracked)
+                        {
+                            //IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+                            joints = body.Joints;
+                            // convert the joint points to depth (display) space
 
-                //            Joint elbowRight = joints[JointType.ElbowRight];
-                //            CameraSpacePoint positionElbow = wristRight.Position;
-                //            if (positionElbow.Z < 0)
-                //            {
-                //                positionElbow.Z = InferredZPositionClamp;
-                //            }
-                //            depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionElbow);
-                //            this.armJointPoints[JointType.ElbowRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
 
-                //            isArmDetected = true;
-                //        }
-                //    }
-                //}
+                            Joint wristRight = joints[JointType.WristRight];
+                            CameraSpacePoint positionWrist = wristRight.Position;
+                            if (positionWrist.Z < 0)
+                            {
+                                positionWrist.Z = InferredZPositionClamp;
+                            }
+                            DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionWrist);
+                            if (wristRight.TrackingState == TrackingState.Tracked)
+                            {
+                                this.armJointPoints[JointType.WristRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                            }
+
+                            Joint elbowRight = joints[JointType.ElbowRight];
+                            CameraSpacePoint positionElbow = elbowRight.Position;
+                            if (positionElbow.Z < 0)
+                            {
+                                positionElbow.Z = InferredZPositionClamp;
+                            }
+
+                            depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(positionElbow);
+                            if (elbowRight.TrackingState == TrackingState.Tracked)
+                            {
+                                this.armJointPoints[JointType.ElbowRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                            }
+                           
+                            Console.Out.WriteLine("arm joint points: x =" + depthSpacePoint.X + ", y =" + depthSpacePoint.Y);
+                            isArmDetected = true;
+
+                        }
+                    }
+                }
                 //##############################
-               
+                
 
                 //-------------------------------------------------------------------
                 // Color Frame
@@ -397,6 +410,37 @@ namespace BodyExtractionAndHightlighting
                         fixed (byte* ptrCombiColorBuffer = combiColorBuffer)
                         fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
                         {
+                            bool stretchEnabled = false;
+                            int xElbow = 0;
+                            int xWrist = 0;
+                            //TODO draw arm
+                            if (isArmDetected && extendArm)
+                            {
+                                if ((joints[JointType.WristRight].TrackingState == TrackingState.Tracked) && (joints[JointType.ElbowRight].TrackingState == TrackingState.Tracked))
+                                {
+                                    stretchEnabled = true;
+                                    Point pWrist = armJointPoints[JointType.WristRight];
+                                    Point pElbow = armJointPoints[JointType.ElbowRight];
+                                    int depthWidth = sensor.DepthFrameSource.FrameDescription.Width;
+                                    int depthHeight = sensor.DepthFrameSource.FrameDescription.Height;
+                                    //Console.Out.WriteLine("pElbow: x =" + pElbow.X + ", y =" + pElbow.Y);
+                                    int indexWrist = ((int)pWrist.Y) * depthWidth + ((int)pWrist.X);
+                                    int indexElbow = ((int)pElbow.Y) * depthWidth + ((int)pElbow.X);
+                                    xElbow = (int)pElbow.X;
+                                    xWrist = (int)pWrist.X;
+
+                                    // marks position of wrist and elbow with 1 pixel
+                                    //if (i == indexWrist)
+                                    //{
+                                    //    *intPtr = 0xffff0000; // ARgb
+                                    //}
+                                    //if (i == indexElbow)
+                                    //{
+                                    //    *intPtr = 0xff00ff00;
+                                    //}
+                                }
+                            }
+
                             //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
                             for (int i = 0; i < depthIntoColorSpace.Length; i++)
                             {
@@ -409,34 +453,41 @@ namespace BodyExtractionAndHightlighting
                                     (colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
                                     (colorPointY >= 0) && (colorPointX >= 0))
                                 {
-                                    uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4);
-                                    *intPtr = *intPtr1080p;
-                                    *(((byte*)intPtr) + 3) = (byte)userTransparency.Value;
+                                    uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4); // corresponding pixel in the 1080p image
+                                    *intPtr = *intPtr1080p; // assign color value (4 bytes)
+                                    *(((byte*)intPtr) + 3) = (byte)userTransparency.Value; // overwrite the alpha value
                                     /*
-                                    combiColorBuffer[i * 4] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4]; //r
-                                    combiColorBuffer[i * 4 + 1] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 1]; //b
-                                    combiColorBuffer[i * 4 + 2] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 2]; //g
+                                    combiColorBuffer[i * 4] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4]; //b
+                                    combiColorBuffer[i * 4 + 1] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 1]; //g
+                                    combiColorBuffer[i * 4 + 2] = combiColorBuffer1080p[(colorPointY * fdColor.Width + colorPointX) * 4 + 2]; //r
                                     combiColorBuffer[i * 4 + 3] = (byte)userTransparency.Value; //alpha of person
                                     */
+                                }
 
-                                    if (isArmDetected)
+                                if (stretchEnabled) {
+                                    int w = sensor.DepthFrameSource.FrameDescription.Width;
+                                    int x = i % w;
+                                    int y = i / w;
+                                    if ((x > xElbow)) //&& (x < xWrist))
                                     {
-                                        Point pWrist = armJointPoints[JointType.WristRight];
-                                        Point pElbow = armJointPoints[JointType.ElbowRight];
-                                        int depthWidth = sensor.DepthFrameSource.FrameDescription.Width;
-                                        int depthHeight = sensor.DepthFrameSource.FrameDescription.Height;
+                                        int offset = x - xElbow;
+                                        int lookupX = xElbow + (offset / 2);
+                                        int colorPointX_stretch = (int)(depthIntoColorSpace[lookupX].X + 0.5);
+                                        int colorPointY_stretch = (int)(depthIntoColorSpace[i].Y + 0.5); //stays the same
+                                        uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same
 
-                                        if (i == pWrist.Y * depthWidth + pWrist.X)
+                                        if ((biDataSource[w * y + lookupX] != 0xff) &&
+                                            (colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
+                                            (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
                                         {
-                                            *intPtr = 0xffff0000;
-                                        }
-                                        if (i == pElbow.Y * depthWidth + pElbow.X)
-                                        {
-                                            *intPtr = 0xffff0000;
+                                            uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4); // corresponding pixel in the 1080p image
+                                            *intPtr_stretch = *intPtr1080p; // assign color value (4 bytes)
+                                            *intPtr_stretch = 0xFFFF0000; // assign color value (4 bytes)
+
+                                            *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value; // overwrite the alpha value
                                         }
                                     }
                                 }
-
                             } // for loop                            
                         }
                     } // unsafe
@@ -458,9 +509,9 @@ namespace BodyExtractionAndHightlighting
                         //where color map has no corresponding value in the depth map due to resolution/sensor position, the pixels are set to black
                         if (Single.IsInfinity(colorIntoDepthSpace[i].Y) || Single.IsInfinity(colorIntoDepthSpace[i].X))
                         {
-                            combiColorBuffer1080p[i * 4] = 255; //r
-                            combiColorBuffer1080p[i * 4 + 1] = 255; //b
-                            combiColorBuffer1080p[i * 4 + 2] = 255; //g
+                            combiColorBuffer1080p[i * 4] = 255; //b
+                            combiColorBuffer1080p[i * 4 + 1] = 255; //g
+                            combiColorBuffer1080p[i * 4 + 2] = 255; //r
                             combiColorBuffer1080p[i * 4 + 3] = 0; //a
                         }
                         else
@@ -615,22 +666,23 @@ namespace BodyExtractionAndHightlighting
             if ((joint0.TrackingState == TrackingState.Tracked) && (joint1.TrackingState == TrackingState.Tracked))
             {
                 drawPen = drawingPen;
-            }
 
-            if (((joint0.JointType == JointType.ElbowRight) && (joint1.JointType == JointType.WristRight)) ||
-                ((joint1.JointType == JointType.ElbowRight) && (joint0.JointType == JointType.WristRight)))
-            {
-                if (drawPen.Brush == Brushes.Red)
-                {
-                    drawPen = highlightRightArmPenYellow;
-                }
-                else
-                {
-                    drawPen = highlightRightArmPenRed;
-                }
-            }
 
-            drawingContext.DrawLine(drawPen, jointPoints[jointType0], jointPoints[jointType1]);
+                if (((joint0.JointType == JointType.ElbowRight) && (joint1.JointType == JointType.WristRight)) ||
+                    ((joint1.JointType == JointType.ElbowRight) && (joint0.JointType == JointType.WristRight)))
+                {
+                    if (drawPen.Brush == Brushes.Red)
+                    {
+                        drawPen = highlightRightArmPenYellow;
+                    }
+                    else
+                    {
+                        drawPen = highlightRightArmPenRed;
+                    }
+                }
+
+                drawingContext.DrawLine(drawPen, jointPoints[jointType0], jointPoints[jointType1]);
+            }
         }
 
         /// <summary>

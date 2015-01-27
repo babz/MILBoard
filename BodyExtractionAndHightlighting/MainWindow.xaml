@@ -39,9 +39,9 @@
         </Canvas>
         <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="250,10,-172,0" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked"/>
 
-        <Grid.Background>
+        <!--<Grid.Background>
             <ImageBrush ImageSource="Resources\sharedWorkspace.jpg" Stretch="Uniform" />
-        </Grid.Background>
+        </Grid.Background>-->
     </Grid>
 
 </Window>
