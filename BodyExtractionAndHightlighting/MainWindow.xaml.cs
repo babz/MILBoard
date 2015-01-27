@@ -444,6 +444,41 @@ namespace BodyExtractionAndHightlighting
                             //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
                             for (int i = 0; i < depthIntoColorSpace.Length; i++)
                             {
+                                bool extendedHandDrawn = false;
+
+                                //always stretch in x-dir
+                                if (stretchEnabled)
+                                {
+                                    int w = sensor.DepthFrameSource.FrameDescription.Width;
+                                    int x = i % w;
+                                    int y = i / w;
+                                    if ((x > xElbow)) //&& (x < xWrist))
+                                    {
+                                        extendedHandDrawn = true; // hack
+
+                                        int offset = x - xElbow;
+                                        int lookupX = xElbow + (offset / 2);
+                                        int colorPointX_stretch = (int)(depthIntoColorSpace[w * y + lookupX].X + 0.5);
+                                        int colorPointY_stretch = (int)(depthIntoColorSpace[w * y + lookupX].Y + 0.5); //stays the same
+                                        uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same
+
+                                        if ((biDataSource[w * y + lookupX] != 0xff) &&
+                                            (colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
+                                            (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
+                                        {
+                                            uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4); // corresponding pixel in the 1080p image
+                                            *intPtr_stretch = *intPtr1080p; // assign color value (4 bytes)
+
+                                            *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value; // overwrite the alpha value
+
+                                            
+                                        }
+                                    }
+                                }
+                                if (extendedHandDrawn)
+                                {
+                                    continue;
+                                }
 
                                 int colorPointX = (int)(depthIntoColorSpace[i].X + 0.5);
                                 int colorPointY = (int)(depthIntoColorSpace[i].Y + 0.5);
@@ -464,30 +499,7 @@ namespace BodyExtractionAndHightlighting
                                     */
                                 }
 
-                                if (stretchEnabled) {
-                                    int w = sensor.DepthFrameSource.FrameDescription.Width;
-                                    int x = i % w;
-                                    int y = i / w;
-                                    if ((x > xElbow)) //&& (x < xWrist))
-                                    {
-                                        int offset = x - xElbow;
-                                        int lookupX = xElbow + (offset / 2);
-                                        int colorPointX_stretch = (int)(depthIntoColorSpace[lookupX].X + 0.5);
-                                        int colorPointY_stretch = (int)(depthIntoColorSpace[i].Y + 0.5); //stays the same
-                                        uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same
-
-                                        if ((biDataSource[w * y + lookupX] != 0xff) &&
-                                            (colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
-                                            (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
-                                        {
-                                            uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4); // corresponding pixel in the 1080p image
-                                            *intPtr_stretch = *intPtr1080p; // assign color value (4 bytes)
-                                            *intPtr_stretch = 0xFFFF0000; // assign color value (4 bytes)
-
-                                            *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value; // overwrite the alpha value
-                                        }
-                                    }
-                                }
+                                
                             } // for loop                            
                         }
                     } // unsafe
