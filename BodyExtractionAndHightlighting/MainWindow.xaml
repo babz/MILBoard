@@ -1,7 +1,7 @@
 ﻿<Window x:Class="BodyExtractionAndHightlighting.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Width="850" Height="700"
+        Title="MainWindow" Width="1280" Height="720"
         WindowStyle="None"
         ResizeMode="NoResize"
         AllowsTransparency="True"

@@ -18,7 +18,6 @@ C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Release\Bod
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Release\BodyExtractionAndHightlighting.pdb
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Release\Microsoft.Kinect.dll
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Release\Microsoft.Kinect.xml
-C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\MainWindow.baml
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\MainWindow.g.cs
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\App.g.cs
