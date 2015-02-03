@@ -1,7 +1,10 @@
 ﻿<Window x:Class="BodyExtractionAndHightlighting.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Width="850" Height="700">
+        Title="MainWindow" Width="850" Height="700"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -31,17 +34,10 @@
         <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" Margin="127,0,-127,0" RenderTransformOrigin="0.26,0.625" />
 
         <Canvas Grid.Row="4" Grid.ColumnSpan="3" Grid.ZIndex="1">
-            <!--<Canvas.Background>
-                <ImageBrush ImageSource="Resources\sharedWorkspace.jpg" Stretch="Fill" />
-            </Canvas.Background>-->
             <Image x:Name="imageCombi" Canvas.Left="20" Canvas.Top="10" Width="800" Height="600" Canvas.ZIndex="0" />
             <Image x:Name="imageBody" Canvas.Left="20" Canvas.Top="10" Width="800" Height="600" Canvas.ZIndex="1" />
         </Canvas>
         <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="250,10,-172,0" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked"/>
-
-        <!--<Grid.Background>
-            <ImageBrush ImageSource="Resources\sharedWorkspace.jpg" Stretch="Uniform" />
-        </Grid.Background>-->
     </Grid>
 
 </Window>
