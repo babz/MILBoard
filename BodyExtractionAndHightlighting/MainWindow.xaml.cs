@@ -801,16 +801,19 @@ namespace BodyExtractionAndHightlighting
         private void BlackBG_Checked(object sender, RoutedEventArgs e)
         {
             bgType = BackgroundType.Black;
+            this.Background = new SolidColorBrush(Colors.Black);
         }
 
         private void WhiteBG_Checked(object sender, RoutedEventArgs e)
         {
             bgType = BackgroundType.White;
+            this.Background = new SolidColorBrush(Colors.White);
         }
 
         private void CustomBG_Checked(object sender, RoutedEventArgs e)
         {
             bgType = BackgroundType.Custom;
+            this.Background = new SolidColorBrush(Colors.Transparent);
         }
 
         private void checkBoxExtendArm_Checked(object sender, RoutedEventArgs e)

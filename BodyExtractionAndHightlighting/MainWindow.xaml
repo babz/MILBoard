@@ -3,8 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainWindow" Width="850" Height="700"
         WindowStyle="None"
+        ResizeMode="NoResize"
         AllowsTransparency="True"
-        Background="Transparent">
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
+    <Window.Background>
+        <SolidColorBrush Color="Transparent"/>
+    </Window.Background>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
