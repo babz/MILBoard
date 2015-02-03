@@ -33,7 +33,7 @@
         
         <Label Grid.Row="0" Grid.Column="0" Content="Resolution:" />
         <Label Grid.Row="0" Grid.Column="1" Content="Transparency of user:" />
-        <Label Grid.Row="0" Grid.Column="2" Content="Background:" />
+        <Label Grid.Row="0" Grid.Column="2" Content="Background:" Margin="0,0,-426,0" />
 
         <!--Dynamic Content-->
         <RadioButton Name="fullHD" Grid.Column="0" Content="1080p" GroupName="Resolution" Checked="fullHD_Checked" Margin="10,23,59,5" Grid.RowSpan="2" />
@@ -43,12 +43,12 @@
 
         <RadioButton Name="BlackBG" Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" Checked="BlackBG_Checked"/>
         <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" Checked="WhiteBG_Checked" Margin="60,0,-60,16" Grid.RowSpan="2" />
-        <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" Margin="127,0,-127,0" RenderTransformOrigin="0.26,0.625" />
-        <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="310,6,0,0" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" />
+        <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" Margin="127,0,-426,0" RenderTransformOrigin="0.26,0.625" />
+        <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="310,6,430,0" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" />
         
         <Canvas Grid.Row="4" Grid.ColumnSpan="3" Grid.ZIndex="1">
-            <Image x:Name="imageCombi" Canvas.Left="20" Canvas.Top="10" Width="800" Height="600" Canvas.ZIndex="0" />
-            <Image x:Name="imageBody" Canvas.Left="20" Canvas.Top="10" Width="800" Height="600" Canvas.ZIndex="1" />
+            <Image x:Name="imageCombi" Canvas.Left="20" Canvas.Top="10" Width="1200" Height="700" Canvas.ZIndex="0" />
+            <Image x:Name="imageBody" Canvas.Left="20" Canvas.Top="10" Width="1200" Height="700" Canvas.ZIndex="1" />
         </Canvas>
         
     </Grid>

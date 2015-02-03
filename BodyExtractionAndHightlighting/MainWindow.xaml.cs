@@ -18,7 +18,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace BodyExtractionAndHightlighting
-{  
+{
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -160,7 +160,7 @@ namespace BodyExtractionAndHightlighting
 
         //gui logic
         bool isFullHD = false;
-        enum BackgroundType { Black, White, Custom};
+        enum BackgroundType { Black, White, Custom };
         BackgroundType bgType = BackgroundType.Custom;
         private bool extendArm = false;
 
@@ -308,10 +308,11 @@ namespace BodyExtractionAndHightlighting
             using (var biFrame = reference.BodyIndexFrameReference.AcquireFrame())
             using (var bodyFrame = reference.BodyFrameReference.AcquireFrame())
             {
-                if ((cFrame == null) || (dFrame == null) || (biFrame == null) || (bodyFrame == null)) {
+                if ((cFrame == null) || (dFrame == null) || (biFrame == null) || (bodyFrame == null))
+                {
                     return;
                 }
-                
+
                 //-----------------------
                 //check performance
                 long ticksNow = DateTime.Now.Ticks;
@@ -326,7 +327,7 @@ namespace BodyExtractionAndHightlighting
                 dFrame.CopyFrameDataToArray(depthDataSource);
                 biFrame.CopyFrameDataToArray(biDataSource);
 
-              
+
                 // body frame
                 if (this.bodies == null)
                 {
@@ -375,7 +376,7 @@ namespace BodyExtractionAndHightlighting
                             {
                                 this.armJointPoints[JointType.ElbowRight] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
                             }
-                           
+
                             Console.Out.WriteLine("arm joint points: x =" + depthSpacePoint.X + ", y =" + depthSpacePoint.Y);
                             isArmDetected = true;
 
@@ -383,7 +384,7 @@ namespace BodyExtractionAndHightlighting
                     }
                 }
                 //##############################
-                
+
 
                 //-------------------------------------------------------------------
                 // Color Frame
@@ -412,8 +413,17 @@ namespace BodyExtractionAndHightlighting
                         {
                             bool stretchEnabled = false;
                             int xElbow = 0;
+                            int yElbow = 0;
                             int xWrist = 0;
-                            //TODO draw arm
+                            int yWrist = 0;
+
+                            /* // could be used for better start / end conditions                            
+                            // normal vector of the right lower arm 
+                            float xNormalVector = 0;
+                            float yNormalVector = 0;
+                            */
+                            double normalizedAngle = 0.0;
+
                             if (isArmDetected && extendArm)
                             {
                                 if ((joints[JointType.WristRight].TrackingState == TrackingState.Tracked) && (joints[JointType.ElbowRight].TrackingState == TrackingState.Tracked))
@@ -427,17 +437,27 @@ namespace BodyExtractionAndHightlighting
                                     int indexWrist = ((int)pWrist.Y) * depthWidth + ((int)pWrist.X);
                                     int indexElbow = ((int)pElbow.Y) * depthWidth + ((int)pElbow.X);
                                     xElbow = (int)pElbow.X;
+                                    yElbow = (int)pElbow.Y;
                                     xWrist = (int)pWrist.X;
+                                    yWrist = (int)pWrist.Y;
 
-                                    // marks position of wrist and elbow with 1 pixel
-                                    //if (i == indexWrist)
-                                    //{
-                                    //    *intPtr = 0xffff0000; // ARgb
-                                    //}
-                                    //if (i == indexElbow)
-                                    //{
-                                    //    *intPtr = 0xff00ff00;
-                                    //}
+                                    double deltaX = pWrist.X - pElbow.X;
+                                    double deltaY = pWrist.Y - pElbow.Y;
+                                    // gradient is positive for vectors going up
+                                    if (deltaX == 0) { deltaX = 0.01f; } // hot-fix to avoid division by zero 
+                                    double gradient = deltaY / deltaX; // Steigung
+                                    double angle = Math.Atan(gradient) * 180.0f / Math.PI; // value between -90 and 90 degree
+
+                                    // we don't care about + or - sign --> and also we want to have a normalized direction (0 - 1)
+                                    normalizedAngle = Math.Abs(angle / 180.0f);
+
+                                    // computes the left hand side normal vector
+                                    // --> the arm is on the right hand side of this normal vector
+                                    //xNormalVector = (deltaY) * -1;
+                                    //yNormalVector = deltaX;
+
+
+                                    // compute the angle (]-\pi/2;\pi/2[) --> -90 to 90 degree
                                 }
                             }
 
@@ -449,29 +469,36 @@ namespace BodyExtractionAndHightlighting
                                 //always stretch in x-dir
                                 if (stretchEnabled)
                                 {
+                                    // Determine the current 2 dimensional coordinate in the image (x, y)
                                     int w = sensor.DepthFrameSource.FrameDescription.Width;
                                     int x = i % w;
                                     int y = i / w;
+
+                                    // Check if the point is on the right hand side of the normal vector
                                     if ((x > xElbow)) //&& (x < xWrist))
                                     {
                                         extendedHandDrawn = true; // hack
 
-                                        int offset = x - xElbow;
-                                        int lookupX = xElbow + (offset / 2);
-                                        int colorPointX_stretch = (int)(depthIntoColorSpace[w * y + lookupX].X + 0.5);
-                                        int colorPointY_stretch = (int)(depthIntoColorSpace[w * y + lookupX].Y + 0.5); //stays the same
+                                        int offsetX = x - xElbow;
+                                        //int lookupX = xElbow + (offsetX / 2);
+                                        int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
+
+                                        int offsetY = y - yElbow;
+                                        //int lookupY = y;
+                                        int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
+
+
+                                        int colorPointX_stretch = (int)(depthIntoColorSpace[w * lookupY + lookupX].X + 0.5);
+                                        int colorPointY_stretch = (int)(depthIntoColorSpace[w * lookupY + lookupX].Y + 0.5); //stays the same
                                         uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same
 
-                                        if ((biDataSource[w * y + lookupX] != 0xff) &&
+                                        if ((biDataSource[w * lookupY + lookupX] != 0xff) &&
                                             (colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
                                             (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
                                         {
                                             uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4); // corresponding pixel in the 1080p image
                                             *intPtr_stretch = *intPtr1080p; // assign color value (4 bytes)
-
-                                            *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value; // overwrite the alpha value
-
-                                            
+                                            *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value; // overwrite the alpha value                                            
                                         }
                                     }
                                 }
@@ -499,7 +526,7 @@ namespace BodyExtractionAndHightlighting
                                     */
                                 }
 
-                                
+
                             } // for loop                            
                         }
                     } // unsafe
@@ -549,7 +576,7 @@ namespace BodyExtractionAndHightlighting
                 } // full HD
                 // Color Frame
                 //-------------------------------------------------------------------
-                
+
 
             } // using Frames
         }
@@ -610,10 +637,10 @@ namespace BodyExtractionAndHightlighting
                 // prevent drawing outside of our render area
                 this.drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
             } // using DrawingContext
-               
+
         }
-                    
-     
+
+
         /// <summary>
         /// Draws a body
         /// </summary>
@@ -779,7 +806,7 @@ namespace BodyExtractionAndHightlighting
                 this.sensor = null;
             }
         }
-        
+
         private void nonFullHD_Checked(object sender, RoutedEventArgs e)
         {
             isFullHD = false;
@@ -825,6 +852,6 @@ namespace BodyExtractionAndHightlighting
         {
             extendArm = false;
         }
-         
+
     }
 }
