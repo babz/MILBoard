@@ -27,4 +27,3 @@ C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\Bod
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\BodyExtractionAndHightlighting.csproj.GenerateResource.Cache
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\BodyExtractionAndHightlighting.exe
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\BodyExtractionAndHightlighting.pdb
-C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Release\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
