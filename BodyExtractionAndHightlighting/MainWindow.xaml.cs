@@ -289,7 +289,21 @@ namespace BodyExtractionAndHightlighting
                                 if ((joints[JointType.WristRight].TrackingState == TrackingState.Tracked) && (joints[JointType.ElbowRight].TrackingState == TrackingState.Tracked))
                                 {
                                     stretchEnabled = true;
-                                    Point pWrist = armJointPoints[JointType.WristRight];
+                                    //orig
+                                    //Point pWrist = armJointPoints[JointType.WristRight];
+                                    //mod
+                                    Point pWrist;
+                                    if (isTouchPositionEnabled)
+                                    {
+                                        Console.Out.WriteLine("--------touch is now enabled--------");
+                                        pWrist = new Point((int)touchPosition.X, (int)touchPosition.Y);
+                                    }
+                                    else
+                                    {
+                                        Console.Out.WriteLine("===== wrist joint is taken =====");
+                                        pWrist = armJointPoints[JointType.WristRight];
+                                    }
+                                    //end mod
                                     Point pElbow = armJointPoints[JointType.ElbowRight];
                                     int depthWidth = sensor.DepthFrameSource.FrameDescription.Width;
                                     int depthHeight = sensor.DepthFrameSource.FrameDescription.Height;
