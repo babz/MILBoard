@@ -14,8 +14,6 @@ C:\master_proj\solutions\BodyExtractionAndHightlighting\BodyExtractionAndHightli
 C:\master_proj\solutions\BodyExtractionAndHightlighting\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.pdb
 C:\master_proj\solutions\BodyExtractionAndHightlighting\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.exe.config
-C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.exe
-C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.pdb
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.exe
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.pdb
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Debug\Microsoft.Kinect.dll
@@ -27,4 +25,5 @@ C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyE
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.g.resources
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.Properties.Resources.resources
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csproj.GenerateResource.Cache
-C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
+C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.exe
+C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.pdb

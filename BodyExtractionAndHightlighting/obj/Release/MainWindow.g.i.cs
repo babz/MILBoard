@@ -134,6 +134,14 @@ namespace BodyExtractionAndHightlighting {
             switch (connectionId)
             {
             case 1:
+            
+            #line 9 "..\..\MainWindow.xaml"
+            ((BodyExtractionAndHightlighting.MainWindow)(target)).MouseRightButtonDown += new System.Windows.Input.MouseButtonEventHandler(this.Window_MouseRightButtonDown);
+            
+            #line default
+            #line hidden
+            return;
+            case 2:
             this.fullHD = ((System.Windows.Controls.RadioButton)(target));
             
             #line 39 "..\..\MainWindow.xaml"
@@ -142,7 +150,7 @@ namespace BodyExtractionAndHightlighting {
             #line default
             #line hidden
             return;
-            case 2:
+            case 3:
             this.nonFullHD = ((System.Windows.Controls.RadioButton)(target));
             
             #line 40 "..\..\MainWindow.xaml"
@@ -151,10 +159,10 @@ namespace BodyExtractionAndHightlighting {
             #line default
             #line hidden
             return;
-            case 3:
+            case 4:
             this.userTransparency = ((System.Windows.Controls.Slider)(target));
             return;
-            case 4:
+            case 5:
             this.BlackBG = ((System.Windows.Controls.RadioButton)(target));
             
             #line 44 "..\..\MainWindow.xaml"
@@ -163,7 +171,7 @@ namespace BodyExtractionAndHightlighting {
             #line default
             #line hidden
             return;
-            case 5:
+            case 6:
             this.WhiteBG = ((System.Windows.Controls.RadioButton)(target));
             
             #line 45 "..\..\MainWindow.xaml"
@@ -172,7 +180,7 @@ namespace BodyExtractionAndHightlighting {
             #line default
             #line hidden
             return;
-            case 6:
+            case 7:
             this.CustomBG = ((System.Windows.Controls.RadioButton)(target));
             
             #line 46 "..\..\MainWindow.xaml"
@@ -181,7 +189,7 @@ namespace BodyExtractionAndHightlighting {
             #line default
             #line hidden
             return;
-            case 7:
+            case 8:
             this.checkBoxExtendArm = ((System.Windows.Controls.CheckBox)(target));
             
             #line 47 "..\..\MainWindow.xaml"
@@ -196,7 +204,7 @@ namespace BodyExtractionAndHightlighting {
             #line default
             #line hidden
             return;
-            case 8:
+            case 9:
             this.imageCombi = ((System.Windows.Controls.Image)(target));
             return;
             }

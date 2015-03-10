@@ -34,6 +34,10 @@ namespace BodyExtractionAndHightlighting
         /// </summary>
         MultiSourceFrameReader reader;
 
+        private bool showFps = false;
+        private bool isTouchPositionEnabled = false;
+        private Point touchPosition;
+
         // coordinate mapper
         private CoordinateMapper coordinateMapper = null;
 
@@ -78,14 +82,14 @@ namespace BodyExtractionAndHightlighting
         WriteableBitmap combiBitmap;
 
         //check performance in ticks
-        const long TICKS_PER_SECOND = 10000000;
+        const long TICKS_PER_SECOND = 10000000; //according to msdn
         long prevTick = 0;
 
         //gui logic
         bool isFullHD = false;
         enum BackgroundType { Black, White, Custom };
         BackgroundType bgType = BackgroundType.Custom;
-        private bool extendArm = false;
+        private bool extendArm = false; //value set via checkbox in GUI
 
         // right lower arm detection for scaling
         bool isArmDetected = false;
@@ -145,6 +149,14 @@ namespace BodyExtractionAndHightlighting
             }
         }
 
+        private void calculateFps()
+        {
+            long ticksNow = DateTime.Now.Ticks;
+            float fps = ((float)TICKS_PER_SECOND) / (ticksNow - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
+            Console.Out.WriteLine("fps: " + fps);
+            prevTick = ticksNow;
+        }
+
         void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs args)
         {
             MultiSourceFrame reference = args.FrameReference.AcquireFrame();
@@ -164,15 +176,12 @@ namespace BodyExtractionAndHightlighting
                     return;
                 }
 
-                //-----------------------
                 //check performance
-                long ticksNow = DateTime.Now.Ticks;
-                float fps = ((float)TICKS_PER_SECOND) / (ticksNow - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
-                Console.Out.WriteLine("fps: " + fps);
-                prevTick = ticksNow;
-                //-----------------------
-                //return;
-
+                if (showFps)
+                {
+                    this.calculateFps();
+                    //return;
+                }
 
                 dFrame.CopyFrameDataToArray(depthDataSource);
                 biFrame.CopyFrameDataToArray(biDataSource);
@@ -243,7 +252,8 @@ namespace BodyExtractionAndHightlighting
                 {
                     cFrame.CopyConvertedFrameDataToArray(combiColorBuffer1080p, ColorImageFormat.Bgra);
                 }
-
+                #region 512x424
+                //512x424
                 if (!isFullHD)
                 {
                     sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
@@ -268,6 +278,12 @@ namespace BodyExtractionAndHightlighting
                             */
                             double normalizedAngle = 0.0;
 
+                            double pointerOffset = 0.0;
+                            if (isTouchPositionEnabled)
+                            {
+                                pointerOffset = 0.5;
+                            }
+
                             if (isArmDetected && extendArm)
                             {
                                 if ((joints[JointType.WristRight].TrackingState == TrackingState.Tracked) && (joints[JointType.ElbowRight].TrackingState == TrackingState.Tracked))
@@ -287,6 +303,8 @@ namespace BodyExtractionAndHightlighting
 
                                     double deltaX = pWrist.X - pElbow.X;
                                     double deltaY = pWrist.Y - pElbow.Y;
+                                    double armLength = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+                                    
                                     // gradient is positive for vectors going up
                                     if (deltaX == 0) { deltaX = 0.01f; } // hot-fix to avoid division by zero 
                                     double gradient = deltaY / deltaX; // slope
@@ -321,10 +339,13 @@ namespace BodyExtractionAndHightlighting
                                         extendedHandDrawn = true; // hack
 
                                         int offsetX = x - xElbow;
-                                        int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
+                                        //int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
+                                        int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
+
 
                                         int offsetY = y - yElbow;
-                                        int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
+                                        //int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
+                                        int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
 
                                         int colorPointX_stretch = (int)(depthIntoColorSpace[w * lookupY + lookupX].X + 0.5);
                                         int colorPointY_stretch = (int)(depthIntoColorSpace[w * lookupY + lookupX].Y + 0.5);
@@ -366,42 +387,178 @@ namespace BodyExtractionAndHightlighting
                     combiBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap.Width, (int)combiBitmap.Height));
                     combiBitmap.Unlock();
                 } // no full hd
+        #endregion
+                # region 1080p
                 else
                 {
                     sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
+                    Array.Clear(combiColorBuffer1080p, 0, combiColorBuffer1080p.Length);
 
-                    //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
-                    for (int i = 0; i < fdColor.LengthInPixels; i++)
+                    unsafe
                     {
-                        //where color map has no corresponding value in the depth map due to resolution/sensor position, the pixels are set to black
-                        if (Single.IsInfinity(colorIntoDepthSpace[i].Y) || Single.IsInfinity(colorIntoDepthSpace[i].X))
+                        fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
                         {
-                            combiColorBuffer1080p[i * 4] = 255; //b
-                            combiColorBuffer1080p[i * 4 + 1] = 255; //g
-                            combiColorBuffer1080p[i * 4 + 2] = 255; //r
-                            combiColorBuffer1080p[i * 4 + 3] = 0; //a
-                        }
-                        else
-                        {
-                            //if bodyIndex pixel has no body assigned, draw a black pixel to the corresponding color pixel
-                            int idx = (int)(sensor.BodyIndexFrameSource.FrameDescription.Width * colorIntoDepthSpace[i].Y + colorIntoDepthSpace[i].X); //2D to 1D
-                            if ((biDataSource[idx] > 5) || (biDataSource[idx] < 0))
-                            {
-                                combiColorBuffer1080p[i * 4] = 255;
-                                combiColorBuffer1080p[i * 4 + 1] = 255;
-                                combiColorBuffer1080p[i * 4 + 2] = 255;
-                                combiColorBuffer1080p[i * 4 + 3] = 0;
-                            }
-                            else
-                            {
-                                combiColorBuffer1080p[i * 4 + 3] = (byte)userTransparency.Value; //alpha of person set by gui-slider
-                            }
-                        }
-                    } // for loop
+                            bool stretchEnabled = false;
+                            int xElbow = 0;
+                            int yElbow = 0;
+                            int xWrist = 0;
+                            int yWrist = 0;
 
-                    //combiColorBuffer1080p contains all required information
-                    combiBitmap1080p.WritePixels(new Int32Rect(0, 0, this.combiBitmap1080p.PixelWidth, this.combiBitmap1080p.PixelHeight), combiColorBuffer1080p, combiBitmap1080p.PixelWidth * sizeof(int), 0);
-                } // full HD
+                            /* // could be used for better start / end conditions                            
+                            // normal vector of the right lower arm 
+                            float xNormalVector = 0;
+                            float yNormalVector = 0;
+                            */
+                            double normalizedAngle = 0.0;
+
+                            double pointerOffset = 0.0;
+                            if (isTouchPositionEnabled)
+                            {
+                                pointerOffset = 0.5;
+                            }
+
+                            if (isArmDetected && extendArm)
+                            {
+                                if ((joints[JointType.WristRight].TrackingState == TrackingState.Tracked) && (joints[JointType.ElbowRight].TrackingState == TrackingState.Tracked))
+                                {
+                                    stretchEnabled = true;
+                                    Point pWrist = armJointPoints[JointType.WristRight];
+                                    Point pElbow = armJointPoints[JointType.ElbowRight];
+
+                                    int colorWidth = sensor.ColorFrameSource.FrameDescription.Width;
+                                    int colorHeight = sensor.ColorFrameSource.FrameDescription.Height;
+                                    //Console.Out.WriteLine("pElbow: x =" + pElbow.X + ", y =" + pElbow.Y);
+                                    int indexWrist = ((int)pWrist.Y) * colorWidth + ((int)pWrist.X);
+                                    int indexElbow = ((int)pElbow.Y) * colorHeight + ((int)pElbow.X);
+                                    xElbow = (int)pElbow.X;
+                                    yElbow = (int)pElbow.Y;
+                                    xWrist = (int)pWrist.X;
+                                    yWrist = (int)pWrist.Y;
+
+                                    double deltaX = pWrist.X - pElbow.X;
+                                    double deltaY = pWrist.Y - pElbow.Y;
+                                    double armLength = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                                    // gradient is positive for vectors going up
+                                    if (deltaX == 0) { deltaX = 0.01f; } // hot-fix to avoid division by zero 
+                                    double gradient = deltaY / deltaX; // slope
+                                    double angle = Math.Atan(gradient) * 180.0f / Math.PI; // value between -90 and 90 degree
+
+                                    // no differentiation btw pos or neg slope; normalized direction
+                                    normalizedAngle = Math.Abs(angle / 180.0f);
+
+                                    // computes the left hand side normal vector
+                                    // --> the arm is on the right hand side of this normal vector
+                                    //xNormalVector = (deltaY) * -1;
+                                    //yNormalVector = deltaX;
+                                }
+                            }
+
+                            //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+                            for (int i = 0; i < colorIntoDepthSpace.Length; i++)
+                            {
+                                bool extendedHandDrawn = false;
+
+                                //always stretch in x-dir
+                                if (stretchEnabled)
+                                {
+                                    // Determine the current 2 dimensional coordinate in the image (x, y)
+                                    int w = sensor.ColorFrameSource.FrameDescription.Width;
+                                    int x = i % w;
+                                    int y = i / w;
+
+                                    // Check if the point is on the right hand side of the normal vector
+                                    if ((x > xElbow)) //&& (x < xWrist))
+                                    {
+                                        extendedHandDrawn = true; // hack
+
+                                        int offsetX = x - xElbow;
+                                        //int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
+                                        int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
+
+
+                                        int offsetY = y - yElbow;
+                                        //int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
+                                        int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
+
+                                        int colorPointX_stretch = (int)(colorIntoDepthSpace[w * lookupY + lookupX].X + 0.5);
+                                        int colorPointY_stretch = (int)(colorIntoDepthSpace[w * lookupY + lookupX].Y + 0.5);
+                                        uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer1080p + i * 4); //stays the same
+
+                                        if ((biDataSource[w * lookupY + lookupX] != 0xff) &&
+                                            (colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
+                                            (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
+                                        {
+                                            uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4); // corresponding pixel in the 1080p image
+                                            *intPtr_stretch = *intPtr1080p; // assign color value (4 bytes)
+                                            *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value; // overwrite the alpha value                                            
+                                        }
+                                    }
+                                }
+                                if (extendedHandDrawn)
+                                {
+                                    continue;
+                                }
+
+                                int colorPointX = (int)(colorIntoDepthSpace[i].X + 0.5);
+                                int colorPointY = (int)(colorIntoDepthSpace[i].Y + 0.5);
+                                uint* intPtr = (uint*)(ptrCombiColorBuffer1080p + i * 4);
+
+                                if ((biDataSource[i] != 0xff) &&
+                                    (colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
+                                    (colorPointY >= 0) && (colorPointX >= 0))
+                                {
+                                    uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4); // corresponding pixel in the 1080p image
+                                    *intPtr = *intPtr1080p; // assign color value (4 bytes)
+                                    *(((byte*)intPtr) + 3) = (byte)userTransparency.Value; // overwrite the alpha value
+                                }
+                            } // for loop                            
+                        }
+                    } // unsafe
+
+                    combiBitmap1080p.Lock();
+                    Marshal.Copy(combiColorBuffer1080p, 0, combiBitmap1080p.BackBuffer, combiColorBuffer1080p.Length);
+                    combiBitmap1080p.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap1080p.Width, (int)combiBitmap1080p.Height));
+                    combiBitmap1080p.Unlock();
+                }
+                
+                //else
+                //{
+                //    sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
+
+                //    //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+                //    for (int i = 0; i < fdColor.LengthInPixels; i++)
+                //    {
+                //        //where color map has no corresponding value in the depth map due to resolution/sensor position, the pixels are set to black
+                //        if (Single.IsInfinity(colorIntoDepthSpace[i].Y) || Single.IsInfinity(colorIntoDepthSpace[i].X))
+                //        {
+                //            combiColorBuffer1080p[i * 4] = 255; //b
+                //            combiColorBuffer1080p[i * 4 + 1] = 255; //g
+                //            combiColorBuffer1080p[i * 4 + 2] = 255; //r
+                //            combiColorBuffer1080p[i * 4 + 3] = 0; //a
+                //        }
+                //        else
+                //        {
+                //            //if bodyIndex pixel has no body assigned, draw a black pixel to the corresponding color pixel
+                //            int idx = (int)(sensor.BodyIndexFrameSource.FrameDescription.Width * colorIntoDepthSpace[i].Y + colorIntoDepthSpace[i].X); //2D to 1D
+                //            if ((biDataSource[idx] > 5) || (biDataSource[idx] < 0))
+                //            {
+                //                combiColorBuffer1080p[i * 4] = 255;
+                //                combiColorBuffer1080p[i * 4 + 1] = 255;
+                //                combiColorBuffer1080p[i * 4 + 2] = 255;
+                //                combiColorBuffer1080p[i * 4 + 3] = 0;
+                //            }
+                //            else
+                //            {
+                //                combiColorBuffer1080p[i * 4 + 3] = (byte)userTransparency.Value; //alpha of person set by gui-slider
+                //            }
+                //        }
+                //    } // for loop
+
+                //    //combiColorBuffer1080p contains all required information
+                //    combiBitmap1080p.WritePixels(new Int32Rect(0, 0, this.combiBitmap1080p.PixelWidth, this.combiBitmap1080p.PixelHeight), combiColorBuffer1080p, combiBitmap1080p.PixelWidth * sizeof(int), 0);
+                //} // full HD
+                # endregion
             } // using Frames
         }
 
@@ -464,6 +621,28 @@ namespace BodyExtractionAndHightlighting
                 this.sensor.Close();
                 this.sensor = null;
             }
+        }
+
+        private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Console.Out.WriteLine("RightButtonDown: " + e.GetPosition(this).ToString());
+            isTouchPositionEnabled = true;
+            touchPosition = e.GetPosition(this);
+        }
+
+        private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            isTouchPositionEnabled = false;
+        }
+
+        private void checkBoxShowFps_Unchecked(object sender, RoutedEventArgs e)
+        {
+            showFps = false;
+        }
+
+        private void checkBoxShowFps_Checked(object sender, RoutedEventArgs e)
+        {
+            showFps = true;
         }
 
     } //  public partial class MainWindow : Window
