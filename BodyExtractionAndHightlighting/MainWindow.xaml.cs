@@ -203,9 +203,9 @@ namespace BodyExtractionAndHightlighting
                 // those body objects will be re-used.
                 bodyFrame.GetAndRefreshBodyData(this.bodies);
 
-                //######################################### Get Right Arm ###############################################
+                //########### Get Right Arm ###########
                 isArmDetected = this.GetRightArmJointPoints();
-                //##############################
+                //#####################################
 
 
                 //-------------------------------------------------------------------
@@ -591,28 +591,25 @@ namespace BodyExtractionAndHightlighting
                 Joint elbowRight = joints[JointType.ElbowRight];
                 Joint handTipRight = joints[JointType.HandTipRight];
 
-                CameraSpacePoint positionWrist = wristRight.Position;
-                CameraSpacePoint positionElbow = elbowRight.Position;
-                CameraSpacePoint positionHandtip = handTipRight.Position;
+                CameraSpacePoint[] camSpacePosJoints = { wristRight.Position, elbowRight.Position, handTipRight.Position};
 
-                if (positionWrist.Z < 0)
-                {
-                    positionWrist.Z = InferredZPositionClamp;
-                }
-                if (positionElbow.Z < 0)
-                {
-                    positionElbow.Z = InferredZPositionClamp;
-                }
-                if (positionHandtip.Z < 0)
-                {
-                    positionHandtip.Z = InferredZPositionClamp;
-                }
+                if (camSpacePosJoints[0].Z < 0)
+                    camSpacePosJoints[0].Z = InferredZPositionClamp;
+
+                if (camSpacePosJoints[1].Z < 0)
+                    camSpacePosJoints[1].Z = InferredZPositionClamp;
+
+                if (camSpacePosJoints[2].Z < 0)
+                    camSpacePosJoints[2].Z = InferredZPositionClamp;
 
                 if ((wristRight.TrackingState == TrackingState.Tracked) && (elbowRight.TrackingState == TrackingState.Tracked) && (handTipRight.TrackingState == TrackingState.Tracked))
                 {
-                    DepthSpacePoint wrist = this.GetDepthSpacePoint(positionWrist);
-                    DepthSpacePoint elbow = this.GetDepthSpacePoint(positionElbow);
-                    DepthSpacePoint handTip = this.GetDepthSpacePoint(positionHandtip);
+                    DepthSpacePoint[] depthSpacePosJoints = new DepthSpacePoint[3];
+                    this.coordinateMapper.MapCameraPointsToDepthSpace(camSpacePosJoints, depthSpacePosJoints);
+
+                    DepthSpacePoint wrist = depthSpacePosJoints[0];
+                    DepthSpacePoint elbow = depthSpacePosJoints[1];
+                    DepthSpacePoint handTip = depthSpacePosJoints[2];
 
                     this.armJointPoints[JointType.WristRight] = new Point(wrist.X, wrist.Y);
                     this.armJointPoints[JointType.ElbowRight] = new Point(elbow.X, elbow.Y);
@@ -623,11 +620,6 @@ namespace BodyExtractionAndHightlighting
             }
 
             return armDetected;
-        }
-
-        private DepthSpacePoint GetDepthSpacePoint(CameraSpacePoint camSpacePoint)
-        {
-            return this.coordinateMapper.MapCameraPointToDepthSpace(camSpacePoint);
         }
 
         #region GUI properties
