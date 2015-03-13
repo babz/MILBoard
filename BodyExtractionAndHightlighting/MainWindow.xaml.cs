@@ -83,12 +83,19 @@ namespace BodyExtractionAndHightlighting
         byte[] combiColorBuffer; 
         WriteableBitmap combiBitmap;
 
-        // extracted hand
+        // hand extraction
+        Point pElbow;
+        Point pWrist;
+        int xElbow;
+        int yElbow;
+        int xWrist;
+        int yWrist;
         byte[] hand;
 
         //check performance in ticks
         const long TICKS_PER_SECOND = 10000000; //according to msdn
-        long prevTick = 0;
+        double fps = 0;
+        long prevTick = 0, ticksNow = 0;
 
         //gui logic
         bool isFullHD = false;
@@ -156,8 +163,9 @@ namespace BodyExtractionAndHightlighting
 
         private void calculateFps()
         {
-            long ticksNow = DateTime.Now.Ticks;
-            float fps = ((float)TICKS_PER_SECOND) / (ticksNow - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
+            //TODO shows less than before
+            ticksNow = DateTime.Now.Ticks;
+            fps = ((float)TICKS_PER_SECOND) / (DateTime.Now.Ticks - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
             Console.Out.WriteLine("fps: " + fps);
             prevTick = ticksNow;
         }
@@ -222,8 +230,44 @@ namespace BodyExtractionAndHightlighting
                 isArmDetected = this.GetRightArmJointPoints();
                 //#####################################
 
-                //512x424
-                if (!isFullHD)
+                #region --- 512x424 and Arm NOT Detected ---
+                if (!isFullHD && !isArmDetected)
+                {
+                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
+                    Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
+
+                    unsafe
+                    {
+                        fixed (byte* ptrCombiColorBuffer = combiColorBuffer)
+                        fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
+                        {
+                            //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+                            for (int i = 0; i < depthIntoColorSpace.Length; i++)
+                            {
+                                int colorPointX = (int)(depthIntoColorSpace[i].X + 0.5);
+                                int colorPointY = (int)(depthIntoColorSpace[i].Y + 0.5);
+                                uint* intPtr = (uint*)(ptrCombiColorBuffer + i * 4);
+
+                                if ((biDataSource[i] != 0xff) &&
+                                    (colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
+                                    (colorPointY >= 0) && (colorPointX >= 0))
+                                {
+                                    uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4); // corresponding pixel in the 1080p image
+                                    *intPtr = *intPtr1080p; // assign color value (4 bytes)
+                                    *(((byte*)intPtr) + 3) = (byte)userTransparency.Value; // overwrite the alpha value
+                                }
+                            } //end for
+                        } // end using fixed
+                    } // end unsafe
+
+                    combiBitmap.Lock();
+                    Marshal.Copy(combiColorBuffer, 0, combiBitmap.BackBuffer, combiColorBuffer.Length);
+                    combiBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap.Width, (int)combiBitmap.Height));
+                    combiBitmap.Unlock();
+                }
+                #endregion
+                #region --- 512x424 and Arm Detected and Arm Extension ---
+                else if (!isFullHD && isArmDetected && extendArm) 
                 {
                     sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
                     Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
@@ -235,18 +279,19 @@ namespace BodyExtractionAndHightlighting
                             //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
                             for (int i = 0; i < depthIntoColorSpace.Length; i++)
                             {
+                                #region --- Arm EXTEND mode ---
+
                                 bool extendedHandDrawn = false;
 
-                                #region --- Arm EXTEND mode ---
                                 // calculates the extension factor
                                 if (isArmDetected && extendArm)
                                 {
-                                    Point pElbow = armJointPoints[JointType.ElbowRight];
-                                    Point pWrist = armJointPoints[JointType.WristRight];
-                                    int xElbow = (int)pElbow.X;
-                                    int yElbow = (int)pElbow.Y;
-                                    int xWrist = (int)pWrist.X;
-                                    int yWrist = (int)pWrist.Y;
+                                    pElbow = armJointPoints[JointType.ElbowRight];
+                                    pWrist = armJointPoints[JointType.WristRight];
+                                    xElbow = (int)pElbow.X;
+                                    yElbow = (int)pElbow.Y;
+                                    xWrist = (int)pWrist.X;
+                                    yWrist = (int)pWrist.Y;
 
                                     double normalizedAngle = 0.0;
 
@@ -318,7 +363,6 @@ namespace BodyExtractionAndHightlighting
                                             *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value; // overwrite the alpha value                                            
                                         }
                                     }
-                                    # endregion
 
                                 } //end armIsDetected
 
@@ -327,6 +371,7 @@ namespace BodyExtractionAndHightlighting
                                 {
                                     continue;
                                 }
+                                # endregion
 
                                 int colorPointX = (int)(depthIntoColorSpace[i].X + 0.5);
                                 int colorPointY = (int)(depthIntoColorSpace[i].Y + 0.5);
@@ -348,9 +393,10 @@ namespace BodyExtractionAndHightlighting
                     Marshal.Copy(combiColorBuffer, 0, combiBitmap.BackBuffer, combiColorBuffer.Length);
                     combiBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap.Width, (int)combiBitmap.Height));
                     combiBitmap.Unlock();
-
-                } //no full HD
-                else
+                }
+                #endregion
+                #region --- FullHD and Arm NOT Detected ---
+                else if (isFullHD && !isArmDetected)
                 {
                     sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
 
@@ -385,8 +431,23 @@ namespace BodyExtractionAndHightlighting
 
                     //combiColorBuffer1080p contains all required information
                     combiBitmap1080p.WritePixels(new Int32Rect(0, 0, this.combiBitmap1080p.PixelWidth, this.combiBitmap1080p.PixelHeight), combiColorBuffer1080p, combiBitmap1080p.PixelWidth * sizeof(int), 0);
-                } // full HD
-
+                }
+                #endregion
+                #region --- FullHD and Arm Detected and Arm Extension ---
+                else if (isFullHD && isArmDetected && extendArm)
+                {
+                    //TODO implement
+                }
+                #endregion
+                else
+                {
+                    Console.Out.WriteLine("Something went terribly wrong! Frame is disposed.");
+                    cFrame.Dispose();
+                    dFrame.Dispose();
+                    biFrame.Dispose();
+                    bodyFrame.Dispose();
+                    return;
+                }
             } // using Frames
         }
 
