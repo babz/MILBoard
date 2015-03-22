@@ -281,7 +281,7 @@ namespace BodyExtractionAndHightlighting
 
                     unsafe
                     {
-                        fixed (byte* ptrHandBuffer = handBuffer)
+                        
                         fixed (ColorSpacePoint* ptrDepthIntoColorSpace = depthIntoColorSpace)
                         fixed (byte* ptrCombiColorBuffer = combiColorBuffer)
                         fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
@@ -296,10 +296,11 @@ namespace BodyExtractionAndHightlighting
                             int yWrist = (int)pWrist.Y;
                             int xHandTip = (int)pHandTip.X;
                             int yHandTip = (int)pHandTip.Y;
-                            int handBufferLength = (xHandTip - xElbow) * (yHandTip - yElbow);
-                            //TODO move out of fct
-                            handBuffer = new byte[handBufferLength];
-                            //*ptrHandBuffer = new byte[handBufferLength];
+                            //int handBufferLength = (xHandTip - xElbow) * (yHandTip - yElbow);
+
+                            // todo: try to avoid allocation every frame
+                            //byte* ptrHandBuffer = (byte*)Marshal.AllocHGlobal(handBufferLength).ToPointer();
+                            
 
                             double normalizedAngle = 0.0;
 
@@ -338,7 +339,7 @@ namespace BodyExtractionAndHightlighting
                             //xNormalVector = (deltaY) * -1;
                             //yNormalVector = deltaX;
 
-                            int indexHand = 0;
+                            //int indexHand = 0;
                             int length = depthIntoColorSpace.Length;
                             for (int i = 0; i < length; i++)
                             {
@@ -380,38 +381,49 @@ namespace BodyExtractionAndHightlighting
                                 //    }
                                 //} // x > xElbow
                                 # endregion
-                                // fill hand buffer with right hand; do not draw hand if it has been extracted
-                                if ((x > xElbow) && (x < xHandTip) && (y > yHandTip) && (y < yElbow)) { 
-                                    //TODO pay attention to order in which rows are added!!
-                                    //*ptrHandBuffer[indexHand] = ptrDepthIntoColorSpace[i];
-                                    int colorPointX_hand = (int)(ptrDepthIntoColorSpace[i].X + 0.5);
-                                    int colorPointY_hand = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
-                                    //TODO
-                                    //handBuffer[indexHand] = depthIntoColorSpace[i];
-                                    indexHand++;
-                                }
-                                // do not draw original hand if extended hand has been drawn already
-                                else
+                                
+                                // color gets assigned to where body index is given (pixel belongs to a body)
+                                if (biDataSource[i] != 0xff)
                                 {
-                                    // color gets assigned to where body index is given
-                                    if (biDataSource[i] != 0xff)
-                                    {
-                                        int colorPointX = (int)(ptrDepthIntoColorSpace[i].X + 0.5);
-                                        int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
-                                        uint* intPtr = (uint*)(ptrCombiColorBuffer + i * 4);
+                                    int colorPointX = (int)(ptrDepthIntoColorSpace[i].X + 0.5);
+                                    int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
+                                    uint* ptrTargetPixel = null; // this is where we want to write the pixel
 
-                                        if ((colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
-                                        (colorPointY >= 0) && (colorPointX >= 0))
-                                        {
-                                            // corresponding pixel in the 1080p image
-                                            uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4);
-                                            // assign color value (4 bytes)
-                                            *intPtr = *intPtr1080p;
-                                            // overwrite the alpha value
-                                            *(((byte*)intPtr) + 3) = (byte)userTransparency.Value;
-                                        }
+                                    
+                                    if ((x >= xElbow) && (x <= xHandTip) &&
+                                        ( ((yHandTip <= yElbow) && (y >= yHandTip) && (y <= yElbow)) ||
+                                          ((yHandTip > yElbow) && (y <= yHandTip) && (y >= yElbow)) )
+                                        ) // area of the hand
+                                    {
+                                        //ptrTargetPixel = (uint*)&(ptrHandBuffer[indexHand * 4]);
+                                        //ptrTargetPixel = (uint*)ptrHandBuffer + indexHand * 4; // point to current pixel in hand buffer
+                                        //indexHand++;
+                                        double newAngle = 25.0;
+                                        //TODO check if boundaries within combiColor img
+                                        int newX = (int)(Math.Cos(newAngle) * (x - xElbow) - Math.Sin(newAngle) * (y - yElbow) + xElbow);
+                                        int newY = (int)(Math.Sin(newAngle) * (x - xElbow) + Math.Cos(newAngle) * (y - yElbow) + yElbow);
+
+                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
                                     }
-                                } //end else
+                                    else
+                                    {
+                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + i * 4); // point to current pixel in combiColorBuffer
+                                    }
+
+                                    if ((colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
+                                    (colorPointY >= 0) && (colorPointX >= 0))
+                                    {
+                                        // corresponding pixel in the 1080p image
+                                        uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4);
+                                        
+                                        // assign color value (4 bytes)
+                                        *ptrTargetPixel = *intPtr1080p; // assigns 4 bytes
+                                        
+                                        // overwrite the alpha value (last byte)
+                                        *(((byte*)ptrTargetPixel) + 3) = (byte)userTransparency.Value; // only writes one byte
+                                    }
+                                } // if pixel belongs to body
+
                                 
                             } //end for
                         } // end using fixed
