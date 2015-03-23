@@ -190,12 +190,12 @@ namespace BodyExtractionAndHightlighting
                     return;
                 }
 
-                showFps = true;
+                //showFps = true;
                 //check performance
                 if (showFps)
                 {
                     this.calculateFps();
-                    return;
+                    //return;
                 }
 
                 // writes depth values from frame into an array
@@ -316,6 +316,7 @@ namespace BodyExtractionAndHightlighting
                                 pWrist = new Point((int)touchPosition.X, (int)touchPosition.Y);
                             }
 
+                            //TODO del?
                             int indexWrist = yWrist * fdDepth.Width + xWrist;
                             int indexElbow = yElbow * fdDepth.Width + xElbow;
 
@@ -392,18 +393,32 @@ namespace BodyExtractionAndHightlighting
                                     
                                     if ((x >= xElbow) && (x <= xHandTip) &&
                                         ( ((yHandTip <= yElbow) && (y >= yHandTip) && (y <= yElbow)) ||
-                                          ((yHandTip > yElbow) && (y <= yHandTip) && (y >= yElbow)) )
+                                          ((yHandTip > yElbow) && (y >= yElbow) && (y <= yHandTip)) )
                                         ) // area of the hand
                                     {
                                         //ptrTargetPixel = (uint*)&(ptrHandBuffer[indexHand * 4]);
                                         //ptrTargetPixel = (uint*)ptrHandBuffer + indexHand * 4; // point to current pixel in hand buffer
                                         //indexHand++;
-                                        double newAngle = 25.0;
-                                        //TODO check if boundaries within combiColor img
-                                        int newX = (int)(Math.Cos(newAngle) * (x - xElbow) - Math.Sin(newAngle) * (y - yElbow) + xElbow);
-                                        int newY = (int)(Math.Sin(newAngle) * (x - xElbow) + Math.Cos(newAngle) * (y - yElbow) + yElbow);
+                                        double newAngle = 45.0 / (Math.PI * 180);
+                                        double cos = Math.Cos(newAngle);
+                                        double sin = Math.Sin(newAngle);
 
-                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
+                                        //TODO check if boundaries within combiColor img
+                                        //int newX = (int)(Math.Cos(newAngle) * (x - xElbow) - Math.Sin(newAngle) * (y - yElbow) + xElbow);
+                                        //int newY = (int)(Math.Sin(newAngle) * (x - xElbow) + Math.Cos(newAngle) * (y - yElbow) + yElbow);
+                                        
+                                        //TODO problem because y-expression gets negative!!!!!
+                                        //clockwise-rotation:
+                                        //sol: xElbow ist im imgSpace - finde den Index von xElbow im Array!!!!
+                                        //double newX = (cos * (x - xElbow) + sin * (y - yElbow) + xElbow);
+                                        //double newY = (sin * -(x - xElbow) + cos * (y - yElbow) + yElbow);
+                                        
+                                        //aren't the arm joint points NOT in depth-dimensions but in color dimensions??!!
+                                        //angle... has to be positive counterclockwise
+                                        double newX = (cos * (x - ptrDepthIntoColorSpace[indexElbow].X) - sin * (y - yElbow) + xElbow);
+                                        double newY = (sin * (x - ptrDepthIntoColorSpace[indexElbow].X) + cos * (y - yElbow) + yElbow);
+
+                                        //ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
                                     }
                                     else
                                     {
