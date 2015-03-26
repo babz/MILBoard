@@ -399,7 +399,9 @@ namespace BodyExtractionAndHightlighting
                                         //ptrTargetPixel = (uint*)&(ptrHandBuffer[indexHand * 4]);
                                         //ptrTargetPixel = (uint*)ptrHandBuffer + indexHand * 4; // point to current pixel in hand buffer
                                         //indexHand++;
-                                        double newAngle = 45.0 / (Math.PI * 180);
+
+                                        //angle... has to be positive counterclockwise
+                                        double newAngle = 90.0 * Math.PI / 180;
                                         double cos = Math.Cos(newAngle);
                                         double sin = Math.Sin(newAngle);
 
@@ -410,15 +412,11 @@ namespace BodyExtractionAndHightlighting
                                         //TODO problem because y-expression gets negative!!!!!
                                         //clockwise-rotation:
                                         //sol: xElbow ist im imgSpace - finde den Index von xElbow im Array!!!!
-                                        //double newX = (cos * (x - xElbow) + sin * (y - yElbow) + xElbow);
-                                        //double newY = (sin * -(x - xElbow) + cos * (y - yElbow) + yElbow);
+                                        //counterclockwise rotation:
+                                        int newX = (int)(cos * (x - xElbow) - sin * (y - yElbow) + xElbow + 0.5);
+                                        int newY = (int)(sin * (x - xElbow) + cos * (y - yElbow) + yElbow + 0.5);
                                         
-                                        //aren't the arm joint points NOT in depth-dimensions but in color dimensions??!!
-                                        //angle... has to be positive counterclockwise
-                                        double newX = (cos * (x - ptrDepthIntoColorSpace[indexElbow].X) - sin * (y - yElbow) + xElbow);
-                                        double newY = (sin * (x - ptrDepthIntoColorSpace[indexElbow].X) + cos * (y - yElbow) + yElbow);
-
-                                        //ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
+                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
                                     }
                                     else
                                     {
