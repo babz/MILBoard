@@ -400,10 +400,14 @@ namespace BodyExtractionAndHightlighting
                                         //ptrTargetPixel = (uint*)ptrHandBuffer + indexHand * 4; // point to current pixel in hand buffer
                                         //indexHand++;
 
-                                        //angle... has to be positive counterclockwise
-                                        double newAngle = 90.0 * Math.PI / 180;
-                                        double cos = Math.Cos(newAngle);
-                                        double sin = Math.Sin(newAngle);
+                                        //angle... has to be positive clockwise?
+
+                                        Vector v1 = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
+                                        Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
+                                        double newAngleDeg = Vector.AngleBetween(v1, v2); // dot product
+                                        double newAngleRad = newAngleDeg * Math.PI / 180; // conversion into rad
+                                        double cos = Math.Cos(newAngleRad);
+                                        double sin = Math.Sin(newAngleRad);
 
                                         //TODO check if boundaries within combiColor img
                                         //int newX = (int)(Math.Cos(newAngle) * (x - xElbow) - Math.Sin(newAngle) * (y - yElbow) + xElbow);
