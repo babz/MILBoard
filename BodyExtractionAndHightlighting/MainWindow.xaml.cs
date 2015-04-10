@@ -252,6 +252,7 @@ namespace BodyExtractionAndHightlighting
                                     int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
                                     uint* intPtr = (uint*)(ptrCombiColorBuffer + i * 4);
 
+                                    //check boundaries
                                     if ((colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
                                     (colorPointY >= 0) && (colorPointX >= 0))
                                     {
@@ -281,7 +282,6 @@ namespace BodyExtractionAndHightlighting
 
                     unsafe
                     {
-                        
                         fixed (ColorSpacePoint* ptrDepthIntoColorSpace = depthIntoColorSpace)
                         fixed (byte* ptrCombiColorBuffer = combiColorBuffer)
                         fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
@@ -317,8 +317,8 @@ namespace BodyExtractionAndHightlighting
                             }
 
                             //TODO del?
-                            int indexWrist = yWrist * fdDepth.Width + xWrist;
-                            int indexElbow = yElbow * fdDepth.Width + xElbow;
+                            //int indexWrist = yWrist * fdDepth.Width + xWrist;
+                            //int indexElbow = yElbow * fdDepth.Width + xElbow;
 
                             double deltaX = pWrist.X - pElbow.X;
                             double deltaY = pWrist.Y - pElbow.Y;
@@ -386,47 +386,58 @@ namespace BodyExtractionAndHightlighting
                                 // color gets assigned to where body index is given (pixel belongs to a body)
                                 if (biDataSource[i] != 0xff)
                                 {
-                                    int colorPointX = (int)(ptrDepthIntoColorSpace[i].X + 0.5);
-                                    int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
+                                    int colorPointX = this.ConvertDoubleToInt(ptrDepthIntoColorSpace[i].X);
+                                    int colorPointY = this.ConvertDoubleToInt(ptrDepthIntoColorSpace[i].Y);
                                     uint* ptrTargetPixel = null; // this is where we want to write the pixel
 
-                                    
-                                    if ((x >= xElbow) && (x <= xHandTip) &&
+                                    // area of the lower arm + hand
+                                    if ( (x >= xElbow) && (x <= xHandTip) &&
                                         ( ((yHandTip <= yElbow) && (y >= yHandTip) && (y <= yElbow)) ||
                                           ((yHandTip > yElbow) && (y >= yElbow) && (y <= yHandTip)) )
-                                        ) // area of the hand
+                                        ) 
                                     {
                                         //ptrTargetPixel = (uint*)&(ptrHandBuffer[indexHand * 4]);
                                         //ptrTargetPixel = (uint*)ptrHandBuffer + indexHand * 4; // point to current pixel in hand buffer
                                         //indexHand++;
 
-                                        //angle... has to be positive clockwise?
+                                        //NOTE do not call code outside unsafe code
+                                        //Point newPoint = GetRotatedPixelPosition(x, xHandTip, xElbow, y, yHandTip, yElbow);
+                                        //int newX = this.ConvertDoubleToInt(newPoint.X);
+                                        //int newY = this.ConvertDoubleToInt(newPoint.Y);
 
+                                        #region GET_ROTATED_PIXEL_POS
+                                        //NOTE do not outsource into method as it would dramatically decrease performance due to call outside unsafe block
+                                        if (!isTouchPositionEnabled)
+                                        {
+                                            Point fictiveTouchPoint = new Point(800.0, 550.0);
+                                            this.touchPosition = fictiveTouchPoint;
+                                            Console.Out.WriteLine("fictive touch:" + fictiveTouchPoint.X + fictiveTouchPoint.Y);
+                                        }
                                         Vector v1 = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
                                         Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
+                                        v1.Normalize();
+                                        v2.Normalize();
                                         double newAngleDeg = Vector.AngleBetween(v1, v2); // dot product
                                         double newAngleRad = newAngleDeg * Math.PI / 180; // conversion into rad
                                         double cos = Math.Cos(newAngleRad);
                                         double sin = Math.Sin(newAngleRad);
 
                                         //TODO check if boundaries within combiColor img
-                                        //int newX = (int)(Math.Cos(newAngle) * (x - xElbow) - Math.Sin(newAngle) * (y - yElbow) + xElbow);
-                                        //int newY = (int)(Math.Sin(newAngle) * (x - xElbow) + Math.Cos(newAngle) * (y - yElbow) + yElbow);
-                                        
-                                        //TODO problem because y-expression gets negative!!!!!
-                                        //clockwise-rotation:
-                                        //sol: xElbow ist im imgSpace - finde den Index von xElbow im Array!!!!
-                                        //counterclockwise rotation:
                                         int newX = (int)(cos * (x - xElbow) - sin * (y - yElbow) + xElbow + 0.5);
                                         int newY = (int)(sin * (x - xElbow) + cos * (y - yElbow) + yElbow + 0.5);
-                                        
+
+                                        #endregion
+
                                         ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
                                     }
+                                    // rest of body
                                     else
                                     {
-                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + i * 4); // point to current pixel in combiColorBuffer
+                                        // point to current pixel in combiColorBuffer
+                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + i * 4); 
                                     }
 
+                                    // check boundaries
                                     if ((colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
                                     (colorPointY >= 0) && (colorPointX >= 0))
                                     {
@@ -440,7 +451,6 @@ namespace BodyExtractionAndHightlighting
                                         *(((byte*)ptrTargetPixel) + 3) = (byte)userTransparency.Value; // only writes one byte
                                     }
                                 } // if pixel belongs to body
-
                                 
                             } //end for
                         } // end using fixed
@@ -506,6 +516,34 @@ namespace BodyExtractionAndHightlighting
                     return;
                 }
             } // using Frames
+        }
+
+        private Point GetRotatedPixelPosition(int x, int xHandTip, int xElbow, int y, int yHandTip, int yElbow)
+        {
+            if (!isTouchPositionEnabled)
+            {
+                Point fictiveTouchPoint = new Point(800.0, 550.0);
+                this.touchPosition = fictiveTouchPoint;
+                Console.Out.WriteLine("fictive touch:" + fictiveTouchPoint.X + fictiveTouchPoint.Y);
+            }
+            Vector v1 = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
+            Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
+            v1.Normalize();
+            v2.Normalize();
+            double newAngleDeg = Vector.AngleBetween(v1, v2); // dot product
+            double newAngleRad = newAngleDeg * Math.PI / 180; // conversion into rad
+            double cos = Math.Cos(newAngleRad);
+            double sin = Math.Sin(newAngleRad);
+
+            //TODO check if boundaries within combiColor img
+            double newX = cos * (x - xElbow) - sin * (y - yElbow) + xElbow;
+            double newY = sin * (x - xElbow) + cos * (y - yElbow) + yElbow;
+            return new Point(newX, newY);
+        }
+
+        private int ConvertDoubleToInt(double d) 
+        {
+            return (int)(d + 0.5);
         }
 
         private bool GetRightArmJointPoints()
