@@ -386,8 +386,8 @@ namespace BodyExtractionAndHightlighting
                                 // color gets assigned to where body index is given (pixel belongs to a body)
                                 if (biDataSource[i] != 0xff)
                                 {
-                                    int colorPointX = this.ConvertDoubleToInt(ptrDepthIntoColorSpace[i].X);
-                                    int colorPointY = this.ConvertDoubleToInt(ptrDepthIntoColorSpace[i].Y);
+                                    int colorPointX = (int)(ptrDepthIntoColorSpace[i].X + 0.5);
+                                    int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
                                     uint* ptrTargetPixel = null; // this is where we want to write the pixel
 
                                     // area of the lower arm + hand
@@ -539,11 +539,6 @@ namespace BodyExtractionAndHightlighting
             double newX = cos * (x - xElbow) - sin * (y - yElbow) + xElbow;
             double newY = sin * (x - xElbow) + cos * (y - yElbow) + yElbow;
             return new Point(newX, newY);
-        }
-
-        private int ConvertDoubleToInt(double d) 
-        {
-            return (int)(d + 0.5);
         }
 
         private bool GetRightArmJointPoints()
