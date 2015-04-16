@@ -44,7 +44,7 @@
         <RadioButton Name="BlackBG" Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" Checked="BlackBG_Checked"/>
         <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" Checked="WhiteBG_Checked" Margin="60,0,-60,16" Grid.RowSpan="2" />
         <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" Margin="127,0,-426,0" RenderTransformOrigin="0.26,0.625" />
-        <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="310,6,430,0" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" />
+        <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="310,6,430,0" IsChecked="True" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" />
         <CheckBox x:Name="checkBoxShowFps" Content="Log fps" Grid.Column="2" HorizontalAlignment="Left" Margin="470,6,430,0" Unchecked="checkBoxShowFps_Unchecked" Checked="checkBoxShowFps_Checked"/>
 
 

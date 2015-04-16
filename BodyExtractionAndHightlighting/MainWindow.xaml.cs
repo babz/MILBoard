@@ -344,10 +344,6 @@ namespace BodyExtractionAndHightlighting
                             int length = depthIntoColorSpace.Length;
                             for (int i = 0; i < length; i++)
                             {
-                                // calculates the extension factor
-                                #region --- Arm EXTEND mode ---
-
-                                // Determine the current 2 dimensional coordinate in the image (x, y)
                                 int x = i % imgWidth;
                                 int y = i / imgWidth;
 
@@ -381,7 +377,7 @@ namespace BodyExtractionAndHightlighting
                                 //        }
                                 //    }
                                 //} // x > xElbow
-                                # endregion
+                                
 
                                 // color gets assigned to where body index is given (pixel belongs to a body)
                                 if (biDataSource[i] != 0xff)
@@ -417,20 +413,23 @@ namespace BodyExtractionAndHightlighting
                                         //    this.touchPosition = fictiveTouchPoint;
                                         //    Console.Out.WriteLine("fictive touch:" + fictiveTouchPoint.X + fictiveTouchPoint.Y);
                                         //}
-                                        double newAngleDeg = 90.0;
+                                        double newAngleDeg = 0.0;
                                         if (isTouchPositionEnabled)
                                         {
                                             Vector v1 = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
                                             Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
                                             v1.Normalize();
                                             v2.Normalize();
+                                            //http://whatis.techtarget.com/definition/dot-product-scalar-product
                                             newAngleDeg = Vector.AngleBetween(v1, v2); // dot product
 
                                             //TODO consider case when button is above hand (rotate counterclockwise)
-                                            //if (this.touchPosition.Y < yElbow)
-                                            //{
-                                            //    newAngleDeg = 360 - newAngleDeg;
-                                            //}
+                                            //NOTE touch pos has other coordinate system than hand, zb hand tip is 179 and touch is 340 when arm is slightly under button 1
+                                            //GEHT HIER NICHT REIN
+                                            if (this.touchPosition.Y < yHandTip)
+                                            {
+                                                newAngleDeg = 360 - newAngleDeg;
+                                            }
                                             //Console.Out.WriteLine("touchPoint " + this.touchPosition.X + ", " + this.touchPosition.Y + ", newAngle in deg: " + newAngleDeg);
                                         }
                                         
@@ -443,6 +442,38 @@ namespace BodyExtractionAndHightlighting
                                         int newY = (int)(sin * (x - xElbow) + cos * (y - yElbow) + yElbow + 0.5);
 
                                         #endregion
+
+                                        // calculates the extension factor
+                                        #region --- Arm SCALE mode ---
+
+                                        int offsetX = newX - xElbow;
+                                        //int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
+                                        int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
+
+                                        int offsetY = newY - yElbow;
+                                        //int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
+                                        int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
+
+                                        // bodyIndex can be 0, 1, 2, 3, 4, or 5
+                                        if (biDataSource[imgWidth * lookupY + lookupX] != 0xff)
+                                        {
+                                            int colorPointX_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].X + 0.5);
+                                            int colorPointY_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].Y + 0.5);
+                                            uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same   
+
+                                            if ((colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
+                                            (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
+                                            {
+                                                // corresponding pixel in the 1080p color image
+                                                uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4);
+                                                // assign color value (4 bytes)
+                                                *intPtr_stretch = *intPtr1080p;
+                                                // overwrite the alpha value
+                                                *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value;
+                                            }
+                                        }
+
+                                        # endregion
 
                                         ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
                                     }
