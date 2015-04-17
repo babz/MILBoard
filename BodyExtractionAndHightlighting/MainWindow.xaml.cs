@@ -340,6 +340,34 @@ namespace BodyExtractionAndHightlighting
                             //xNormalVector = (deltaY) * -1;
                             //yNormalVector = deltaX;
 
+                            #region CALC_ROTATION_ANGLE
+
+                            double newAngleDeg = 0.0;
+                            if (isTouchPositionEnabled)
+                            {
+                                Vector v1 = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
+                                Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
+                                v1.Normalize();
+                                v2.Normalize();
+                                //http://whatis.techtarget.com/definition/dot-product-scalar-product
+                                newAngleDeg = Vector.AngleBetween(v1, v2); // dot product
+
+                                //TODO consider case when button is above hand (rotate counterclockwise)
+                                //NOTE touch pos has other coordinate system than hand, zb hand tip is 179 and touch is 340 when arm is slightly under button 1
+                                //GEHT HIER NICHT REIN
+                                if (this.touchPosition.Y < yHandTip)
+                                {
+                                    newAngleDeg = 360 - newAngleDeg;
+                                }
+                                //Console.Out.WriteLine("touchPoint " + this.touchPosition.X + ", " + this.touchPosition.Y + ", newAngle in deg: " + newAngleDeg);
+                            }
+
+                            double newAngleRad = newAngleDeg * Math.PI / 180; // conversion into rad
+                            double cos = Math.Cos(newAngleRad);
+                            double sin = Math.Sin(newAngleRad);
+
+                            #endregion
+
                             //int indexHand = 0;
                             int length = depthIntoColorSpace.Length;
                             for (int i = 0; i < length; i++)
@@ -386,57 +414,14 @@ namespace BodyExtractionAndHightlighting
                                     int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
                                     uint* ptrTargetPixel = null; // this is where we want to write the pixel
 
-
+                                    // area of the hand
                                     if ((x >= xElbow) && (x <= xHandTip) &&
                                         (((yHandTip <= yElbow) && (y >= yHandTip) && (y <= yElbow)) ||
                                           ((yHandTip > yElbow) && (y >= yElbow) && (y <= yHandTip)))
-                                        ) // area of the hand
+                                        ) 
                                     {
-                                        //ptrTargetPixel = (uint*)&(ptrHandBuffer[indexHand * 4]);
-                                        //ptrTargetPixel = (uint*)ptrHandBuffer + indexHand * 4; // point to current pixel in hand buffer
-                                        //indexHand++;
-
                                         #region GET_ROTATED_PIXEL_POS
 
-                                        //============== OLD ==========
-                                        //angle... has to be positive counterclockwise
-                                        //double newAngle = 90.0 * Math.PI / 180;
-                                        //double cos = Math.Cos(newAngle);
-                                        //double sin = Math.Sin(newAngle);
-                                        // ============================
-                                        
-
-                                        //NOTE do not outsource into method as it would dramatically decrease performance due to call outside unsafe block
-                                        //if (!isTouchPositionEnabled)
-                                        //{
-                                        //    Point fictiveTouchPoint = new Point(800.0, 550.0);
-                                        //    this.touchPosition = fictiveTouchPoint;
-                                        //    Console.Out.WriteLine("fictive touch:" + fictiveTouchPoint.X + fictiveTouchPoint.Y);
-                                        //}
-                                        double newAngleDeg = 0.0;
-                                        if (isTouchPositionEnabled)
-                                        {
-                                            Vector v1 = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
-                                            Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
-                                            v1.Normalize();
-                                            v2.Normalize();
-                                            //http://whatis.techtarget.com/definition/dot-product-scalar-product
-                                            newAngleDeg = Vector.AngleBetween(v1, v2); // dot product
-
-                                            //TODO consider case when button is above hand (rotate counterclockwise)
-                                            //NOTE touch pos has other coordinate system than hand, zb hand tip is 179 and touch is 340 when arm is slightly under button 1
-                                            //GEHT HIER NICHT REIN
-                                            if (this.touchPosition.Y < yHandTip)
-                                            {
-                                                newAngleDeg = 360 - newAngleDeg;
-                                            }
-                                            //Console.Out.WriteLine("touchPoint " + this.touchPosition.X + ", " + this.touchPosition.Y + ", newAngle in deg: " + newAngleDeg);
-                                        }
-                                        
-                                        double newAngleRad = newAngleDeg * Math.PI / 180; // conversion into rad
-                                        double cos = Math.Cos(newAngleRad);
-                                        double sin = Math.Sin(newAngleRad);
-                                        
                                         //clockwise rotation:
                                         int newX = (int)(cos * (x - xElbow) - sin * (y - yElbow) + xElbow + 0.5);
                                         int newY = (int)(sin * (x - xElbow) + cos * (y - yElbow) + yElbow + 0.5);
@@ -475,6 +460,7 @@ namespace BodyExtractionAndHightlighting
 
                                         # endregion
 
+                                        //rotated pixel
                                         ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
                                     }
                                     else
@@ -677,6 +663,7 @@ namespace BodyExtractionAndHightlighting
 
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
+            Console.Out.WriteLine("Canvas Pos: " + Mouse.GetPosition(imageCanvas).ToString());
             Console.Out.WriteLine("RightButtonDown: " + e.GetPosition(this).ToString());
             isTouchPositionEnabled = true;
             touchPosition = e.GetPosition(this);
