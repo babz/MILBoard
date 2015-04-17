@@ -6,12 +6,12 @@
         ResizeMode="NoResize"
         AllowsTransparency="True"
         WindowStartupLocation="CenterScreen"
-        WindowState="Maximized" MouseRightButtonDown="Window_MouseRightButtonDown" MouseRightButtonUp="Window_MouseRightButtonUp">
+        WindowState="Maximized" >
     <Window.Background>
         <SolidColorBrush Color="Transparent"/>
     </Window.Background>
 
-    <Grid Margin="0" MouseRightButtonDown="test" >
+    <Grid Margin="0" MouseRightButtonDown="Window_MouseRightButtonDown" MouseRightButtonUp="Window_MouseRightButtonUp">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />

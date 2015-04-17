@@ -25,7 +25,6 @@ D:\fh\masterproj\repo\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtr
 D:\fh\masterproj\repo\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csproj.GenerateResource.Cache
 D:\fh\masterproj\repo\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.exe
 D:\fh\masterproj\repo\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.pdb
-D:\fh\masterproj\repo\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.exe.config
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.exe
 C:\master_proj\solutions\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.pdb
