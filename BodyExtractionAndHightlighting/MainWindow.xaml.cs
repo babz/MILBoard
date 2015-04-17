@@ -345,7 +345,7 @@ namespace BodyExtractionAndHightlighting
                             double newAngleDeg = 0.0;
                             if (isTouchPositionEnabled)
                             {
-                                Vector v1 = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
+                                Vector v1 = new Vector((xWrist - xElbow), (yWrist - yElbow));
                                 Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
                                 v1.Normalize();
                                 v2.Normalize();
@@ -666,7 +666,8 @@ namespace BodyExtractionAndHightlighting
             Console.Out.WriteLine("Canvas Pos: " + Mouse.GetPosition(imageCanvas).ToString());
             Console.Out.WriteLine("RightButtonDown: " + e.GetPosition(this).ToString());
             isTouchPositionEnabled = true;
-            touchPosition = e.GetPosition(this);
+            //touchPosition = e.GetPosition(this);
+            touchPosition = Mouse.GetPosition(imageCanvas);
         }
 
         private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
