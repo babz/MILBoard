@@ -346,7 +346,8 @@ namespace BodyExtractionAndHightlighting
                             if (isTouchPositionEnabled)
                             {
                                 Vector v1 = new Vector((xWrist - xElbow), (yWrist - yElbow));
-                                Vector v2 = new Vector((this.touchPosition.X - xElbow), (this.touchPosition.Y - yElbow));
+                                Point touch = this.GetKinectCoordinates(touchPosition);
+                                Vector v2 = new Vector((touch.X - xElbow), (touch.Y - yElbow));
                                 v1.Normalize();
                                 v2.Normalize();
                                 //http://whatis.techtarget.com/definition/dot-product-scalar-product
@@ -602,6 +603,18 @@ namespace BodyExtractionAndHightlighting
 
             return armDetected;
         }
+
+        #region private Methods
+
+        private Point GetKinectCoordinates(Point touchpoint)
+        {
+            int Kx = (int)touchpoint.X * 512 / (int)this.imageCanvas.ActualWidth;
+            int Ky = 424 * (int)touchpoint.Y / (int)this.imageCanvas.ActualHeight;
+
+            return new Point(Kx, Ky);
+        }
+
+        #endregion
 
         #region GUI properties
 
