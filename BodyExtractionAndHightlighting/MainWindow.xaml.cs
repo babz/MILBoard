@@ -415,10 +415,14 @@ namespace BodyExtractionAndHightlighting
                                     int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
                                     uint* ptrTargetPixel = null; // this is where we want to write the pixel
 
+                                    Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
+                                    int handOffset = (int)areaOffset.Length / 3;
+                                    int handTipBoundaryX = xHandTip + handOffset;
+                                    int handTipBoundaryY = yHandTip + handOffset;
                                     // area of the hand
-                                    if ((x >= xElbow) && (x <= xHandTip) &&
-                                        (((yHandTip <= yElbow) && (y >= yHandTip) && (y <= yElbow)) ||
-                                          ((yHandTip > yElbow) && (y >= yElbow) && (y <= yHandTip)))
+                                    if ((x >= xElbow) && (x <= handTipBoundaryX) &&
+                                        (((handTipBoundaryY <= yElbow) && (y >= handTipBoundaryY) && (y <= yElbow)) ||
+                                          ((handTipBoundaryY > yElbow) && (y >= yElbow) && (y <= handTipBoundaryY)))
                                         ) 
                                     {
                                         #region GET_ROTATED_PIXEL_POS
