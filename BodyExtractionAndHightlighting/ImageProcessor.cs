@@ -239,7 +239,7 @@ namespace BodyExtractionAndHightlighting
                     (colorPointY >= 0) && (colorPointX >= 0))
                     {
                         // corresponding pixel in the 1080p image
-                        uint* ptrSourcePixel = (uint*)(ptrColorBuffer + (colorPointY * bodyIndexBufferWidth + colorPointX) * 4);
+                        uint* ptrSourcePixel = (uint*)(ptrColorBuffer + (colorPointY * colorBufferWidth + colorPointX) * 4);
 
                         // assign color value (4 bytes)
                         *ptrTargetPixel = *ptrSourcePixel;
