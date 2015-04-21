@@ -231,42 +231,26 @@ namespace BodyExtractionAndHightlighting
                 //#####################################
                 ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height);
 
-                #region --- 512x424: Arm NOT Detected or NO extension ---
-                if (!isFullHD && !isArmDetected)
+                #region --- 512x424 ---
+                if (!isFullHD)
                 {
                     sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
                     Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
 
-                    //TODO get return value??
-                    imgProcessor.ComputeSimpleImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace);
-
-                    combiBitmap.Lock();
-                    Marshal.Copy(combiColorBuffer, 0, combiBitmap.BackBuffer, combiColorBuffer.Length);
-                    combiBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap.Width, (int)combiBitmap.Height));
-                    combiBitmap.Unlock();
-                }
-                #endregion
-                #region --- 512x424 and Arm Detected and Arm Extension ---
-                else if (!isFullHD && isArmDetected)
-                {
-                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
-                    Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
-
-                    //TODO removed unsafe block
-                    Point pElbow = armJointPoints[JointType.ElbowRight];
-                    Point pWrist = armJointPoints[JointType.WristRight];
-                    Point pHandTip = armJointPoints[JointType.HandTipRight];
-
-                    //==============
-                    
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
-                    if (isTouchPositionEnabled) {
-                    Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-
-                    imgProcessor.ComputeTransformedImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace, pElbow, pWrist, pHandTip, pTouch);
+                    if (isArmDetected && isTouchPositionEnabled)
+                    {
+                        Point pElbow = armJointPoints[JointType.ElbowRight];
+                        Point pWrist = armJointPoints[JointType.WristRight];
+                        Point pHandTip = armJointPoints[JointType.HandTipRight];
+                        Point pTouch = this.GetKinectCoordinates(this.touchPosition);
+                        imgProcessor.ComputeTransformedImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace, pElbow, pWrist, pHandTip, pTouch);
                     }
-
+                    else
+                    {
+                        imgProcessor.ComputeSimpleImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace);
+                    }
 
                     //===========
                     combiBitmap.Lock();
