@@ -229,6 +229,7 @@ namespace BodyExtractionAndHightlighting
                 //########### Get Right Arm ###########
                 isArmDetected = this.GetRightArmJointPoints();
                 //#####################################
+                ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height);
 
                 #region --- 512x424: Arm NOT Detected or NO extension ---
                 if (!isFullHD && !isArmDetected)
@@ -236,36 +237,8 @@ namespace BodyExtractionAndHightlighting
                     sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
                     Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
 
-                    unsafe
-                    {
-                        fixed (ColorSpacePoint* ptrDepthIntoColorSpace = depthIntoColorSpace)
-                        fixed (byte* ptrCombiColorBuffer = combiColorBuffer)
-                        fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
-                        {
-                            int length = depthIntoColorSpace.Length;
-                            for (int i = 0; i < length; i++)
-                            {
-                                // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                                if (biDataSource[i] != 0xff)
-                                {
-                                    int colorPointX = (int)(ptrDepthIntoColorSpace[i].X + 0.5);
-                                    int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
-                                    uint* intPtr = (uint*)(ptrCombiColorBuffer + i * 4);
-
-                                    if ((colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
-                                    (colorPointY >= 0) && (colorPointX >= 0))
-                                    {
-                                        // corresponding pixel in the 1080p image
-                                        uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4);
-                                        // assign color value (4 bytes)
-                                        *intPtr = *intPtr1080p;
-                                        // overwrite the alpha value
-                                        *(((byte*)intPtr) + 3) = (byte)userTransparency.Value;
-                                    }
-                                }
-                            } //end for
-                        } // end using fixed
-                    } // end unsafe
+                    //TODO get return value??
+                    imgProcessor.ComputeSimpleImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace);
 
                     combiBitmap.Lock();
                     Marshal.Copy(combiColorBuffer, 0, combiBitmap.BackBuffer, combiColorBuffer.Length);
@@ -279,219 +252,23 @@ namespace BodyExtractionAndHightlighting
                     sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
                     Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
 
-                    unsafe
-                    {
+                    //TODO removed unsafe block
+                    Point pElbow = armJointPoints[JointType.ElbowRight];
+                    Point pWrist = armJointPoints[JointType.WristRight];
+                    Point pHandTip = armJointPoints[JointType.HandTipRight];
 
-                        fixed (ColorSpacePoint* ptrDepthIntoColorSpace = depthIntoColorSpace)
-                        fixed (byte* ptrCombiColorBuffer = combiColorBuffer)
-                        fixed (byte* ptrCombiColorBuffer1080p = combiColorBuffer1080p)
-                        {
-                            //TODO optimize: do not access armJointPoints in unsafe code
-                            Point pElbow = armJointPoints[JointType.ElbowRight];
-                            Point pWrist = armJointPoints[JointType.WristRight];
-                            Point pHandTip = armJointPoints[JointType.HandTipRight];
-                            int xElbow = (int)pElbow.X;
-                            int yElbow = (int)pElbow.Y;
-                            int xWrist = (int)pWrist.X;
-                            int yWrist = (int)pWrist.Y;
-                            int xHandTip = (int)pHandTip.X;
-                            int yHandTip = (int)pHandTip.Y;
-                            //int handBufferLength = (xHandTip - xElbow) * (yHandTip - yElbow);
+                    //==============
+                    
+                    imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
-                            // todo: try to avoid allocation every frame
-                            //byte* ptrHandBuffer = (byte*)Marshal.AllocHGlobal(handBufferLength).ToPointer();
+                    if (isTouchPositionEnabled) {
+                    Point pTouch = this.GetKinectCoordinates(this.touchPosition);
+
+                    imgProcessor.ComputeTransformedImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace, pElbow, pWrist, pHandTip, pTouch);
+                    }
 
 
-                            double normalizedAngle = 0.0;
-
-                            //TODO image freezes when button is pushed
-                            //do something when button is pushed
-                            double pointerOffset = 0.0;
-                            //if (isTouchPositionEnabled)
-                            //{
-                            //    Console.Out.WriteLine("--------touch is now enabled--------");
-
-                            //    //TODO not ideal
-                            //    pointerOffset = 0.5;
-                            //    pWrist = new Point((int)touchPosition.X, (int)touchPosition.Y);
-                            //}
-
-                            //TODO del?
-                            int indexWrist = yWrist * fdDepth.Width + xWrist;
-                            int indexElbow = yElbow * fdDepth.Width + xElbow;
-
-                            double deltaX = pWrist.X - pElbow.X;
-                            double deltaY = pWrist.Y - pElbow.Y;
-                            double armLength = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
-
-                            // gradient is positive for vectors going up
-                            if (deltaX == 0) { deltaX = 0.01f; } // hot-fix to avoid division by zero 
-
-                            double gradient = deltaY / deltaX; // slope
-                            double angle = Math.Atan(gradient) * 180.0f / Math.PI; // value between -90 and 90 degree
-
-                            // no differentiation btw pos or neg slope; normalized direction
-                            normalizedAngle = Math.Abs(angle / 180.0f);
-
-                            int imgWidth = fdDepth.Width;
-
-                            // computes the left hand side normal vector
-                            // --> the arm is on the right hand side of this normal vector
-                            //xNormalVector = (deltaY) * -1;
-                            //yNormalVector = deltaX;
-
-                            #region CALC_ROTATION_ANGLE
-
-                            double newAngleDeg = 0.0;
-                            if (isTouchPositionEnabled)
-                            {
-                                Vector v1 = new Vector((xWrist - xElbow), (yWrist - yElbow));
-                                Point touch = this.GetKinectCoordinates(touchPosition);
-                                Vector v2 = new Vector((touch.X - xElbow), (touch.Y - yElbow));
-                                v1.Normalize();
-                                v2.Normalize();
-                                //http://whatis.techtarget.com/definition/dot-product-scalar-product
-                                newAngleDeg = Vector.AngleBetween(v1, v2); // dot product
-
-                                //TODO consider case when button is above hand (rotate counterclockwise)
-                                //NOTE touch pos has other coordinate system than hand, zb hand tip is 179 and touch is 340 when arm is slightly under button 1
-                                //GEHT HIER NICHT REIN
-                                if (this.touchPosition.Y < yHandTip)
-                                {
-                                    newAngleDeg = 360 - newAngleDeg;
-                                }
-                                //Console.Out.WriteLine("touchPoint " + this.touchPosition.X + ", " + this.touchPosition.Y + ", newAngle in deg: " + newAngleDeg);
-                            }
-
-                            double newAngleRad = newAngleDeg * Math.PI / 180; // conversion into rad
-                            double cos = Math.Cos(newAngleRad);
-                            double sin = Math.Sin(newAngleRad);
-
-                            #endregion
-
-                            //int indexHand = 0;
-                            int length = depthIntoColorSpace.Length;
-                            for (int i = 0; i < length; i++)
-                            {
-                                int x = i % imgWidth;
-                                int y = i / imgWidth;
-
-                                // Check if the point is on the right hand side of the normal vector
-                                //if (x > xElbow) //&& (x < xWrist))
-                                //{
-                                //    int offsetX = x - xElbow;
-                                //    //int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
-                                //    int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
-
-                                //    int offsetY = y - yElbow;
-                                //    //int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
-                                //    int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
-
-                                //    // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                                //    if (biDataSource[imgWidth * lookupY + lookupX] != 0xff)
-                                //    {
-                                //        int colorPointX_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].X + 0.5);
-                                //        int colorPointY_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].Y + 0.5);
-                                //        uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same   
-
-                                //        if ((colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
-                                //        (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
-                                //        {
-                                //            // corresponding pixel in the 1080p color image
-                                //            uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4);
-                                //            // assign color value (4 bytes)
-                                //            *intPtr_stretch = *intPtr1080p;
-                                //            // overwrite the alpha value
-                                //            *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value;
-                                //        }
-                                //    }
-                                //} // x > xElbow
-                                
-
-                                // color gets assigned to where body index is given (pixel belongs to a body)
-                                if (biDataSource[i] != 0xff)
-                                {
-                                    int colorPointX = (int)(ptrDepthIntoColorSpace[i].X + 0.5);
-                                    int colorPointY = (int)(ptrDepthIntoColorSpace[i].Y + 0.5);
-                                    uint* ptrTargetPixel = null; // this is where we want to write the pixel
-
-                                    Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
-                                    int handOffset = (int)areaOffset.Length / 3;
-                                    int handTipBoundaryX = xHandTip + handOffset;
-                                    int handTipBoundaryY = yHandTip + handOffset;
-                                    // area of the hand
-                                    if ((x >= xElbow) && (x <= handTipBoundaryX) &&
-                                        (((handTipBoundaryY <= yElbow) && (y >= handTipBoundaryY) && (y <= yElbow)) ||
-                                          ((handTipBoundaryY > yElbow) && (y >= yElbow) && (y <= handTipBoundaryY)))
-                                        ) 
-                                    {
-                                        #region GET_ROTATED_PIXEL_POS
-
-                                        //clockwise rotation:
-                                        int newX = (int)(cos * (x - xElbow) - sin * (y - yElbow) + xElbow + 0.5);
-                                        int newY = (int)(sin * (x - xElbow) + cos * (y - yElbow) + yElbow + 0.5);
-
-                                        #endregion
-
-                                        // calculates the extension factor
-                                        #region --- Arm SCALE mode ---
-
-                                        int offsetX = newX - xElbow;
-                                        //int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
-                                        int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
-
-                                        int offsetY = newY - yElbow;
-                                        //int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
-                                        int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
-
-                                        // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                                        if (biDataSource[imgWidth * lookupY + lookupX] != 0xff)
-                                        {
-                                            int colorPointX_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].X + 0.5);
-                                            int colorPointY_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].Y + 0.5);
-                                            uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same   
-
-                                            if ((colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
-                                            (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
-                                            {
-                                                // corresponding pixel in the 1080p color image
-                                                uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4);
-                                                // assign color value (4 bytes)
-                                                *intPtr_stretch = *intPtr1080p;
-                                                // overwrite the alpha value
-                                                *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value;
-                                            }
-                                        }
-
-                                        # endregion
-
-                                        //rotated pixel
-                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + (newY * imgWidth + newX) * 4);
-                                    }
-                                    else
-                                    {
-                                        ptrTargetPixel = (uint*)(ptrCombiColorBuffer + i * 4); // point to current pixel in combiColorBuffer
-                                    }
-
-                                    if ((colorPointY < fdColor.Height) && (colorPointX < fdColor.Width) &&
-                                    (colorPointY >= 0) && (colorPointX >= 0))
-                                    {
-                                        // corresponding pixel in the 1080p image
-                                        uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY * fdColor.Width + colorPointX) * 4);
-
-                                        // assign color value (4 bytes)
-                                        *ptrTargetPixel = *intPtr1080p; // assigns 4 bytes
-
-                                        // overwrite the alpha value (last byte)
-                                        *(((byte*)ptrTargetPixel) + 3) = (byte)userTransparency.Value; // only writes one byte
-                                    }
-                                } // if pixel belongs to body
-
-
-                            } //end for
-                        } // end using fixed
-                    } // end unsafe
-
+                    //===========
                     combiBitmap.Lock();
                     Marshal.Copy(combiColorBuffer, 0, combiBitmap.BackBuffer, combiColorBuffer.Length);
                     combiBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap.Width, (int)combiBitmap.Height));
