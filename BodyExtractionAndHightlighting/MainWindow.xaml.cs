@@ -49,7 +49,7 @@ namespace BodyExtractionAndHightlighting
         Body[] bodies;
 
         // body-index
-        byte[] biDataSource;
+        byte[] bodyIndexSensorBuffer;
         uint[] biImageBuffer; //tmp storage for frame data converted to color
         WriteableBitmap biBitmap;
 
@@ -76,15 +76,13 @@ namespace BodyExtractionAndHightlighting
 
         // combined color - bodyIndex
         ushort[] stencilBuffer;
-        byte[] combiColorBuffer1080p;
-        WriteableBitmap combiBitmap1080p;
-        // ------
+        byte[] colorSensorBuffer;
+        byte[] imageBufferHD;
+        WriteableBitmap writeableBitmapHD;
+        
         // for low res: 512x424
-        byte[] combiColorBuffer;
-        WriteableBitmap combiBitmap;
-
-        //hand extraction
-        byte[] handBuffer;
+        byte[] imageBufferLowRes;
+        WriteableBitmap writeableBitmapLowRes;
 
         //check performance in ticks
         const long TICKS_PER_SECOND = 10000000; //according to msdn
@@ -124,7 +122,7 @@ namespace BodyExtractionAndHightlighting
 
             // body-index
             FrameDescription fdBi = sensor.BodyIndexFrameSource.FrameDescription;
-            biDataSource = new byte[fdBi.LengthInPixels];
+            bodyIndexSensorBuffer = new byte[fdBi.LengthInPixels];
             biImageBuffer = new uint[fdBi.LengthInPixels];
             biBitmap = new WriteableBitmap(fdBi.Width, fdBi.Height, 96, 96, PixelFormats.Bgra32, null);
             //imageBi.Source = biBitmap; //body index img only
@@ -135,13 +133,16 @@ namespace BodyExtractionAndHightlighting
 
             // combination 1080p
             stencilBuffer = new ushort[fdBi.LengthInPixels];
-            combiColorBuffer1080p = new byte[fdColor.LengthInPixels * 4];
-            combiBitmap1080p = new WriteableBitmap(fdColor.Width, fdColor.Height, 96, 96, PixelFormats.Bgra32, null);
+            colorSensorBuffer = new byte[fdColor.LengthInPixels * 4];
+
+            imageBufferHD = new byte[fdColor.LengthInPixels * 4];
+            writeableBitmapHD = new WriteableBitmap(fdColor.Width, fdColor.Height, 96, 96, PixelFormats.Bgra32, null);
 
             //combination 512x424 (depth resolution)
-            combiColorBuffer = new byte[fdDepth.LengthInPixels * 4];
-            combiBitmap = new WriteableBitmap(fdDepth.Width, fdDepth.Height, 96, 96, PixelFormats.Bgra32, null);
-            imageCombi.Source = combiBitmap; //img with 512x424-color of body index frame;
+            imageBufferLowRes = new byte[fdDepth.LengthInPixels * 4];
+            writeableBitmapLowRes = new WriteableBitmap(fdDepth.Width, fdDepth.Height, 96, 96, PixelFormats.Bgra32, null);
+
+            imageCombi.Source = writeableBitmapLowRes; //img with 512x424-color of body index frame;
 
             // get the coordinate mapper
             this.coordinateMapper = this.sensor.CoordinateMapper;
@@ -156,19 +157,6 @@ namespace BodyExtractionAndHightlighting
 
                 sensor.Open();
             }
-        }
-
-        private void calculateFps()
-        {
-            ticksNow = DateTime.Now.Ticks;
-            fps = ((float)TICKS_PER_SECOND) / (DateTime.Now.Ticks - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
-            //Console.Out.WriteLine("fps: " + fps);
-            Console.Out.WriteLine("fps: " + (int)(fps + 0.5));
-            prevTick = ticksNow;
-
-            //calc mean
-            sumFps += fps;
-            counter++;
         }
 
         void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs args)
@@ -201,7 +189,7 @@ namespace BodyExtractionAndHightlighting
                 // writes depth values from frame into an array
                 dFrame.CopyFrameDataToArray(depthDataSource);
                 // writes body index values from frame into an array
-                biFrame.CopyFrameDataToArray(biDataSource);
+                biFrame.CopyFrameDataToArray(bodyIndexSensorBuffer);
 
 
                 // -- body frame --
@@ -219,23 +207,23 @@ namespace BodyExtractionAndHightlighting
                 //FrameDescription fdColor = cFrame.FrameDescription;
                 if (cFrame.RawColorImageFormat == ColorImageFormat.Bgra)
                 {
-                    cFrame.CopyRawFrameDataToArray(combiColorBuffer1080p);
+                    cFrame.CopyRawFrameDataToArray(colorSensorBuffer);
                 }
                 else
                 {
-                    cFrame.CopyConvertedFrameDataToArray(combiColorBuffer1080p, ColorImageFormat.Bgra);
+                    cFrame.CopyConvertedFrameDataToArray(colorSensorBuffer, ColorImageFormat.Bgra);
                 }
 
                 //########### Get Right Arm ###########
                 isArmDetected = this.GetRightArmJointPoints();
-                //#####################################
+
                 ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height);
 
-                #region --- 512x424 ---
+                // --- 512x424 ---
                 if (!isFullHD)
                 {
                     sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
-                    Array.Clear(combiColorBuffer, 0, combiColorBuffer.Length);
+                    Array.Clear(imageBufferLowRes, 0, imageBufferLowRes.Length);
 
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
@@ -245,64 +233,39 @@ namespace BodyExtractionAndHightlighting
                         Point pWrist = armJointPoints[JointType.WristRight];
                         Point pHandTip = armJointPoints[JointType.HandTipRight];
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        imgProcessor.ComputeTransformedImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace, pElbow, pWrist, pHandTip, pTouch);
+                        imgProcessor.ComputeTransformedImage(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthIntoColorSpace, pElbow, pWrist, pHandTip, pTouch);
                     }
                     else
                     {
-                        imgProcessor.ComputeSimpleImage(biDataSource, combiColorBuffer1080p, combiColorBuffer, depthIntoColorSpace);
+                        imgProcessor.ComputeSimpleImage(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthIntoColorSpace);
                     }
 
                     //===========
-                    combiBitmap.Lock();
-                    Marshal.Copy(combiColorBuffer, 0, combiBitmap.BackBuffer, combiColorBuffer.Length);
-                    combiBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)combiBitmap.Width, (int)combiBitmap.Height));
-                    combiBitmap.Unlock();
+                    writeableBitmapLowRes.Lock();
+                    Marshal.Copy(imageBufferLowRes, 0, writeableBitmapLowRes.BackBuffer, imageBufferLowRes.Length);
+                    writeableBitmapLowRes.AddDirtyRect(new Int32Rect(0, 0, (int)writeableBitmapLowRes.Width, (int)writeableBitmapLowRes.Height));
+                    writeableBitmapLowRes.Unlock();
                 }
-                #endregion
-                #region --- FullHD: Arm NOT Detected or NO extension ---
-                else if (isFullHD && !isArmDetected)
+                // --- FullHD 1920 x 1080 ---
+                else if (isFullHD)
                 {
                     sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
+                    Array.Clear(imageBufferHD, 0, imageBufferHD.Length);
 
-                    //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
-                    for (int i = 0; i < fdColor.LengthInPixels; i++)
+                    imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
+
+                    if (isArmDetected && isTouchPositionEnabled)
                     {
-                        //where color map has no corresponding value in the depth map due to resolution/sensor position, the pixels are set to black
-                        if (Single.IsInfinity(colorIntoDepthSpace[i].Y) || Single.IsInfinity(colorIntoDepthSpace[i].X))
-                        {
-                            combiColorBuffer1080p[i * 4] = 255; //b
-                            combiColorBuffer1080p[i * 4 + 1] = 255; //g
-                            combiColorBuffer1080p[i * 4 + 2] = 255; //r
-                            combiColorBuffer1080p[i * 4 + 3] = 0; //a
-                        }
-                        else
-                        {
-                            //if bodyIndex pixel has no body assigned, draw a black pixel to the corresponding color pixel
-                            int idx = (int)(sensor.BodyIndexFrameSource.FrameDescription.Width * colorIntoDepthSpace[i].Y + colorIntoDepthSpace[i].X); //2D to 1D
-                            if ((biDataSource[idx] > 5) || (biDataSource[idx] < 0))
-                            {
-                                combiColorBuffer1080p[i * 4] = 255;
-                                combiColorBuffer1080p[i * 4 + 1] = 255;
-                                combiColorBuffer1080p[i * 4 + 2] = 255;
-                                combiColorBuffer1080p[i * 4 + 3] = 0;
-                            }
-                            else
-                            {
-                                combiColorBuffer1080p[i * 4 + 3] = (byte)userTransparency.Value; //alpha of person set by gui-slider
-                            }
-                        }
-                    } // for loop
+                        //do extension
+                    }
+                    else
+                    {
+                        imgProcessor.ComputeSimpleHDImage(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferHD, colorIntoDepthSpace);
+                    }
 
                     //combiColorBuffer1080p contains all required information
-                    combiBitmap1080p.WritePixels(new Int32Rect(0, 0, this.combiBitmap1080p.PixelWidth, this.combiBitmap1080p.PixelHeight), combiColorBuffer1080p, combiBitmap1080p.PixelWidth * sizeof(int), 0);
+                    writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), colorSensorBuffer, writeableBitmapHD.PixelWidth * sizeof(int), 0);
                 }
-                #endregion
-                #region --- FullHD and Arm Detected and Arm Extension ---
-                else if (isFullHD && isArmDetected)
-                {
-                    //TODO implement
-                }
-                #endregion
                 else
                 {
                     Console.Out.WriteLine("Something went terribly wrong! Frame is disposed.");
@@ -313,6 +276,30 @@ namespace BodyExtractionAndHightlighting
                     return;
                 }
             } // using Frames
+        }
+        
+
+        #region private Methods
+
+        private Point GetKinectCoordinates(Point touchpoint)
+        {
+            int Kx = (int)touchpoint.X * 512 / (int)this.imageCanvas.ActualWidth;
+            int Ky = 424 * (int)touchpoint.Y / (int)this.imageCanvas.ActualHeight;
+
+            return new Point(Kx, Ky);
+        }
+
+        private void calculateFps()
+        {
+            ticksNow = DateTime.Now.Ticks;
+            fps = ((float)TICKS_PER_SECOND) / (DateTime.Now.Ticks - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
+            //Console.Out.WriteLine("fps: " + fps);
+            Console.Out.WriteLine("fps: " + (int)(fps + 0.5));
+            prevTick = ticksNow;
+
+            //calc mean
+            sumFps += fps;
+            counter++;
         }
 
         private bool GetRightArmJointPoints()
@@ -369,16 +356,6 @@ namespace BodyExtractionAndHightlighting
             return armDetected;
         }
 
-        #region private Methods
-
-        private Point GetKinectCoordinates(Point touchpoint)
-        {
-            int Kx = (int)touchpoint.X * 512 / (int)this.imageCanvas.ActualWidth;
-            int Ky = 424 * (int)touchpoint.Y / (int)this.imageCanvas.ActualHeight;
-
-            return new Point(Kx, Ky);
-        }
-
         #endregion
 
         #region GUI properties
@@ -388,7 +365,7 @@ namespace BodyExtractionAndHightlighting
             isFullHD = false;
             if (imageCombi != null)
             {
-                imageCombi.Source = combiBitmap; //img with 512x424-color of body index frame;
+                imageCombi.Source = writeableBitmapLowRes; //img with 512x424-color of body index frame;
             }
         }
 
@@ -397,7 +374,7 @@ namespace BodyExtractionAndHightlighting
             isFullHD = true;
             if (imageCombi != null)
             {
-                imageCombi.Source = combiBitmap1080p; //img with 1080p-color of body index frame;
+                imageCombi.Source = writeableBitmapHD; //img with 1080p-color of body index frame;
             }
         }
 

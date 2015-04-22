@@ -75,6 +75,39 @@ namespace BodyExtractionAndHightlighting
             }
         }
 
+        public unsafe void ComputeSimpleHDImage(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, byte[] imageBufferHD, DepthSpacePoint[] colorToDepthSpaceMapper)
+        {
+            fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
+            fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
+            fixed (byte* ptrImageBufferHD = imageBufferHD)
+            fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
+            {
+                int lengthColorBuffer = colorBufferHeight * colorBufferWidth;
+
+                //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+                for (int i = 0; i < lengthColorBuffer; i++)
+                {
+                    //where the color img cannot be mapped to the depth image, there are infinity values
+                    if (Single.IsInfinity(ptrColorToDepthSpaceMapper[i].Y) || Single.IsInfinity(ptrColorToDepthSpaceMapper[i].X))
+                    {
+                        continue;
+                    }
+
+                    int idx = (int)(bodyIndexBufferWidth * ptrColorToDepthSpaceMapper[i].Y + ptrColorToDepthSpaceMapper[i].X); //2D to 1D
+
+                    // bodyIndex can be 0, 1, 2, 3, 4, or 5
+                    if (ptrBodyIndexSensorBuffer[idx] != 0xff)
+                    {
+                        //with the cast to int, 4 bytes are copied
+                        ((int*)ptrImageBufferHD)[i] = ((int*)ptrColorSensorBuffer)[i];
+                        // overwrite the alpha value
+                        *((ptrImageBufferHD) + i * 4 + 3) = this.userTransparency;
+                    }
+                    
+                } // for loop
+            }
+        }
+
         #region Private Methods
 
         /**
@@ -162,11 +195,11 @@ namespace BodyExtractionAndHightlighting
                     int colorPointY = (int)(ptrDepthToColorSpaceMapper[i].Y + 0.5);
 
                     //check boundaries
-                    //if ((colorPointY >= colorBufferHeight) || (colorPointX >= colorBufferWidth) ||
-                    //(colorPointY < 0) || (colorPointX < 0))
-                    //{
-                    //    return;
-                    //}
+                    if ((colorPointY >= colorBufferHeight) || (colorPointX >= colorBufferWidth) ||
+                    (colorPointY < 0) || (colorPointX < 0))
+                    {
+                        return;
+                    }
 
 
                     uint* ptrTargetPixel = null; // this is where we want to write the pixel
@@ -234,19 +267,16 @@ namespace BodyExtractionAndHightlighting
                         ptrTargetPixel = (uint*)(ptrImageBuffer + i * 4); 
                     }
 
-                    //check boundaries of image
-                    if ((colorPointY < colorBufferHeight) && (colorPointX < colorBufferWidth) &&
-                    (colorPointY >= 0) && (colorPointX >= 0))
-                    {
-                        // corresponding pixel in the 1080p image
-                        uint* ptrSourcePixel = (uint*)(ptrColorBuffer + (colorPointY * colorBufferWidth + colorPointX) * 4);
+                    /* Overwrite body-index-pixel with color pixel
+                     */ 
+                    // corresponding pixel in the 1080p image
+                    uint* ptrSourcePixel = (uint*)(ptrColorBuffer + (colorPointY * colorBufferWidth + colorPointX) * 4);
 
-                        // assign color value (4 bytes)
-                        *ptrTargetPixel = *ptrSourcePixel;
+                    // assign color value (4 bytes)
+                    *ptrTargetPixel = *ptrSourcePixel;
 
-                        // overwrite the alpha value (last byte)
-                        *(((byte*)ptrTargetPixel) + 3) = this.userTransparency; 
-                    }
+                    // overwrite the alpha value (last byte)
+                    *(((byte*)ptrTargetPixel) + 3) = this.userTransparency; 
 
                 } // if pixel belongs to body
 
@@ -269,5 +299,7 @@ namespace BodyExtractionAndHightlighting
             }
         }
         #endregion
+
+        
     }
 }
