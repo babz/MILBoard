@@ -264,7 +264,7 @@ namespace BodyExtractionAndHightlighting
                     }
 
                     //combiColorBuffer1080p contains all required information
-                    writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), colorSensorBuffer, writeableBitmapHD.PixelWidth * sizeof(int), 0);
+                    writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), imageBufferHD, writeableBitmapHD.PixelWidth * sizeof(int), 0);
                 }
                 else
                 {
