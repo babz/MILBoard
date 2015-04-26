@@ -282,31 +282,27 @@ namespace BodyExtractionAndHightlighting
                     // ###################### everything to the right ######################
                     // area of the hand
                     if (xDepthSpace >= xElbow)
-                    {
-                        //clockwise rotation:
-                        int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
-                        int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
-                        
+                    {                        
                         // calculates the extension factor
                         #region --- Arm SCALE mode ---
-                        int offsetX = (int)(rotatedX - xElbow); // todo: float ?
+                        int offsetX = (int)(xDepthSpace - xElbow); // todo: float ?
                         int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
 
-                        int offsetY = (int)(rotatedY - yElbow); // todo: float ?
+                        int offsetY = (int)(yDepthSpace - yElbow); // todo: float ?
                         int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
 
+                        int lookupIdx = bodyIndexBufferWidth * lookupY + lookupX;
                         // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                        if (ptrBodyIndexSensorBuffer[bodyIndexBufferWidth * lookupY + lookupX] != 0xff)
+                        if (ptrBodyIndexSensorBuffer[lookupIdx] != 0xff)
                         {
-                            int colorPointX_stretch = (int)(ptrDepthToColorSpaceMapper[bodyIndexBufferWidth * lookupY + lookupX].X + 0.5);
-                            int colorPointY_stretch = (int)(ptrDepthToColorSpaceMapper[bodyIndexBufferWidth * lookupY + lookupX].Y + 0.5);
+                            int colorPointX_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].X + 0.5);
+                            int colorPointY_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].Y + 0.5);
 
                             if ((colorPointY_stretch >= colorBufferHeight) || (colorPointX_stretch >= colorBufferWidth) ||
                                     (colorPointY_stretch < 0) || (colorPointX_stretch < 0))
                             {
                                 continue;
                             }
-
                             ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY_stretch * colorBufferWidth + colorPointX_stretch);
                         }
                         else
@@ -344,7 +340,9 @@ namespace BodyExtractionAndHightlighting
                         //}
                         # endregion
 
-                        //rotated pixel (where we want to write in target image buffer)
+                        // compute rotation (in target image buffer)
+                        int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
+                        int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
                         ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexBufferWidth + rotatedX);                      
                     }
                     #endregion
