@@ -232,8 +232,8 @@ namespace BodyExtractionAndHightlighting
                         Point pWrist = armJointPoints[JointType.WristRight];
                         Point pHandTip = armJointPoints[JointType.HandTipRight];
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
-                        imgProcessor.ComputeTransformedImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthToColorSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
+                        sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
+                        imgProcessor.ComputeTransformedImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, colorToDepthSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
                     }
                     else
                     {

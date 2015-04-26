@@ -21,13 +21,13 @@ namespace BodyExtractionAndHightlighting
             this.colorBufferHeight = colorSensorBufferHeight;
         }
 
-        public unsafe void ComputeTransformedImage_LowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, byte[] imageBufferLowRes, ColorSpacePoint[] depthToColorSpaceMapper,
+        public unsafe void ComputeTransformedImage_LowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, byte[] imageBufferLowRes, DepthSpacePoint[] depthToColorSpaceMapper,
             Point pElbow, Point pWrist, Point pHandTip, Point pTouch)
         {
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
             fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
-            fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
+            fixed (DepthSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 int xElbow = (int)pElbow.X;
                 int yElbow = (int)pElbow.Y;
@@ -204,8 +204,10 @@ namespace BodyExtractionAndHightlighting
             return yBodyJoint * bodyIndexBufferWidth + xBodyJoint;
         }
 
-        private unsafe void CalculateTransformation_LowRes(byte* ptrBodyIndexBuffer, byte* ptrColorBuffer, byte* ptrImageBufferLowRes, ColorSpacePoint* ptrDepthToColorSpaceMapper, int xElbow, int yElbow, int xWrist, int yWrist, int xHandTip, int yHandTip, int xTouch, int yTouch)
+        private unsafe void CalculateTransformation_LowRes(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbow, int yElbow, int xWrist, int yWrist, int xHandTip, int yHandTip, int xTouch, int yTouch)
         {
+
+            /* // ###################################### simple version ###################################
             //===== CALC_ROTATION_ANGLE ==========
 
             double rotationAngleInRad = this.CalculateRotationAngle(xElbow, yElbow, xWrist, yWrist, xTouch, yTouch);
@@ -305,10 +307,129 @@ namespace BodyExtractionAndHightlighting
                         ptrImgBufferPixelInt = ptrImageBufferInt + i;
                     }
 
+                    // Overwrite body-index-pixel with color pixel
+                    
+                    // corresponding pixel in the 1080p image
+                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
+
+                    // assign color value (4 bytes)
+                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+
+                    // overwrite the alpha value (last byte)
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+
+                } // if pixel belongs to body
+
+            } //end for
+             * */
+
+            // ###################################### HD version ###################################
+            //===== CALC_ROTATION_ANGLE ==========
+
+            double rotationAngleInRad = this.CalculateRotationAngle(xElbow, yElbow, xWrist, yWrist, xTouch, yTouch);
+            double cos = Math.Cos(rotationAngleInRad);
+            double sin = Math.Sin(rotationAngleInRad);
+
+            //===== CALC_NORMALIZED_ANGLE ==========
+            //TODO check if angle need to be calculated from rotated pixel
+            double normalizedAngle = this.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
+
+            uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
+            uint* ptrImageBufferInt = (uint*)ptrImageBuffer;
+            uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
+            uint* ptrColorSensorBufferPixelInt = null;
+
+            Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
+            int handOffset = (int)areaOffset.Length / 3;
+            int handTipBoundaryX = xHandTip + handOffset;
+            int handTipBoundaryY = yHandTip;// -handOffset;
+
+            int lengthOfMapper = colorBufferHeight * colorBufferWidth;
+            for (int idxColorSpace = 0; idxColorSpace < lengthOfMapper; idxColorSpace++)
+            {
+                float xDepthSpaceF = ptrColorToDepthSpaceMapper[idxColorSpace].X;
+                float yDepthSpaceF = ptrColorToDepthSpaceMapper[idxColorSpace].Y;
+
+                //where the color img cannot be mapped to the depth image, there are infinity values
+                if (Single.IsInfinity(yDepthSpaceF) || Single.IsInfinity(xDepthSpaceF))
+                {
+                    continue;
+                }
+
+                int xDepthSpace = (int)(xDepthSpaceF + 0.5);
+                int yDepthSpace = (int)(yDepthSpaceF + 0.5);
+
+                //corrresponding pixel in the bodyIndexBuffer; mapper returns pixel in depth space
+                int idxDepthSpace = (int)(bodyIndexBufferWidth * yDepthSpace + xDepthSpace); //2D to 1D
+
+                // color gets assigned to where body index is given (pixel belongs to a body)
+                // bodyIndex can be 0, 1, 2, 3, 4, or 5
+                //TODO regard only one body
+                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                {
+                    #region --- Region of lower arm
+
+                    // area of the hand
+                    if ((xDepthSpace >= xElbow) && (xDepthSpace <= handTipBoundaryX) &&
+                        (((handTipBoundaryY <= yElbow) && (yDepthSpace >= handTipBoundaryY) && (yDepthSpace <= yElbow)) ||
+                            ((handTipBoundaryY > yElbow) && (yDepthSpace >= yElbow) && (yDepthSpace <= handTipBoundaryY)))
+                        )
+                    {
+                        //=== GET_ROTATED_PIXEL_POS
+
+                        //clockwise rotation:
+                        int xDepthSpace_rot = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
+                        int yDepthSpace_rot = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
+
+                        //rotated pixel
+                        ptrImgBufferPixelInt = ptrImageBufferInt + (yDepthSpace_rot * bodyIndexBufferWidth + xDepthSpace_rot);
+
+                        // calculates the extension factor
+                        #region --- Arm SCALE mode ---
+
+                        //int offsetX = rotatedX - xElbow;
+                        ////int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
+                        //int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
+
+                        //int offsetY = rotatedY - yElbow;
+                        ////int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
+                        //int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
+
+                        //// bodyIndex can be 0, 1, 2, 3, 4, or 5
+                        //if (biDataSource[imgWidth * lookupY + lookupX] != 0xff)
+                        //{
+                        //    int colorPointX_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].X + 0.5);
+                        //    int colorPointY_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].Y + 0.5);
+                        //    uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same   
+
+                        //    if ((colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
+                        //    (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
+                        //    {
+                        //        // corresponding pixel in the 1080p color image
+                        //        uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4);
+                        //        // assign color value (4 bytes)
+                        //        *intPtr_stretch = *intPtr1080p;
+                        //        // overwrite the alpha value
+                        //        *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value;
+                        //    }
+                        //}
+
+                        # endregion
+                    }
+                    #endregion
+                    else
+                    {
+                        // point to current pixel in image buffer
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+                    }
+
+                    int xColorSpace = idxColorSpace % colorBufferWidth;
+                    int yColorSpace = (int)(((float)idxColorSpace) / colorBufferWidth + 0.5);
+
                     /* Overwrite body-index-pixel with color pixel
                      */
                     // corresponding pixel in the 1080p image
-                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
+                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (yColorSpace * colorBufferWidth + xColorSpace);
 
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;

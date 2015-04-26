@@ -68,3 +68,4 @@ C:\bsc\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.g
 C:\bsc\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.Properties.Resources.resources
 C:\bsc\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csproj.GenerateResource.Cache
 C:\bsc\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.pdb
+D:\fh\masterproj\repo\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
