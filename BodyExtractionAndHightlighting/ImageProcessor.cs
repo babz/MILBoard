@@ -257,10 +257,86 @@ namespace BodyExtractionAndHightlighting
                 int yDepthSpace = (int) (((float)idxDepthSpace) / bodyIndexBufferWidth + 0.5);
                 ptrColorSensorBufferPixelInt = null;
 
-                // color gets assigned to where body index is given (pixel belongs to a body)
-                // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                //TODO regard only one body
-                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                #region --- Region of lower arm
+                if (xDepthSpace >= xElbow)
+                {                        
+                    // calculates the extension factor
+                    #region --- Arm SCALE mode ---
+                    int offsetX = (int)(xDepthSpace - xElbow); // todo: float ?
+                    int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+
+                    int offsetY = (int)(yDepthSpace - yElbow); // todo: float ?
+                    int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
+
+                    int lookupIdx = bodyIndexBufferWidth * lookupY + lookupX;
+                    // bodyIndex can be 0, 1, 2, 3, 4, or 5
+                    if (ptrBodyIndexSensorBuffer[lookupIdx] != 0xff)
+                    {
+                        int colorPointX_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].X + 0.5);
+                        int colorPointY_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].Y + 0.5);
+                        if ((colorPointY_stretch >= colorBufferHeight) || (colorPointX_stretch >= colorBufferWidth) ||
+                                (colorPointY_stretch < 0) || (colorPointX_stretch < 0))
+                        {
+                            continue;
+                        }
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY_stretch * colorBufferWidth + colorPointX_stretch);
+                    }
+                    else
+                    {
+                        continue; // todo: required ?
+                    }
+                    #endregion
+                    #region comment
+                    //int offsetX = rotatedX - xElbow;
+                    ////int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
+                    //int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
+
+                    //int offsetY = rotatedY - yElbow;
+                    ////int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
+                    //int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
+
+                    //// bodyIndex can be 0, 1, 2, 3, 4, or 5
+                    //if (biDataSource[imgWidth * lookupY + lookupX] != 0xff)
+                    //{
+                    //    int colorPointX_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].X + 0.5);
+                    //    int colorPointY_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].Y + 0.5);
+
+                    //    uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same   
+
+                    //    if ((colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
+                    //    (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
+                    //    {
+                    //        // corresponding pixel in the 1080p color image
+                    //        uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4);
+                    //        // assign color value (4 bytes)
+                    //        *intPtr_stretch = *intPtr1080p;
+                    //        // overwrite the alpha value
+                    //        *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value;
+                    //    }
+                    //}
+                    # endregion
+
+                    // compute rotation (in target image buffer)
+                    int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
+                    int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
+                    ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexBufferWidth + rotatedX);                      
+                }
+                #endregion // lower arm
+                else
+                {
+                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                    {
+                        // point to current pixel in image buffer
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
+                // nomal color lookup if no strech is applied
+                if (ptrColorSensorBufferPixelInt == null)
                 {
                     int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
                     int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
@@ -271,102 +347,15 @@ namespace BodyExtractionAndHightlighting
                     {
                         continue;
                     }
+                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
+                }
 
-                    #region --- Region of lower arm
-                    /*
-                    // ###################### Simple Box check ######################
-                    if ((xDepthSpace >= xElbow) && (xDepthSpace <= handTipBoundaryX) &&
-                        (((handTipBoundaryY <= yElbow) && (yDepthSpace >= handTipBoundaryY) && (yDepthSpace <= yElbow)) ||
-                            ((handTipBoundaryY > yElbow) && (yDepthSpace >= yElbow) && (yDepthSpace <= handTipBoundaryY)))
-                        ) */
-                    // ###################### everything to the right ######################
-                    // area of the hand
-                    if (xDepthSpace >= xElbow)
-                    {                        
-                        // calculates the extension factor
-                        #region --- Arm SCALE mode ---
-                        int offsetX = (int)(xDepthSpace - xElbow); // todo: float ?
-                        int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+                // assign color value (4 bytes)
+                *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
 
-                        int offsetY = (int)(yDepthSpace - yElbow); // todo: float ?
-                        int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
-
-                        int lookupIdx = bodyIndexBufferWidth * lookupY + lookupX;
-                        // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                        if (ptrBodyIndexSensorBuffer[lookupIdx] != 0xff)
-                        {
-                            int colorPointX_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].X + 0.5);
-                            int colorPointY_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].Y + 0.5);
-
-                            if ((colorPointY_stretch >= colorBufferHeight) || (colorPointX_stretch >= colorBufferWidth) ||
-                                    (colorPointY_stretch < 0) || (colorPointX_stretch < 0))
-                            {
-                                continue;
-                            }
-                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY_stretch * colorBufferWidth + colorPointX_stretch);
-                        }
-                        else
-                        {
-                            continue; // todo: required ?
-                        }
-                        #endregion
-                        #region comment
-                        //int offsetX = rotatedX - xElbow;
-                        ////int lookupX = (int) (xElbow + (offsetX / (2.0 - normalizedAngle)));
-                        //int lookupX = (int)(xElbow + (offsetX / (2.0 + pointerOffset - normalizedAngle)));
-
-                        //int offsetY = rotatedY - yElbow;
-                        ////int lookupY = (int) (yElbow + (offsetY / (1.0 + normalizedAngle)));
-                        //int lookupY = (int)(yElbow + (offsetY / (1.0 + pointerOffset + normalizedAngle)));
-
-                        //// bodyIndex can be 0, 1, 2, 3, 4, or 5
-                        //if (biDataSource[imgWidth * lookupY + lookupX] != 0xff)
-                        //{
-                        //    int colorPointX_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].X + 0.5);
-                        //    int colorPointY_stretch = (int)(ptrDepthIntoColorSpace[imgWidth * lookupY + lookupX].Y + 0.5);
-
-                        //    uint* intPtr_stretch = (uint*)(ptrCombiColorBuffer + i * 4); //stays the same   
-
-                        //    if ((colorPointY_stretch < fdColor.Height) && (colorPointX_stretch < fdColor.Width) &&
-                        //    (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
-                        //    {
-                        //        // corresponding pixel in the 1080p color image
-                        //        uint* intPtr1080p = (uint*)(ptrCombiColorBuffer1080p + (colorPointY_stretch * fdColor.Width + colorPointX_stretch) * 4);
-                        //        // assign color value (4 bytes)
-                        //        *intPtr_stretch = *intPtr1080p;
-                        //        // overwrite the alpha value
-                        //        *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency.Value;
-                        //    }
-                        //}
-                        # endregion
-
-                        // compute rotation (in target image buffer)
-                        int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
-                        int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
-                        ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexBufferWidth + rotatedX);                      
-                    }
-                    #endregion
-                    else
-                    {
-                        // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
-                    }
-
-                    if (ptrColorSensorBufferPixelInt == null)
-                    {
-                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
-                    }
-
-                    // assign color value (4 bytes)
-                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-
-                    // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
-
-                } // if pixel belongs to body
-
+                // overwrite the alpha value (last byte)
+                *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
             } //end for   
-            
         }
 
         private unsafe void CalculateTransformation_LowRes_HD_test(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
