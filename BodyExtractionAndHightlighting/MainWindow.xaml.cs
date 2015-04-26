@@ -53,8 +53,8 @@ namespace BodyExtractionAndHightlighting
         uint[] biImageBuffer; //tmp storage for frame data converted to color
         WriteableBitmap biBitmap;
 
-        ColorSpacePoint[] depthIntoColorSpace = null;
-        DepthSpacePoint[] colorIntoDepthSpace = null;
+        ColorSpacePoint[] depthToColorSpaceMapper = null;
+        DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
         private static readonly uint[] BodyColor = 
         {
@@ -147,8 +147,8 @@ namespace BodyExtractionAndHightlighting
             // get the coordinate mapper
             this.coordinateMapper = this.sensor.CoordinateMapper;
 
-            depthIntoColorSpace = new ColorSpacePoint[depthDataSource.Length];
-            colorIntoDepthSpace = new DepthSpacePoint[fdColor.LengthInPixels];
+            depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
+            colorToDepthSpaceMapper = new DepthSpacePoint[fdColor.LengthInPixels];
 
             if (sensor != null)
             {
@@ -222,7 +222,7 @@ namespace BodyExtractionAndHightlighting
                 // --- 512x424 ---
                 if (!isFullHD)
                 {
-                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthIntoColorSpace);
+                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
                     Array.Clear(imageBufferLowRes, 0, imageBufferLowRes.Length);
 
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
@@ -233,11 +233,11 @@ namespace BodyExtractionAndHightlighting
                         Point pWrist = armJointPoints[JointType.WristRight];
                         Point pHandTip = armJointPoints[JointType.HandTipRight];
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        imgProcessor.ComputeTransformedImage(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthIntoColorSpace, pElbow, pWrist, pHandTip, pTouch);
+                        imgProcessor.ComputeTransformedImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthToColorSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
                     }
                     else
                     {
-                        imgProcessor.ComputeSimpleImage(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthIntoColorSpace);
+                        imgProcessor.ComputeSimpleImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthToColorSpaceMapper);
                     }
 
                     //===========
@@ -249,18 +249,22 @@ namespace BodyExtractionAndHightlighting
                 // --- FullHD 1920 x 1080 ---
                 else if (isFullHD)
                 {
-                    sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorIntoDepthSpace);
+                    sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
                     Array.Clear(imageBufferHD, 0, imageBufferHD.Length);
 
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
                     if (isArmDetected && isTouchPositionEnabled)
                     {
-                        //do extension
+                        Point pElbow = armJointPoints[JointType.ElbowRight];
+                        Point pWrist = armJointPoints[JointType.WristRight];
+                        Point pHandTip = armJointPoints[JointType.HandTipRight];
+                        Point pTouch = this.GetKinectCoordinates(this.touchPosition);
+                        imgProcessor.ComputeTransformedImage_HD(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferHD, colorToDepthSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
                     }
                     else
                     {
-                        imgProcessor.ComputeSimpleHDImage(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferHD, colorIntoDepthSpace);
+                        imgProcessor.ComputeSimpleImage_HD(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferHD, colorToDepthSpaceMapper);
                     }
 
                     //combiColorBuffer1080p contains all required information
