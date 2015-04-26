@@ -238,7 +238,15 @@ namespace BodyExtractionAndHightlighting
 
             //===== CALC_NORMALIZED_ANGLE ==========
             //TODO check if angle need to be calculated from rotated pixel
-            double normalizedAngle = this.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
+            //double normalizedAngle = this.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
+            double normalizedAngle = this.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
+            normalizedAngle = 0.5;
+            //Console.Out.Println("Normalized angle: " + normalizedAngle);
+
+            // compute strech
+            float xStretchFactor = Math.Abs((xTouch - xElbow) / (xWrist - xElbow));
+            float yStretchFactor = Math.Abs((yTouch - yElbow) / (yWrist - yElbow));
+            
 
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
             uint* ptrImageBufferInt = (uint*)ptrImageBuffer;
@@ -262,11 +270,17 @@ namespace BodyExtractionAndHightlighting
                 {                        
                     // calculates the extension factor
                     #region --- Arm SCALE mode ---
+
+                    
                     int offsetX = (int)(xDepthSpace - xElbow); // todo: float ?
-                    int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+                    //int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+                    int lookupX = (int) (xElbow + (offsetX/xStretchFactor));
 
                     int offsetY = (int)(yDepthSpace - yElbow); // todo: float ?
-                    int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
+                    //int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
+                    int lookupY = (int)(yElbow + (offsetY / yStretchFactor));
+                     
+                // todo: lookupX and lookupY must be inside boundaries (bodyIndexWidth/Height)
 
                     int lookupIdx = bodyIndexBufferWidth * lookupY + lookupX;
                     // bodyIndex can be 0, 1, 2, 3, 4, or 5
