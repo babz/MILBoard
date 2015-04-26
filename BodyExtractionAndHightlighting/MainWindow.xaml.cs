@@ -222,7 +222,6 @@ namespace BodyExtractionAndHightlighting
                 // --- 512x424 ---
                 if (!isFullHD)
                 {
-                    sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
                     Array.Clear(imageBufferLowRes, 0, imageBufferLowRes.Length);
 
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
@@ -233,10 +232,12 @@ namespace BodyExtractionAndHightlighting
                         Point pWrist = armJointPoints[JointType.WristRight];
                         Point pHandTip = armJointPoints[JointType.HandTipRight];
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        imgProcessor.ComputeTransformedImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthToColorSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
+                        sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
+                        imgProcessor.ComputeTransformedImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, colorToDepthSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
                     }
                     else
                     {
+                        sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
                         imgProcessor.ComputeSimpleImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthToColorSpaceMapper);
                     }
 
