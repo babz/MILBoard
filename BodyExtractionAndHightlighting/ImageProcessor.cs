@@ -346,14 +346,17 @@ namespace BodyExtractionAndHightlighting
             int lengthOfMapper = colorBufferHeight * colorBufferWidth;
             for (int idxColorSpace = 0; idxColorSpace < lengthOfMapper; idxColorSpace++)
             {
-                int xDepthSpace = (int)(ptrColorToDepthSpaceMapper[idxColorSpace].X + 0.5);
-                int yDepthSpace = (int)(ptrColorToDepthSpaceMapper[idxColorSpace].Y + 0.5);
+                float xDepthSpaceF = ptrColorToDepthSpaceMapper[idxColorSpace].X;
+                float yDepthSpaceF = ptrColorToDepthSpaceMapper[idxColorSpace].Y;
 
                 //where the color img cannot be mapped to the depth image, there are infinity values
-                if (Single.IsInfinity(yDepthSpace) || Single.IsInfinity(xDepthSpace))
+                if (Single.IsInfinity(yDepthSpaceF) || Single.IsInfinity(xDepthSpaceF))
                 {
                     continue;
                 }
+
+                int xDepthSpace = (int)(ptrColorToDepthSpaceMapper[idxColorSpace].X + 0.5);
+                int yDepthSpace = (int)(ptrColorToDepthSpaceMapper[idxColorSpace].Y + 0.5);
 
                 //corrresponding pixel in the bodyIndexBuffer; mapper returns pixel in depth space
                 int idxDepthSpace = (int)(bodyIndexBufferWidth * yDepthSpace + xDepthSpace); //2D to 1D
