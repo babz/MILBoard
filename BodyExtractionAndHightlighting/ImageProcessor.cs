@@ -299,7 +299,7 @@ namespace BodyExtractionAndHightlighting
                     else
                     {
                         // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace; 
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
                     }
 
                     int xColorSpace = idxColorSpace % colorBufferWidth;
@@ -314,7 +314,7 @@ namespace BodyExtractionAndHightlighting
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
 
                     // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency; 
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
 
                 } // if pixel belongs to body
 
@@ -381,7 +381,7 @@ namespace BodyExtractionAndHightlighting
                         ptrImgBufferPixelInt = ptrImageBufferInt + i;
                     }
 
-                    ptrImgBufferPixelInt = ptrImageBufferInt + i;
+                    //ptrImgBufferPixelInt = ptrImageBufferInt + i;
 
                     //with the cast to int, 4 bytes are copied
                     *ptrImgBufferPixelInt = ((uint*)ptrColorSensorBuffer)[i];
