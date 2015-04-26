@@ -21,7 +21,29 @@ namespace BodyExtractionAndHightlighting
             this.colorBufferHeight = colorSensorBufferHeight;
         }
 
-        public unsafe void ComputeTransformedImage_LowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, byte[] imageBufferLowRes, DepthSpacePoint[] depthToColorSpaceMapper,
+        public unsafe void ComputeTransformedImage_LowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, byte[] imageBufferLowRes, ColorSpacePoint[] depthToColorSpaceMapper,
+            Point pElbow, Point pWrist, Point pHandTip, Point pTouch)
+        {
+            fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
+            fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
+            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
+            {
+                float xElbow = (float)pElbow.X;
+                float yElbow = (float)pElbow.Y;
+                float xWrist = (float)pWrist.X;
+                float yWrist = (float)pWrist.Y;
+                float xHandTip = (float)pHandTip.X;
+                float yHandTip = (float)pHandTip.Y;
+                float xTouch = (float)pTouch.X;
+                float yTouch = (float)pTouch.Y;
+
+                this.CalculateTransformation_LowRes(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+
+            } //end fixed
+        }
+
+        public unsafe void ComputeTransformedImage_LowRes_HD_test(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, byte[] imageBufferLowRes, DepthSpacePoint[] depthToColorSpaceMapper,
             Point pElbow, Point pWrist, Point pHandTip, Point pTouch)
         {
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
@@ -29,16 +51,16 @@ namespace BodyExtractionAndHightlighting
             fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (DepthSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
-                int xElbow = (int)pElbow.X;
-                int yElbow = (int)pElbow.Y;
-                int xWrist = (int)pWrist.X;
-                int yWrist = (int)pWrist.Y;
-                int xHandTip = (int)pHandTip.X;
-                int yHandTip = (int)pHandTip.Y;
-                int xTouch = (int)pTouch.X;
-                int yTouch = (int)pTouch.Y;
+                float xElbow = (float)pElbow.X;
+                float yElbow = (float)pElbow.Y;
+                float xWrist = (float)pWrist.X;
+                float yWrist = (float)pWrist.Y;
+                float xHandTip = (float)pHandTip.X;
+                float yHandTip = (float)pHandTip.Y;
+                float xTouch = (float)pTouch.X;
+                float yTouch = (float)pTouch.Y;
 
-                this.CalculateTransformation_LowRes(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+                this.CalculateTransformation_LowRes_HD_test(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
         }
@@ -151,7 +173,7 @@ namespace BodyExtractionAndHightlighting
          * @see http://whatis.techtarget.com/definition/dot-product-scalar-product
          * @see http://hotmath.com/hotmath_help/topics/magnitude-and-direction-of-vectors.html
          * */
-        private double CalculateDotProduct(int v1_StartX, int v1_StartY, int v1_EndX, int v1_EndY, int v2_EndX, int v2_EndY) 
+        private double CalculateDotProduct(float v1_StartX, float v1_StartY, float v1_EndX, float v1_EndY, float v2_EndX, float v2_EndY) 
         {
             double angleInDegrees = 0.0;
 
@@ -167,7 +189,7 @@ namespace BodyExtractionAndHightlighting
         /**
          * @return  Angle in radians
          * */
-        private double CalculateRotationAngle(int v1_StartX, int v1_StartY, int v1_EndX, int v1_EndY, int v2_EndX, int v2_EndY)
+        private double CalculateRotationAngle(float v1_StartX, float v1_StartY, float v1_EndX, float v1_EndY, float v2_EndX, float v2_EndY)
         {
             double newAngleDeg = this.CalculateDotProduct(v1_StartX, v1_StartY, v1_EndX, v1_EndY, v2_EndX, v2_EndY);
 
@@ -178,7 +200,7 @@ namespace BodyExtractionAndHightlighting
             //}
             //Console.Out.WriteLine("touchPoint " + this.touchPosition.X + ", " + this.touchPosition.Y + ", newAngle in deg: " + newAngleDeg);
 
-            double newAngleRad = newAngleDeg * Math.PI / 180; // conversion into rad
+            double newAngleRad = newAngleDeg * Math.PI / 180.0; // conversion into rad
 
             return newAngleRad;
         }
@@ -186,10 +208,10 @@ namespace BodyExtractionAndHightlighting
         /**
          * @return  Normalized angle in degrees 
          * */
-        private double CalculateNormalizedAngle(int v1_StartX, int v1_StartY, int v1_EndX, int v1_EndY)
+        private double CalculateNormalizedAngle(float v1_StartX, float v1_StartY, float v1_EndX, float v1_EndY)
         {
             Vector horizontalLine = new Vector(1, 0);
-            double angleInDegrees = this.CalculateDotProduct(v1_StartX, v1_StartY, v1_EndX, v1_EndY, (int)horizontalLine.X, (int)horizontalLine.Y);
+            double angleInDegrees = this.CalculateDotProduct(v1_StartX, v1_StartY, v1_EndX, v1_EndY, (float) horizontalLine.X, (float) horizontalLine.Y);
 
             // no differentiation btw pos or neg slope; normalized direction
             double normalizedAngle = Math.Abs(angleInDegrees / 180.0f);
@@ -204,10 +226,10 @@ namespace BodyExtractionAndHightlighting
             return yBodyJoint * bodyIndexBufferWidth + xBodyJoint;
         }
 
-        private unsafe void CalculateTransformation_LowRes(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbow, int yElbow, int xWrist, int yWrist, int xHandTip, int yHandTip, int xTouch, int yTouch)
+        private unsafe void CalculateTransformation_LowRes(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
 
-            /* // ###################################### simple version ###################################
+            // ###################################### simple version ###################################
             //===== CALC_ROTATION_ANGLE ==========
 
             double rotationAngleInRad = this.CalculateRotationAngle(xElbow, yElbow, xWrist, yWrist, xTouch, yTouch);
@@ -219,51 +241,57 @@ namespace BodyExtractionAndHightlighting
             double normalizedAngle = this.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
 
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
-            uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
-            uint* ptrColorSensorBufferInt = (uint*)ptrColorBuffer;
+            uint* ptrImageBufferInt = (uint*)ptrImageBuffer;
+            uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
             uint* ptrColorSensorBufferPixelInt = null;
 
             Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
             int handOffset = (int)areaOffset.Length / 3;
-            int handTipBoundaryX = xHandTip;// +handOffset;
-            int handTipBoundaryY = yHandTip;// -handOffset;
+            int handTipBoundaryX = (int) (xHandTip + 0.5);// +handOffset;
+            int handTipBoundaryY = (int) (yHandTip + 0.5);// -handOffset;
 
             int lengthOfMapper = bodyIndexBufferHeight * bodyIndexBufferWidth;
-            for (int i = 0; i < lengthOfMapper; i++)
+            for (int idxDepthSpace = 0; idxDepthSpace < lengthOfMapper; idxDepthSpace++)
             {
-                int x = i % bodyIndexBufferWidth;
-                int y = i / bodyIndexBufferWidth;
+                int xDepthSpace = idxDepthSpace % bodyIndexBufferWidth;
+                int yDepthSpace = (int) (((float)idxDepthSpace) / bodyIndexBufferWidth + 0.5);
 
                 // color gets assigned to where body index is given (pixel belongs to a body)
                 // bodyIndex can be 0, 1, 2, 3, 4, or 5
                 //TODO regard only one body
-                if (ptrBodyIndexBuffer[i] != 0xff)
+                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
                 {
-                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[i].X + 0.5);
-                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[i].Y + 0.5);
+                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
+                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
 
                     //check boundaries
                     if ((colorPointY >= colorBufferHeight) || (colorPointX >= colorBufferWidth) ||
-                    (colorPointY < 0) || (colorPointX < 0))
+                            (colorPointY < 0) || (colorPointX < 0))
                     {
                         continue;
                     }
 
 
                     #region --- Region of lower arm
-
-
+                    /*
+                    // ###################### Simple Box check ######################
                     // area of the hand
-                    if ((x >= xElbow) && (x <= handTipBoundaryX) &&
-                        (((handTipBoundaryY <= yElbow) && (y >= handTipBoundaryY) && (y <= yElbow)) ||
-                            ((handTipBoundaryY > yElbow) && (y >= yElbow) && (y <= handTipBoundaryY)))
+                    if ((xDepthSpace >= xElbow) && (xDepthSpace <= handTipBoundaryX) &&
+                        (((handTipBoundaryY <= yElbow) && (yDepthSpace >= handTipBoundaryY) && (yDepthSpace <= yElbow)) ||
+                            ((handTipBoundaryY > yElbow) && (yDepthSpace >= yElbow) && (yDepthSpace <= handTipBoundaryY)))
                         )
+                    // ###################### end: Simple Box check ######################
+                     * */
+                    // ###################### everything to the right ######################
+                    // area of the hand
+                    if (xDepthSpace >= xElbow)
+                    // ###################### end: everything to the right ######################
                     {
                         //=== GET_ROTATED_PIXEL_POS
 
                         //clockwise rotation:
-                        int rotatedX = (int)(cos * (x - xElbow) - sin * (y - yElbow) + xElbow + 0.5);
-                        int rotatedY = (int)(sin * (x - xElbow) + cos * (y - yElbow) + yElbow + 0.5);
+                        int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
+                        int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
 
                         //rotated pixel
                         ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexBufferWidth + rotatedX);
@@ -304,7 +332,7 @@ namespace BodyExtractionAndHightlighting
                     else
                     {
                         // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrImageBufferInt + i;
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
                     }
 
                     // Overwrite body-index-pixel with color pixel
@@ -320,9 +348,12 @@ namespace BodyExtractionAndHightlighting
 
                 } // if pixel belongs to body
 
-            } //end for
-             * */
+            } //end for   
+            
+        }
 
+        private unsafe void CalculateTransformation_LowRes_HD_test(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        {
             // ###################################### HD version ###################################
             //===== CALC_ROTATION_ANGLE ==========
 
@@ -341,8 +372,8 @@ namespace BodyExtractionAndHightlighting
 
             Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
             int handOffset = (int)areaOffset.Length / 3;
-            int handTipBoundaryX = xHandTip + handOffset;
-            int handTipBoundaryY = yHandTip;// -handOffset;
+            int handTipBoundaryX = (int) (xHandTip + handOffset);
+            int handTipBoundaryY = (int) yHandTip;// -handOffset;
 
             int lengthOfMapper = colorBufferHeight * colorBufferWidth;
             for (int idxColorSpace = 0; idxColorSpace < lengthOfMapper; idxColorSpace++)
@@ -426,8 +457,8 @@ namespace BodyExtractionAndHightlighting
                     int xColorSpace = idxColorSpace % colorBufferWidth;
                     int yColorSpace = (int)(((float)idxColorSpace) / colorBufferWidth + 0.5);
 
-                    /* Overwrite body-index-pixel with color pixel
-                     */
+                    // Overwrite body-index-pixel with color pixel
+                    
                     // corresponding pixel in the 1080p image
                     ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (yColorSpace * colorBufferWidth + xColorSpace);
 
@@ -440,6 +471,7 @@ namespace BodyExtractionAndHightlighting
                 } // if pixel belongs to body
 
             } //end for
+            
         }
 
         private unsafe void CalculateTransformation_HD(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBufferHD, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbow, int yElbow, int xWrist, int yWrist, int xHandTip, int yHandTip, int xTouch, int yTouch)
