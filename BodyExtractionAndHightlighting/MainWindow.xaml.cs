@@ -92,6 +92,8 @@ namespace BodyExtractionAndHightlighting
         //gui logic
         bool isFullHD = false;
         enum BackgroundType { Black, White, Custom };
+        enum GUIPointerType { Arm, Hand, Symbol };
+        GUIPointerType guiPointerType = GUIPointerType.Arm;
         BackgroundType bgType = BackgroundType.Custom;
         private bool extendArm = false; //value set via checkbox in GUI
 
@@ -298,8 +300,10 @@ namespace BodyExtractionAndHightlighting
 
         private Point GetKinectCoordinates(Point touchpoint)
         {
-            int Kx = (int)touchpoint.X * 512 / (int)this.imageCanvas.ActualWidth;
-            int Ky = 424 * (int)touchpoint.Y / (int)this.imageCanvas.ActualHeight;
+            int touchpointX = (int)(touchpoint.X + 0.5) * 512;
+            int touchpointY = (int)(touchpoint.Y + 0.5) * 424;
+            int Kx = touchpointX / (int)(this.imageCanvas.ActualWidth + 0.5);
+            int Ky = touchpointY / (int)(this.imageCanvas.ActualHeight + 0.5);
 
             return new Point(Kx, Ky);
         }
@@ -411,13 +415,31 @@ namespace BodyExtractionAndHightlighting
             this.Background = new SolidColorBrush(Colors.Transparent);
         }
 
-        private void checkBoxExtendArm_Checked(object sender, RoutedEventArgs e)
+        //private void checkBoxExtendArm_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    extendArm = true;
+        //}
+
+        //private void checkBoxExtendArm_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    extendArm = false;
+        //}
+
+        private void GUIArmPtr_Checked(object sender, RoutedEventArgs e)
         {
+            guiPointerType = GUIPointerType.Arm;
             extendArm = true;
         }
 
-        private void checkBoxExtendArm_Unchecked(object sender, RoutedEventArgs e)
+        private void GUIHandPtr_Checked(object sender, RoutedEventArgs e)
         {
+            guiPointerType = GUIPointerType.Hand;
+            extendArm = false;
+        }
+
+        private void GUISymbolPtr_Checked(object sender, RoutedEventArgs e)
+        {
+            guiPointerType = GUIPointerType.Symbol;
             extendArm = false;
         }
 

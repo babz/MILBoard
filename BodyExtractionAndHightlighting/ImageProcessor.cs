@@ -38,7 +38,7 @@ namespace BodyExtractionAndHightlighting
                 float xTouch = (float)pTouch.X;
                 float yTouch = (float)pTouch.Y;
 
-                this.CalculateTransformation_LowRes(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+                this.transform_LowRes(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
         }
@@ -60,7 +60,7 @@ namespace BodyExtractionAndHightlighting
                 float xTouch = (float)pTouch.X;
                 float yTouch = (float)pTouch.Y;
 
-                this.CalculateTransformation_LowRes_HD_test(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+                this.transform_LowRes_HD_test(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
         }
@@ -81,7 +81,7 @@ namespace BodyExtractionAndHightlighting
                 int xTouch = (int)pTouch.X;
                 int yTouch = (int)pTouch.Y;
 
-                this.CalculateTransformation_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferHD, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+                this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferHD, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
         }
@@ -226,7 +226,7 @@ namespace BodyExtractionAndHightlighting
             return yBodyJoint * bodyIndexBufferWidth + xBodyJoint;
         }
 
-        private unsafe void CalculateTransformation_LowRes(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        private unsafe void transform_LowRes(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
 
             // ###################################### simple version ###################################
@@ -247,7 +247,6 @@ namespace BodyExtractionAndHightlighting
             float xStretchFactor = Math.Abs((xTouch - xElbow) / (xWrist - xElbow));
             float yStretchFactor = Math.Abs((yTouch - yElbow) / (yWrist - yElbow));
             
-
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
             uint* ptrImageBufferInt = (uint*)ptrImageBuffer;
             uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
@@ -280,7 +279,11 @@ namespace BodyExtractionAndHightlighting
                     //int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
                     int lookupY = (int)(yElbow + (offsetY / yStretchFactor));
                      
-                // todo: lookupX and lookupY must be inside boundaries (bodyIndexWidth/Height)
+                    //lookupX and lookupY must be inside boundaries (bodyIndexWidth/Height)
+                    if (lookupX >= bodyIndexBufferWidth || lookupY >= bodyIndexBufferHeight || lookupX < 0 || lookupY < 0)
+                    {
+                        continue;
+                    }
 
                     int lookupIdx = bodyIndexBufferWidth * lookupY + lookupX;
                     // bodyIndex can be 0, 1, 2, 3, 4, or 5
@@ -288,6 +291,8 @@ namespace BodyExtractionAndHightlighting
                     {
                         int colorPointX_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].X + 0.5);
                         int colorPointY_stretch = (int)(ptrDepthToColorSpaceMapper[lookupIdx].Y + 0.5);
+
+
                         if ((colorPointY_stretch >= colorBufferHeight) || (colorPointX_stretch >= colorBufferWidth) ||
                                 (colorPointY_stretch < 0) || (colorPointX_stretch < 0))
                         {
@@ -372,7 +377,7 @@ namespace BodyExtractionAndHightlighting
             } //end for   
         }
 
-        private unsafe void CalculateTransformation_LowRes_HD_test(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        private unsafe void transform_LowRes_HD_test(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
             // ###################################### HD version ###################################
             //===== CALC_ROTATION_ANGLE ==========
@@ -494,7 +499,7 @@ namespace BodyExtractionAndHightlighting
             
         }
 
-        private unsafe void CalculateTransformation_HD(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBufferHD, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbow, int yElbow, int xWrist, int yWrist, int xHandTip, int yHandTip, int xTouch, int yTouch)
+        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBufferHD, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbow, int yElbow, int xWrist, int yWrist, int xHandTip, int yHandTip, int xTouch, int yTouch)
         {
             //===== CALC_ROTATION_ANGLE ==========
 

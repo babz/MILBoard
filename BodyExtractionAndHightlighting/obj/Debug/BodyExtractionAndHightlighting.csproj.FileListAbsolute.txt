@@ -70,3 +70,17 @@ C:\bsc\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.c
 C:\bsc\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.pdb
 D:\fh\masterproj\repo\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
 C:\bsc\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csprojResolveAssemblyReference.cache
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.exe.config
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.exe
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.exe
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\bin\Debug\BodyExtractionAndHightlighting.pdb
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\bin\Debug\Microsoft.Kinect.dll
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\bin\Debug\Microsoft.Kinect.xml
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\MainWindow.baml
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\MainWindow.g.cs
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\App.g.cs
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting_MarkupCompile.cache
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.g.resources
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.Properties.Resources.resources
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.csproj.GenerateResource.Cache
+C:\BSc\MILBoard\BodyExtractionAndHightlighting\obj\Debug\BodyExtractionAndHightlighting.pdb

@@ -20,41 +20,51 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" MinWidth="150" />
-            <ColumnDefinition Width="Auto" MinWidth="300" />
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" MinWidth="132" />
+            <ColumnDefinition Width="Auto" MinWidth="310" />
+            <ColumnDefinition Width="Auto" MinWidth="340"/>
+            <ColumnDefinition Width="Auto" MinWidth="1153" />
         </Grid.ColumnDefinitions>
         <Border Grid.Row="0" Background="White" />
         <Border Grid.Row="0" Grid.Column="1" Background="White" />
         <Border Grid.Row="0" Grid.Column="2" Background="White" />
+        <Border Grid.Row="0" Grid.Column="3" Background="White" />
         <Border Grid.Row="1" Background="White" />
         <Border Grid.Row="1" Grid.Column="1" Background="White" />
         <Border Grid.Row="1" Grid.Column="2" Background="White" />
+        <Border Grid.Row="1" Grid.Column="3" Background="White" />
 
         <Label Grid.Row="0" Grid.Column="0" Content="Resolution:" />
         <Label Grid.Row="0" Grid.Column="1" Content="Transparency of user:" />
-        <Label Grid.Row="0" Grid.Column="2" Content="Background:" Margin="0,0,-426,0" />
+        <Label Grid.Row="0" Grid.Column="2" Content="Background:" />
+        <Label Grid.Row="0" Grid.Column="3" Content="Mode:" Margin="0,0,-226,0" />
 
         <!--Dynamic Content-->
         <RadioButton Name="fullHD" Grid.Column="0" Content="1080p" GroupName="Resolution" IsChecked="False" Checked="fullHD_Checked" Margin="10,23,59,5" Grid.RowSpan="2" />
-        <RadioButton Name="nonFullHD" Grid.Row="1" Grid.Column="0" Content="512x424" GroupName="Resolution" IsChecked="True" Checked="nonFullHD_Checked" Margin="10,0,59,7" Height="17" VerticalAlignment="Bottom" Grid.RowSpan="2" />
+        <RadioButton Name="nonFullHD" Grid.Row="1" Grid.Column="0" Content="512x424" GroupName="Resolution" IsChecked="True" Checked="nonFullHD_Checked" Margin="10,0,59,2" Height="17" VerticalAlignment="Bottom" />
 
-        <Slider Grid.Column="1" Value="150" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" Margin="5,27,40,8" Grid.RowSpan="3" />
+        <Slider Grid.Column="1" Value="150" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" Margin="5,27,40,3" Grid.RowSpan="2" />
 
         <RadioButton Name="BlackBG" Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" Checked="BlackBG_Checked"/>
-        <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" Checked="WhiteBG_Checked" Margin="60,0,-60,16" Grid.RowSpan="2" />
-        <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" Margin="127,0,-426,0" RenderTransformOrigin="0.26,0.625" />
-        <CheckBox x:Name="checkBoxExtendArm" Content="Extend Arm" Grid.Column="2" HorizontalAlignment="Left" Margin="310,6,430,0" IsChecked="True" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" />
-        <CheckBox x:Name="checkBoxShowFps" Content="Log fps" Grid.Column="2" HorizontalAlignment="Left" Margin="470,6,430,0" Unchecked="checkBoxShowFps_Unchecked" Checked="checkBoxShowFps_Checked"/>
+        <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" Checked="WhiteBG_Checked" Margin="60,0,230,7" />
+        <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" IsChecked="True" Checked="CustomBG_Checked" Margin="127,0,4,0"/>
 
+        <RadioButton Name="GUIArmPtr" Grid.Row="1" Grid.Column="3" Content="Arm Extension" GroupName="Mode" IsChecked="True" Checked="GUIArmPtr_Checked" Margin="0,0,791,0"/>
+        <RadioButton Name="GUIHandPtr" Grid.Row="1" Grid.Column="3" Content="Hand Pointer" GroupName="Mode" Checked="GUIHandPtr_Checked" Margin="105,0,345,7" />
+        <RadioButton Name="GUISymbolPtr" Grid.Row="1" Grid.Column="3" Content="Symbol Pointer" GroupName="Mode" Checked="GUISymbolPtr_Checked" Margin="212,0,345,0" />
+        <!--<CheckBox x:Name="checkBoxExtendArm" Content="Arm Extension" Grid.Row="1" Grid.Column="3" HorizontalAlignment="Left" Margin="0,6,0,0" IsChecked="True" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" Height="15" Width="96" />-->
+
+        <CheckBox x:Name="checkBoxShowFps" Content="Log fps" Grid.Column="3" HorizontalAlignment="Left" Margin="470,6,0,0" Unchecked="checkBoxShowFps_Unchecked" Checked="checkBoxShowFps_Checked" Width="59"/>
 
         <Canvas Name="imageCanvas" Width="1575" Height="820" Grid.Row="4" Grid.ColumnSpan="3" Grid.ZIndex="1">
             <Image x:Name="imageCombi" Canvas.Left="0" Canvas.Top="0" Width="1575" Height="820" Canvas.ZIndex="0" />
 
-            <Button Content="FTP" Canvas.Left="800" Canvas.Top="550" Height="20" Width="30" />
+            <Button Content="Button6" Canvas.Left="800" Canvas.Top="550" Height="20" Width="30" />
             <Button Content="Button2" Canvas.Left="900" Canvas.Top="400" Height="20" Width="55"/>
             <Button Content="Button3" Canvas.Left="600" Canvas.Top="600" Height="20" Width="55"/>
             <Button Content="Button1" Canvas.Left="600" Canvas.Top="200" Height="20" Width="55"/>
+            <Button Content="Button4" Canvas.Left="1200" Canvas.Top="300" Height="20" Width="55"/>
+            <Button Content="Button5" Canvas.Left="1200" Canvas.Top="550" Height="20" Width="55"/>
         </Canvas>
 
     </Grid>
