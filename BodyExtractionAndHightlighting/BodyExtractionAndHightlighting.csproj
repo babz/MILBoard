@@ -68,6 +68,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ArmExtensionManager.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="ImageProcessor.cs" />
     <Compile Include="MainWindow.xaml.cs">
