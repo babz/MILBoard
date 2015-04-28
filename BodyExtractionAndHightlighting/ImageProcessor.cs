@@ -10,7 +10,7 @@ namespace BodyExtractionAndHightlighting
 {
     public class ImageProcessor
     {
-        private int bodyIndexBufferWidth, bodyIndexBufferHeight, colorBufferWidth, colorBufferHeight;
+        protected int bodyIndexBufferWidth, bodyIndexBufferHeight, colorBufferWidth, colorBufferHeight;
         private byte userTransparency;
         private Helper helper;
 

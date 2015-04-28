@@ -35,7 +35,7 @@ namespace BodyExtractionAndHightlighting
         MultiSourceFrameReader reader;
 
         private bool showFps = false;
-        private bool isTouchPositionEnabled = false;
+        private bool hasTouchOccurred = false;
         private Point touchPosition;
 
         // coordinate mapper
@@ -95,12 +95,15 @@ namespace BodyExtractionAndHightlighting
         enum GUIPointerType { Arm, Hand, Symbol };
         GUIPointerType guiPointerType = GUIPointerType.Arm;
         BackgroundType bgType = BackgroundType.Custom;
-        private bool extendArm = false; //value set via checkbox in GUI
 
         // right lower arm detection for scaling
         bool isArmDetected = false;
         IReadOnlyDictionary<JointType, Joint> joints;
         Dictionary<JointType, Point> armJointPoints = new Dictionary<JointType, Point>();
+
+        //checkbox values
+        bool armScaleOnly = false;
+        bool armRotateOnly = false;
 
         private double sumFps = 0;
         private int counter = 0;
@@ -217,7 +220,7 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 //########### Get Right Arm ###########
-                isArmDetected = this.GetRightArmJointPoints();
+                isArmDetected = this.DetectArm();
 
                 ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height);
 
@@ -229,7 +232,7 @@ namespace BodyExtractionAndHightlighting
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
                     //arm operation
-                    if (isArmDetected && isTouchPositionEnabled)
+                    if (isArmDetected && hasTouchOccurred)
                     {
                         Point pElbow = armJointPoints[JointType.ElbowRight];
                         Point pWrist = armJointPoints[JointType.WristRight];
@@ -269,7 +272,7 @@ namespace BodyExtractionAndHightlighting
 
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
-                    if (isArmDetected && isTouchPositionEnabled)
+                    if (isArmDetected && hasTouchOccurred)
                     {
                         Point pElbow = armJointPoints[JointType.ElbowRight];
                         Point pWrist = armJointPoints[JointType.WristRight];
@@ -323,11 +326,11 @@ namespace BodyExtractionAndHightlighting
             counter++;
         }
 
-        private bool GetRightArmJointPoints()
+        private bool DetectArm()
         {
             bool armDetected = false;
 
-            if (!extendArm)
+            if (guiPointerType != GUIPointerType.Arm)
             {
                 return false;
             }
@@ -430,19 +433,16 @@ namespace BodyExtractionAndHightlighting
         private void GUIArmPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Arm;
-            extendArm = true;
         }
 
         private void GUIHandPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Hand;
-            extendArm = false;
         }
 
         private void GUISymbolPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Symbol;
-            extendArm = false;
         }
 
         private void checkBoxShowFps_Unchecked(object sender, RoutedEventArgs e)
@@ -457,36 +457,36 @@ namespace BodyExtractionAndHightlighting
 
         private void checkBoxRotateOnly_Unchecked(object sender, RoutedEventArgs e)
         {
-
+            armRotateOnly = false;
         }
 
         private void checkBoxRotateOnly_Checked(object sender, RoutedEventArgs e)
         {
-
+            armRotateOnly = true;
         }
 
         private void checkBoxScaleOnly_Unchecked(object sender, RoutedEventArgs e)
         {
-
+            armScaleOnly = false;
         }
 
         private void checkBoxScaleOnly_Checked(object sender, RoutedEventArgs e)
         {
-
+            armScaleOnly = true;
         }
 
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             Console.Out.WriteLine("Canvas Pos: " + Mouse.GetPosition(imageCanvas).ToString());
             Console.Out.WriteLine("RightButtonDown: " + e.GetPosition(this).ToString());
-            isTouchPositionEnabled = true;
+            hasTouchOccurred = true;
             //touchPosition = e.GetPosition(this);
             touchPosition = Mouse.GetPosition(imageCanvas);
         }
 
         private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            isTouchPositionEnabled = false;
+            hasTouchOccurred = false;
         }
 
         #endregion
