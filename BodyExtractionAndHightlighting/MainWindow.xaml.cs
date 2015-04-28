@@ -228,6 +228,7 @@ namespace BodyExtractionAndHightlighting
 
                     imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
+                    //arm operation
                     if (isArmDetected && isTouchPositionEnabled)
                     {
                         Point pElbow = armJointPoints[JointType.ElbowRight];
@@ -247,6 +248,7 @@ namespace BodyExtractionAndHightlighting
                         
                         
                     }
+                    //normal image writethrough
                     else
                     {
                         sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
@@ -451,6 +453,26 @@ namespace BodyExtractionAndHightlighting
         private void checkBoxShowFps_Checked(object sender, RoutedEventArgs e)
         {
             showFps = true;
+        }
+
+        private void checkBoxRotateOnly_Unchecked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void checkBoxRotateOnly_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void checkBoxScaleOnly_Unchecked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void checkBoxScaleOnly_Checked(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
