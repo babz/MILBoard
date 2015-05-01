@@ -222,42 +222,37 @@ namespace BodyExtractionAndHightlighting
                 //########### Get Right Arm ###########
                 isArmDetected = this.DetectArm();
 
-                ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height);
+                ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource);
+                imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
                 // --- 512x424 ---
                 if (!isFullHD)
                 {
                     Array.Clear(imageBufferLowRes, 0, imageBufferLowRes.Length);
 
-                    imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
-
                     //arm operation
                     if (isArmDetected && hasTouchOccurred)
                     {
-                        Point pElbow = armJointPoints[JointType.ElbowRight];
-                        Point pWrist = armJointPoints[JointType.WristRight];
-                        Point pHandTip = armJointPoints[JointType.HandTipRight];
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
+
+                        ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+
                         if (true) // normal
                         {
-                            sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
-                            imgProcessor.ComputeTransformedImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthToColorSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
+                            aemProcessor.processImageLowRes(imageBufferLowRes);
+                            
                         }
                         else // HD test
                         {
-                            sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
-                            imgProcessor.ComputeTransformedImage_LowRes_HD_test(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, colorToDepthSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
+                            aemProcessor.processImageLowRes_HD_test(imageBufferLowRes);
                         }
-                        
-                        
                     }
-                    //normal image writethrough
                     else
                     {
-                        sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
-                        imgProcessor.ComputeSimpleImage_LowRes(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferLowRes, depthToColorSpaceMapper);
+                        //normal image writethrough
+                        imgProcessor.processImageSimple_LowRes(imageBufferLowRes);
                     }
-
+                    
                     //===========
                     writeableBitmapLowRes.Lock();
                     Marshal.Copy(imageBufferLowRes, 0, writeableBitmapLowRes.BackBuffer, imageBufferLowRes.Length);
@@ -267,24 +262,23 @@ namespace BodyExtractionAndHightlighting
                 // --- FullHD 1920 x 1080 ---
                 else if (isFullHD)
                 {
-                    sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
                     Array.Clear(imageBufferHD, 0, imageBufferHD.Length);
-
-                    imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
                     if (isArmDetected && hasTouchOccurred)
                     {
-                        Point pElbow = armJointPoints[JointType.ElbowRight];
-                        Point pWrist = armJointPoints[JointType.WristRight];
-                        Point pHandTip = armJointPoints[JointType.HandTipRight];
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        imgProcessor.ComputeTransformedImage_HD(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferHD, colorToDepthSpaceMapper, pElbow, pWrist, pHandTip, pTouch);
+
+                        ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+
+                        aemProcessor.processImageHD(imageBufferHD);
                     }
                     else
                     {
-                        imgProcessor.ComputeSimpleImage_HD(bodyIndexSensorBuffer, colorSensorBuffer, imageBufferHD, colorToDepthSpaceMapper);
+                        //normal image writethrough
+                        imgProcessor.processImageSimple_HD(imageBufferHD);
                     }
 
+                    //===========
                     //combiColorBuffer1080p contains all required information
                     writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), imageBufferHD, writeableBitmapHD.PixelWidth * sizeof(int), 0);
                 }
@@ -297,6 +291,8 @@ namespace BodyExtractionAndHightlighting
                     bodyFrame.Dispose();
                     return;
                 }
+
+                
             } // using Frames
         }
         

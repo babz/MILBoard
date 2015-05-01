@@ -60,6 +60,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SymbolManager.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -69,6 +70,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ArmExtensionManager.cs" />
+    <Compile Include="HandManager.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="ImageProcessor.cs" />
     <Compile Include="MainWindow.xaml.cs">
