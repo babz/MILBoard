@@ -75,20 +75,63 @@ namespace BodyExtractionAndHightlighting
             fixed (byte* ptrImageBufferHD = imageBufferHD)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
-                int xElbow = (int)pElbow.X;
-                int yElbow = (int)pElbow.Y;
-                int xWrist = (int)pWrist.X;
-                int yWrist = (int)pWrist.Y;
-                int xHandTip = (int)pHandTip.X;
-                int yHandTip = (int)pHandTip.Y;
-                int xTouch = (int)pTouch.X;
-                int yTouch = (int)pTouch.Y;
+                float xElbow = (float)pElbow.X;
+                float yElbow = (float)pElbow.Y;
+                float xWrist = (float)pWrist.X;
+                float yWrist = (float)pWrist.Y;
+                float xHandTip = (float)pHandTip.X;
+                float yHandTip = (float)pHandTip.Y;
+                float xTouch = (float)pTouch.X;
+                float yTouch = (float)pTouch.Y;
 
                 this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferHD, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
         }
 
+        //---------- Rotate only, Scale only
+
+        public unsafe void processImage_scaleOnly(byte[] imageBufferLowRes)
+        {
+            sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
+
+            fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
+            fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
+            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
+            {
+                float xElbow = (float)pElbow.X;
+                float yElbow = (float)pElbow.Y;
+                float xTouch = (float)pTouch.X;
+                float yTouch = (float)pTouch.Y;
+
+                this.transform_LowRes_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xTouch, yTouch);
+
+            } //end fixed
+        }
+
+        public unsafe void processImage_rotationOnly(byte[] imageBufferLowRes)
+        {
+            sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
+
+            fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
+            fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
+            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
+            {
+                float xElbow = (float)pElbow.X;
+                float yElbow = (float)pElbow.Y;
+                float xWrist = (float)pWrist.X;
+                float yWrist = (float)pWrist.Y;
+                float xHandTip = (float)pHandTip.X;
+                float yHandTip = (float)pHandTip.Y;
+                float xTouch = (float)pTouch.X;
+                float yTouch = (float)pTouch.Y;
+
+                this.transform_LowRes_rotationOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferLowRes, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+
+            } //end fixed
+        }
 
         #region PRIVATE
 
@@ -365,7 +408,7 @@ namespace BodyExtractionAndHightlighting
 
         }
 
-        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBufferHD, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbow, int yElbow, int xWrist, int yWrist, int xHandTip, int yHandTip, int xTouch, int yTouch)
+        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBufferHD, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
             //===== CALC_ROTATION_ANGLE ==========
 
@@ -384,8 +427,8 @@ namespace BodyExtractionAndHightlighting
 
             Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
             int handOffset = (int)areaOffset.Length / 3;
-            int handTipBoundaryX = xHandTip + handOffset;
-            int handTipBoundaryY = yHandTip;// -handOffset;
+            int handTipBoundaryX = (int)(xHandTip + handOffset + 0.5);
+            int handTipBoundaryY = (int)(yHandTip + 0.5);// -handOffset;
 
             int lengthOfMapper = colorBufferHeight * colorBufferWidth;
             for (int idxColorSpace = 0; idxColorSpace < lengthOfMapper; idxColorSpace++)
@@ -483,6 +526,132 @@ namespace BodyExtractionAndHightlighting
                 } // if pixel belongs to body
 
             } //end for
+        }
+
+        private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xTouch, float yTouch)
+        {
+            double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
+            
+            int lengthOfMapper = bodyIndexBufferHeight * bodyIndexBufferWidth;
+            for (int idxDepthSpace = 0; idxDepthSpace < lengthOfMapper; idxDepthSpace++)
+            {
+                bool extendedHandDrawn = false;
+
+                int xDepthSpace = idxDepthSpace % bodyIndexBufferWidth;
+                int yDepthSpace = (int)(((float)idxDepthSpace) / bodyIndexBufferWidth + 0.5);
+
+                if (xDepthSpace > xElbow)
+                {
+                    extendedHandDrawn = true; // hack
+
+                    int offsetX = (int)(xDepthSpace - xElbow);
+                    int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+
+                    int offsetY = (int)(yDepthSpace - yElbow);
+                    int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
+
+                    int colorPointX_stretch = (int)(ptrDepthToColorSpaceMapper[bodyIndexBufferWidth * lookupY + lookupX].X + 0.5);
+                    int colorPointY_stretch = (int)(ptrDepthToColorSpaceMapper[bodyIndexBufferWidth * lookupY + lookupX].Y + 0.5);
+                    uint* intPtr_stretch = (uint*)(ptrImageBuffer + idxDepthSpace * 4); //stays the same
+
+                    if ((ptrBodyIndexSensorBuffer[bodyIndexBufferWidth * lookupY + lookupX] != 0xff) &&
+                        (colorPointY_stretch < colorBufferHeight) && (colorPointX_stretch < colorBufferWidth) &&
+                        (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
+                    {
+                        uint* intPtr1080p = (uint*)(ptrColorSensorBuffer + (colorPointY_stretch * colorBufferWidth + colorPointX_stretch) * 4); // corresponding pixel in the 1080p image
+                        *intPtr_stretch = *intPtr1080p; // assign color value (4 bytes)
+                        *(((byte*)intPtr_stretch) + 3) = (byte)userTransparency; // overwrite the alpha value                                            
+                    }
+                } //end if pixel on right side of xElbow
+                if (extendedHandDrawn)
+                {
+                    continue;
+                }
+
+                int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
+                int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+                uint* intPtr = (uint*)(ptrImageBuffer + idxDepthSpace * 4);
+
+                if ((ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff) &&
+                    (colorPointY < colorBufferHeight) && (colorPointX < colorBufferWidth) &&
+                    (colorPointY >= 0) && (colorPointX >= 0))
+                {
+                    uint* intPtr1080p = (uint*)(ptrColorSensorBuffer + (colorPointY * colorBufferWidth + colorPointX) * 4); // corresponding pixel in the 1080p image
+                    *intPtr = *intPtr1080p; // assign color value (4 bytes)
+                    *(((byte*)intPtr) + 3) = (byte)userTransparency; // overwrite the alpha value
+                }
+            } //end for
+        }
+
+        private unsafe void transform_LowRes_rotationOnly(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        {
+            double rotationAngleInRad = helper.CalculateRotationAngle(xElbow, yElbow, xWrist, yWrist, xTouch, yTouch);
+            double cos = Math.Cos(rotationAngleInRad);
+            double sin = Math.Sin(rotationAngleInRad);
+
+            uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
+            uint* ptrImageBufferInt = (uint*)ptrImageBuffer;
+            uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
+            uint* ptrColorSensorBufferPixelInt = null;
+
+            Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
+            int handOffset = (int)areaOffset.Length / 3;
+            int handTipBoundaryX = (int)(xHandTip + 0.5);// +handOffset;
+            int handTipBoundaryY = (int)(yHandTip + 0.5);// -handOffset;
+
+            int lengthOfMapper = bodyIndexBufferHeight * bodyIndexBufferWidth;
+            for (int idxDepthSpace = 0; idxDepthSpace < lengthOfMapper; idxDepthSpace++)
+            {
+                int xDepthSpace = idxDepthSpace % bodyIndexBufferWidth;
+                int yDepthSpace = (int)(((float)idxDepthSpace) / bodyIndexBufferWidth + 0.5);
+                ptrColorSensorBufferPixelInt = null;
+
+                #region --- Region of lower arm
+                if ((xDepthSpace >= xElbow) && (xDepthSpace <= handTipBoundaryX) &&
+                        (((handTipBoundaryY <= yElbow) && (yDepthSpace >= handTipBoundaryY) && (yDepthSpace <= yElbow)) ||
+                            ((handTipBoundaryY > yElbow) && (yDepthSpace >= yElbow) && (yDepthSpace <= handTipBoundaryY)))
+                        )
+                {
+                    // compute rotation (in target image buffer)
+                    int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
+                    int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
+                    ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexBufferWidth + rotatedX);
+                }
+                #endregion // lower arm
+                else
+                {
+                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                    {
+                        // point to current pixel in image buffer
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
+                // nomal color lookup if no strech is applied
+                if (ptrColorSensorBufferPixelInt == null)
+                {
+                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
+                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+
+                    //check boundaries
+                    if ((colorPointY >= colorBufferHeight) || (colorPointX >= colorBufferWidth) ||
+                            (colorPointY < 0) || (colorPointX < 0))
+                    {
+                        continue;
+                    }
+                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
+                }
+
+                // assign color value (4 bytes)
+                *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+
+                // overwrite the alpha value (last byte)
+                *(((byte*)ptrImgBufferPixelInt) + 3) = base.userTransparency;
+            } //for loop
         }
 
         #endregion
