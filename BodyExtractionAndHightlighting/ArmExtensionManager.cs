@@ -254,6 +254,11 @@ namespace BodyExtractionAndHightlighting
                     // compute rotation (in target image buffer)
                     int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
                     int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
+                    if ((rotatedY >= bodyIndexBufferHeight) || (rotatedX >= bodyIndexBufferWidth) ||
+                            (rotatedY < 0) || (rotatedX < 0))
+                    {
+                        continue;
+                    }
                     ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexBufferWidth + rotatedX);
                 }
                 #endregion // lower arm
@@ -637,6 +642,12 @@ namespace BodyExtractionAndHightlighting
                         // compute rotation (in target image buffer)
                         int rotatedX = (int)(cos * (xDepthSpace - xElbow) - sin * (yDepthSpace - yElbow) + xElbow + 0.5);
                         int rotatedY = (int)(sin * (xDepthSpace - xElbow) + cos * (yDepthSpace - yElbow) + yElbow + 0.5);
+
+                        if ((rotatedY >= bodyIndexBufferHeight) || (rotatedX >= bodyIndexBufferWidth) ||
+                            (rotatedY < 0) || (rotatedX < 0))
+                        {
+                            continue;
+                        }
                         ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexBufferWidth + rotatedX);
                     }
                     #endregion // lower arm
