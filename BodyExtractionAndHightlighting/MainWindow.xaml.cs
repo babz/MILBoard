@@ -53,9 +53,6 @@ namespace BodyExtractionAndHightlighting
         uint[] biImageBuffer; //tmp storage for frame data converted to color
         WriteableBitmap biBitmap;
 
-        ColorSpacePoint[] depthToColorSpaceMapper = null;
-        DepthSpacePoint[] colorToDepthSpaceMapper = null;
-
         private static readonly uint[] BodyColor = 
         {
             0xFF00FF04,
@@ -150,9 +147,6 @@ namespace BodyExtractionAndHightlighting
 
             // get the coordinate mapper
             this.coordinateMapper = this.sensor.CoordinateMapper;
-
-            depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
-            colorToDepthSpaceMapper = new DepthSpacePoint[fdColor.LengthInPixels];
 
             if (sensor != null)
             {

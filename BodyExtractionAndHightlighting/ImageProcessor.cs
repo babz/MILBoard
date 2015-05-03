@@ -17,8 +17,8 @@ namespace BodyExtractionAndHightlighting
         protected KinectSensor sensor;
         protected ushort[] depthDataSource;
 
-        protected ColorSpacePoint[] depthToColorSpaceMapper;
-        protected DepthSpacePoint[] colorToDepthSpaceMapper;
+        protected ColorSpacePoint[] depthToColorSpaceMapper = null;
+        protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
         protected byte userTransparency;
         protected Helper helper;
@@ -36,8 +36,8 @@ namespace BodyExtractionAndHightlighting
             this.sensor = sensor;
             this.depthDataSource = depthDataSource;
 
-            this.depthToColorSpaceMapper = null;
-            this.colorToDepthSpaceMapper = null;
+            this.depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
+            this.colorToDepthSpaceMapper = new DepthSpacePoint[colorBufferWidth * colorBufferHeight];
 
             this.helper = new Helper();
         }
