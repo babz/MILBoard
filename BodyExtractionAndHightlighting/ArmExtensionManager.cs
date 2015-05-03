@@ -777,10 +777,10 @@ namespace BodyExtractionAndHightlighting
                 if (!isElbowOutOfBound && (xColorSpace > xElbowColorSpace)) // right arm
                 {
                     float offsetX = xColorSpace - xElbowColorSpace;
-                    int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)) + 0.5);
+                    int lookupX = (int)(xElbowColorSpace + (offsetX / (2.0 - normalizedAngle)) + 0.5);
 
                     float offsetY = yColorSpace - yElbowColorSpace;
-                    int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)) + 0.5);
+                    int lookupY = (int)(yElbowColorSpace + (offsetY / (1.0 + normalizedAngle)) + 0.5);
 
                     if ((lookupY < colorBufferHeight) && (lookupX < colorBufferWidth) &&
                             (lookupY >= 0) && (lookupX >= 0))
