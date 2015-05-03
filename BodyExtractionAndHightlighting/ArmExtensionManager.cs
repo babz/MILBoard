@@ -777,15 +777,15 @@ namespace BodyExtractionAndHightlighting
                     int offsetY = (int)(yDepthSpace - yElbow);
                     int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
 
-                    int colorPointX_stretch = (int)(ptrColorToDepthSpaceMapper[colorBufferWidth * lookupY + lookupX].X + 0.5);
-                    int colorPointY_stretch = (int)(ptrColorToDepthSpaceMapper[colorBufferWidth * lookupY + lookupX].Y + 0.5);
+                    //int colorPointX_stretch = (int)(ptrColorToDepthSpaceMapper[colorBufferWidth * lookupY + lookupX].X + 0.5);
+                    //int colorPointY_stretch = (int)(ptrColorToDepthSpaceMapper[colorBufferWidth * lookupY + lookupX].Y + 0.5);
                     ptrImgBufferHDPixelInt = (ptrImageBufferHDInt + idxColorSpace); //stays the same
 
                     if ((ptrBodyIndexSensorBuffer[bodyIndexBufferWidth * lookupY + lookupX] != 0xff) &&
-                        (colorPointY_stretch < colorBufferHeight) && (colorPointX_stretch < colorBufferWidth) &&
-                        (colorPointY_stretch >= 0) && (colorPointX_stretch >= 0))
+                        (lookupY < colorBufferHeight) && (lookupX < colorBufferWidth) &&
+                        (lookupY >= 0) && (lookupX >= 0))
                     {
-                        ptrColorSensorBufferPixelInt = (ptrColorSensorBufferInt + (colorPointY_stretch * colorBufferWidth + colorPointX_stretch)); // corresponding pixel in the 1080p image
+                        ptrColorSensorBufferPixelInt = (ptrColorSensorBufferInt + (lookupY * colorBufferWidth + lookupX)); // corresponding pixel in the 1080p image
                         *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt; // assign color value (4 bytes)
                         *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency; // overwrite the alpha value                                            
                     }
