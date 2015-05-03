@@ -232,13 +232,15 @@ namespace BodyExtractionAndHightlighting
                     }
                     else
                     {
-                        bool isHDTest = false;                        
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        ArmExtensionManager armProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-                        armProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
+                        
                         //arm operation
                         if (guiPointerType == GUIPointerType.Arm)
                         {
+                            ArmExtensionManager armProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+                            armProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
+                            bool isHDTest = false;
+
                             if (armScaleOnly)
                             {
                                 armProcessor.processImage_scaleOnly(imageBufferLowRes);
@@ -282,20 +284,51 @@ namespace BodyExtractionAndHightlighting
                 else if (isFullHD)
                 {
                     Array.Clear(imageBufferHD, 0, imageBufferHD.Length);
+                    //########### Get Right Arm Joint-Points ###########
+                    bool armDetected = this.DetectArm();
 
-                    if ((guiPointerType == GUIPointerType.Arm) && hasTouchOccurred)
+                    //normal image writethrough
+                    if (!hasTouchOccurred || !armDetected)
                     {
-                        Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-
-                        ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-
-                        aemProcessor.processImageHD(imageBufferHD);
+                        imgProcessor.processImageSimple_HD(imageBufferHD);
                     }
                     else
                     {
-                        //normal image writethrough
-                        imgProcessor.processImageSimple_HD(imageBufferHD);
-                    }
+                        Point pTouch = this.GetKinectCoordinates(this.touchPosition);
+                        
+                        //arm operation
+                        if (guiPointerType == GUIPointerType.Arm)
+                        {
+                            ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+                            aemProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
+
+                            if (armScaleOnly)
+                            {
+                                aemProcessor.processImageHD_scaleOnly(imageBufferHD);
+                            }
+                            else if (armRotateOnly)
+                            {
+                                aemProcessor.processImageHD_rotationOnly(imageBufferHD);
+                            }
+                            else
+                            {
+                                // normal
+                                aemProcessor.processImageHD(imageBufferHD);
+                            }
+                        }
+                        else if (guiPointerType == GUIPointerType.Hand)
+                        {
+
+                        }
+                        else if (guiPointerType == GUIPointerType.Symbol)
+                        {
+
+                        }
+                        else
+                        {
+                            throw new ApplicationException("Error: undefined pointer state");
+                        }
+                    } 
 
                     //===========
                     //combiColorBuffer1080p contains all required information
