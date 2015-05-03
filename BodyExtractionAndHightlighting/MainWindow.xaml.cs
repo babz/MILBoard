@@ -469,8 +469,12 @@ namespace BodyExtractionAndHightlighting
 
         private void checkBoxRotateOnly_Checked(object sender, RoutedEventArgs e)
         {
+            if (armScaleOnly)
+            {
+                checkBoxScaleOnly.IsChecked = false;
+                armScaleOnly = false;
+            }
             armRotateOnly = true;
-            armScaleOnly = false;
             hasTouchOccurred = true;
         }
 
@@ -482,8 +486,12 @@ namespace BodyExtractionAndHightlighting
 
         private void checkBoxScaleOnly_Checked(object sender, RoutedEventArgs e)
         {
+            if (armRotateOnly)
+            {
+                checkBoxRotateOnly.IsChecked = false;
+                armRotateOnly = false;
+            }
             armScaleOnly = true;
-            armRotateOnly = false;
             hasTouchOccurred = true;
         }
 
