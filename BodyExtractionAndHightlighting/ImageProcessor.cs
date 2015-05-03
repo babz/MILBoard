@@ -14,11 +14,11 @@ namespace BodyExtractionAndHightlighting
 
         protected byte[] bodyIndexSensorBuffer, colorSensorBuffer;
 
-        protected KinectSensor sensor;
-        protected ushort[] depthDataSource;
+        unsafe protected KinectSensor sensor;
+        unsafe protected ushort[] depthDataSource;
 
-        protected ColorSpacePoint[] depthToColorSpaceMapper = null;
-        protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
+        unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
+        unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
         protected byte userTransparency;
         protected Helper helper;
@@ -133,10 +133,10 @@ namespace BodyExtractionAndHightlighting
         /*
          * @example  int indexElbow = yElbow * fdDepth.Width + xElbow;
          * */
-        private int GetLowResImageIndexOfBodyJoint(int xBodyJoint, int yBodyJoint)
-        {
-            return yBodyJoint * bodyIndexBufferWidth + xBodyJoint;
-        }
+        //private int GetLowResImageIndexOfBodyJoint(int xBodyJoint, int yBodyJoint)
+        //{
+        //    return yBodyJoint * bodyIndexBufferWidth + xBodyJoint;
+        //}
 
         #endregion
 

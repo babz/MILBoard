@@ -528,10 +528,12 @@ namespace BodyExtractionAndHightlighting
             } //end for
         }
 
+        //---------- Rotate only, Scale only
+
         private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, byte* ptrColorSensorBuffer, byte* ptrImageBuffer, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xTouch, float yTouch)
         {
             double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
-            
+
             int lengthOfMapper = bodyIndexBufferHeight * bodyIndexBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < lengthOfMapper; idxDepthSpace++)
             {

@@ -36,7 +36,7 @@ namespace BodyExtractionAndHightlighting
 
         private bool showFps = false;
         private bool hasTouchOccurred = false;
-        private Point touchPosition;
+        private Point touchPosition = new Point(0, 0);
 
         // coordinate mapper
         private CoordinateMapper coordinateMapper = null;
@@ -212,7 +212,6 @@ namespace BodyExtractionAndHightlighting
                     cFrame.CopyConvertedFrameDataToArray(colorSensorBuffer, ColorImageFormat.Bgra);
                 }
 
-                
 
                 ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource);
                 imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
@@ -221,23 +220,25 @@ namespace BodyExtractionAndHightlighting
                 if (!isFullHD)
                 {
                     Array.Clear(imageBufferLowRes, 0, imageBufferLowRes.Length);
-                    bool isHDTest = false;
+                    //########### Get Right Arm Joint-Points ###########
+                    bool armDetected = this.DetectArm();
 
-                    if (hasTouchOccurred) 
-                    { 
+                    //normal image writethrough
+                    if (!hasTouchOccurred || !armDetected)
+                    {
+                        imgProcessor.processImageSimple_LowRes(imageBufferLowRes);
+                    }
+                    else
+                    {
+                        bool isHDTest = false;
+                        
+                        Point pTouch = this.GetKinectCoordinates(this.touchPosition);
 
+                        ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+                    
                         //arm operation
                         if (guiPointerType == GUIPointerType.Arm)
                         {
-                            //########### Get Right Arm Joint-Points ###########
-                            if (this.DetectArm() == false)
-                            {
-                                return;
-                            }
-                            Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-
-                            ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-
                             if (armScaleOnly)
                             {
                                 aemProcessor.processImage_scaleOnly(imageBufferLowRes);
@@ -269,12 +270,7 @@ namespace BodyExtractionAndHightlighting
                         {
                             throw new ApplicationException("Error: undefined pointer state");
                         }
-                    }
-                    else
-                    {
-                        //normal image writethrough
-                        imgProcessor.processImageSimple_LowRes(imageBufferLowRes);
-                    }
+                    } 
                     
                     //===========
                     writeableBitmapLowRes.Lock();
@@ -324,6 +320,11 @@ namespace BodyExtractionAndHightlighting
 
         private Point GetKinectCoordinates(Point touchpoint)
         {
+            if (armRotateOnly || armScaleOnly)
+            {
+                touchpoint = new Point(800.0, 550.0);
+            }
+
             int touchpointX = (int)(touchpoint.X + 0.5) * 512;
             int touchpointY = (int)(touchpoint.Y + 0.5) * 424;
             int Kx = touchpointX / (int)(this.imageCanvas.ActualWidth + 0.5);
@@ -463,23 +464,27 @@ namespace BodyExtractionAndHightlighting
         private void checkBoxRotateOnly_Unchecked(object sender, RoutedEventArgs e)
         {
             armRotateOnly = false;
+            hasTouchOccurred = false;
         }
 
         private void checkBoxRotateOnly_Checked(object sender, RoutedEventArgs e)
         {
             armRotateOnly = true;
             armScaleOnly = false;
+            hasTouchOccurred = true;
         }
 
         private void checkBoxScaleOnly_Unchecked(object sender, RoutedEventArgs e)
         {
             armScaleOnly = false;
+            hasTouchOccurred = false;
         }
 
         private void checkBoxScaleOnly_Checked(object sender, RoutedEventArgs e)
         {
             armScaleOnly = true;
             armRotateOnly = false;
+            hasTouchOccurred = true;
         }
 
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
