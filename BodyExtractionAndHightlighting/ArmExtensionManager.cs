@@ -769,48 +769,58 @@ namespace BodyExtractionAndHightlighting
             int lengthOfMapper = colorBufferHeight * colorBufferWidth;
             for (int idxColorSpace = 0; idxColorSpace < lengthOfMapper; idxColorSpace++)
             {
-                float xDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].X;
-                float yDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].Y;
+                ptrColorSensorBufferPixelInt = null;
 
-                //where the color img cannot be mapped to the depth image, there are infinity values
-                if (!Single.IsInfinity(xDepthSpace) && !Single.IsInfinity(yDepthSpace))
+                //point to current pixel in target imgBuffer
+                ptrImgBufferHDPixelInt = ptrImageBufferHDInt + idxColorSpace;
+
+                if (!isElbowOutOfBound && (xColorSpace > xElbowColorSpace))
                 {
-                    //corrresponding pixel in the bodyIndexBuffer; mapper returns pixel in depth space
-                    int idxDepthSpace = (int)(bodyIndexBufferWidth * yDepthSpace + xDepthSpace); //2D to 1D
-                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                    int offsetX = (int)(xColorSpace - xElbowColorSpace);
+                    int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+
+                    int offsetY = (int)(yColorSpace - yElbowColorSpace);
+                    int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
+
+                    if ((lookupY < colorBufferHeight) && (lookupX < colorBufferWidth) &&
+                            (lookupY >= 0) && (lookupX >= 0))
                     {
-                        if (!isElbowOutOfBound && (xColorSpace > xElbowColorSpace))
+                        int idxColorSpaceStreched = lookupY * colorBufferWidth + lookupX;
+                        float xDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpaceStreched].X;
+                        float yDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpaceStreched].Y;
+
+                        //where the color img cannot be mapped to the depth image, there are infinity values
+                        if (!Single.IsInfinity(xDepthSpace) && !Single.IsInfinity(yDepthSpace))
                         {
-                            int offsetX = (int)(xColorSpace - xElbowColorSpace);
-                            int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+                            // corresponding pixel color sensor buffer (source)
+                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxColorSpaceStreched; // corresponding pixel in the 1080p image
+                        }          
+                    }
+                } //end: right arm
+                else    
+                {
+                    float xDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].X;
+                    float yDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].Y;
 
-                            int offsetY = (int)(yColorSpace - yElbowColorSpace);
-                            int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
-
-                            ptrImgBufferHDPixelInt = (ptrImageBufferHDInt + idxColorSpace); //stays the same
-
-                            if ((ptrBodyIndexSensorBuffer[bodyIndexBufferWidth * lookupY + lookupX] != 0xff) &&
-                                (lookupY < colorBufferHeight) && (lookupX < colorBufferWidth) &&
-                                (lookupY >= 0) && (lookupX >= 0))
-                            {
-                                ptrColorSensorBufferPixelInt = (ptrColorSensorBufferInt + (lookupY * colorBufferWidth + lookupX)); // corresponding pixel in the 1080p image
-                                *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt; // assign color value (4 bytes)
-                                *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency; // overwrite the alpha value                                            
-                            }
-                        } //end if pixel on right side of xElbow
-                        else
+                    //where the color img cannot be mapped to the depth image, there are infinity values
+                    if (!Single.IsInfinity(xDepthSpace) && !Single.IsInfinity(yDepthSpace))
+                    {
+                        //corrresponding pixel in the bodyIndexBuffer; mapper returns pixel in depth space
+                        int idxDepthSpace = (int)(bodyIndexBufferWidth * yDepthSpace + xDepthSpace); //2D to 1D
+                        if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
                         {
-                            //point to current pixel in target imgBuffer
-                            ptrImgBufferHDPixelInt = ptrImageBufferHDInt + idxColorSpace;
-
-                            // corresponding pixel in the 1080p image
+                            // corresponding pixel color sensor buffer (source)
                             ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (yColorSpace * this.colorBufferWidth + xColorSpace);
-                            // assign color value (4 bytes); dereferencing + assigning writes into imgBuffer
-                            *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt;
-                            // overwrite the alpha value
-                            *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency;
                         }
                     }
+                } // end: normal pixel
+
+                if (ptrColorSensorBufferPixelInt != null)
+                {
+                    // assign color value (4 bytes); dereferencing + assigning writes into imgBuffer
+                    *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt;
+                    // overwrite the alpha value
+                    *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency;
                 }
 
                 //increment counter
