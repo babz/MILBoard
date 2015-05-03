@@ -212,6 +212,8 @@ namespace BodyExtractionAndHightlighting
                     cFrame.CopyConvertedFrameDataToArray(colorSensorBuffer, ColorImageFormat.Bgra);
                 }
 
+                //########################## Start processing ##########################
+
 
                 ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource);
                 imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
@@ -230,32 +232,30 @@ namespace BodyExtractionAndHightlighting
                     }
                     else
                     {
-                        bool isHDTest = false;
-                        
+                        bool isHDTest = false;                        
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-
-                        ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-                    
+                        ArmExtensionManager armProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+                        armProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
                         //arm operation
                         if (guiPointerType == GUIPointerType.Arm)
                         {
                             if (armScaleOnly)
                             {
-                                aemProcessor.processImage_scaleOnly(imageBufferLowRes);
+                                armProcessor.processImage_scaleOnly(imageBufferLowRes);
                             }
                             else if (armRotateOnly)
                             {
-                                aemProcessor.processImage_rotationOnly(imageBufferLowRes);
+                                armProcessor.processImage_rotationOnly(imageBufferLowRes);
                             }
                             else if (isHDTest)
                             {
                                 // HD test
-                                aemProcessor.processImageLowRes_HD_test(imageBufferLowRes);
+                                armProcessor.processImageLowRes_HD_test(imageBufferLowRes);
                             }
                             else
                             {
                                 // normal
-                                aemProcessor.processImageLowRes(imageBufferLowRes);
+                                armProcessor.processImageLowRes(imageBufferLowRes);
                             }
                         }
                         else if (guiPointerType == GUIPointerType.Hand) 

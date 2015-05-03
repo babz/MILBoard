@@ -604,7 +604,7 @@ namespace BodyExtractionAndHightlighting
                     }
 
                     //point to current pixel in target imgBuffer
-                    ptrImgBufferPixelInt = ptrImageBufferInt + i;
+                    ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
 
                     // corresponding pixel in the 1080p image
                     ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * this.colorBufferWidth + colorPointX);
