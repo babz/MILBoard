@@ -147,11 +147,13 @@ namespace BodyExtractionAndHightlighting
 
         public unsafe void processImageHD_scaleOnly(byte[] imageBufferHD)
         {
+            sensor.CoordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
             sensor.CoordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
             fixed (byte* ptrImageBufferHD = imageBufferHD)
+            fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
                 float xElbow = (float)pElbow.X;
@@ -166,7 +168,7 @@ namespace BodyExtractionAndHightlighting
                 uint* ptrImageBufferHDInt = (uint*)ptrImageBufferHD;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-                this.transform_HD_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+                this.transform_HD_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
         }
@@ -743,83 +745,79 @@ namespace BodyExtractionAndHightlighting
             } //for loop
         }
 
-        private unsafe void transform_HD_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferHDInt, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        private unsafe void transform_HD_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferHDInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
             double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
+
+            float xElbowColorSpace = ptrDepthToColorSpaceMapper[(int)(yElbow + 0.5) * bodyIndexBufferWidth + (int)(xElbow + 0.5)].X;
+            float yElbowColorSpace = ptrDepthToColorSpaceMapper[(int)(yElbow + 0.5) * bodyIndexBufferWidth + (int)(xElbow + 0.5)].Y;
+
+            bool isElbowOutOfBound = false;
+            //where the color img cannot be mapped to the depth image, there are infinity values
+            if (Single.IsInfinity(xElbowColorSpace) || Single.IsInfinity(yElbowColorSpace))
+            {
+                isElbowOutOfBound = true;
+            }
 
             uint* ptrImgBufferHDPixelInt = null; // this is where we want to write the pixel
             uint* ptrColorSensorBufferPixelInt = null;
 
+            //save computing power
+            int xColorSpace = 0;
+            int yColorSpace = 0;
+
             int lengthOfMapper = colorBufferHeight * colorBufferWidth;
             for (int idxColorSpace = 0; idxColorSpace < lengthOfMapper; idxColorSpace++)
             {
-                bool extendedHandDrawn = false;
-
-                float xDepthSpaceF = ptrColorToDepthSpaceMapper[idxColorSpace].X;
-                float yDepthSpaceF = ptrColorToDepthSpaceMapper[idxColorSpace].Y;
+                float xDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].X;
+                float yDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].Y;
 
                 //where the color img cannot be mapped to the depth image, there are infinity values
-                if (Single.IsInfinity(yDepthSpaceF) || Single.IsInfinity(xDepthSpaceF))
+                if (!Single.IsInfinity(xDepthSpace) && !Single.IsInfinity(yDepthSpace))
                 {
-                    continue;
+                    //corrresponding pixel in the bodyIndexBuffer; mapper returns pixel in depth space
+                    int idxDepthSpace = (int)(bodyIndexBufferWidth * yDepthSpace + xDepthSpace); //2D to 1D
+                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                    {
+                        if (!isElbowOutOfBound && (xColorSpace > xElbowColorSpace))
+                        {
+                            int offsetX = (int)(xColorSpace - xElbowColorSpace);
+                            int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
+
+                            int offsetY = (int)(yColorSpace - yElbowColorSpace);
+                            int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
+
+                            ptrImgBufferHDPixelInt = (ptrImageBufferHDInt + idxColorSpace); //stays the same
+
+                            if ((ptrBodyIndexSensorBuffer[bodyIndexBufferWidth * lookupY + lookupX] != 0xff) &&
+                                (lookupY < colorBufferHeight) && (lookupX < colorBufferWidth) &&
+                                (lookupY >= 0) && (lookupX >= 0))
+                            {
+                                ptrColorSensorBufferPixelInt = (ptrColorSensorBufferInt + (lookupY * colorBufferWidth + lookupX)); // corresponding pixel in the 1080p image
+                                *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt; // assign color value (4 bytes)
+                                *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency; // overwrite the alpha value                                            
+                            }
+                        } //end if pixel on right side of xElbow
+                        else
+                        {
+                            //point to current pixel in target imgBuffer
+                            ptrImgBufferHDPixelInt = ptrImageBufferHDInt + idxColorSpace;
+
+                            // corresponding pixel in the 1080p image
+                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (yColorSpace * this.colorBufferWidth + xColorSpace);
+                            // assign color value (4 bytes); dereferencing + assigning writes into imgBuffer
+                            *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt;
+                            // overwrite the alpha value
+                            *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency;
+                        }
+                    }
                 }
 
-                int xDepthSpace = (int)(xDepthSpaceF + 0.5);
-                int yDepthSpace = (int)(yDepthSpaceF + 0.5);
-                
-                if (xDepthSpace > xElbow)
+                //increment counter
+                if (++xColorSpace == colorBufferWidth)
                 {
-                    extendedHandDrawn = true; // hack
-
-                    int offsetX = (int)(xDepthSpace - xElbow);
-                    int lookupX = (int)(xElbow + (offsetX / (2.0 - normalizedAngle)));
-
-                    int offsetY = (int)(yDepthSpace - yElbow);
-                    int lookupY = (int)(yElbow + (offsetY / (1.0 + normalizedAngle)));
-
-                    //int colorPointX_stretch = (int)(ptrColorToDepthSpaceMapper[colorBufferWidth * lookupY + lookupX].X + 0.5);
-                    //int colorPointY_stretch = (int)(ptrColorToDepthSpaceMapper[colorBufferWidth * lookupY + lookupX].Y + 0.5);
-                    ptrImgBufferHDPixelInt = (ptrImageBufferHDInt + idxColorSpace); //stays the same
-
-                    if ((ptrBodyIndexSensorBuffer[bodyIndexBufferWidth * lookupY + lookupX] != 0xff) &&
-                        (lookupY < colorBufferHeight) && (lookupX < colorBufferWidth) &&
-                        (lookupY >= 0) && (lookupX >= 0))
-                    {
-                        ptrColorSensorBufferPixelInt = (ptrColorSensorBufferInt + (lookupY * colorBufferWidth + lookupX)); // corresponding pixel in the 1080p image
-                        *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt; // assign color value (4 bytes)
-                        *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency; // overwrite the alpha value                                            
-                    }
-                } //end if pixel on right side of xElbow
-                if (extendedHandDrawn)
-                {
-                    continue;
-                }
-
-                //corrresponding pixel in the bodyIndexBuffer; mapper returns pixel in depth space
-                int idxDepthSpace = (int)(bodyIndexBufferWidth * yDepthSpace + xDepthSpace); //2D to 1D
-
-                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
-                {
-
-                    int xColorSpace = idxColorSpace % colorBufferWidth;
-                    int yColorSpace = (int)(((float)idxColorSpace) / colorBufferWidth + 0.5);
-
-                    //check boundaries
-                    if ((yColorSpace >= this.colorBufferHeight) || (xColorSpace >= this.colorBufferWidth) ||
-                    (yColorSpace < 0) && (xColorSpace < 0))
-                    {
-                        continue;
-                    }
-
-                    //point to current pixel in target imgBuffer
-                    ptrImgBufferHDPixelInt = ptrImageBufferHDInt + idxColorSpace;
-
-                    // corresponding pixel in the 1080p image
-                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (yColorSpace * this.colorBufferWidth + xColorSpace);
-                    // assign color value (4 bytes); dereferencing + assigning writes into imgBuffer
-                    *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value
-                    *(((byte*)ptrImgBufferHDPixelInt) + 3) = this.userTransparency;
+                    xColorSpace = 0;
+                    yColorSpace++;
                 }
             } //end for
         }
