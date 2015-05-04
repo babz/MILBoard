@@ -355,7 +355,7 @@ namespace BodyExtractionAndHightlighting
         {
             if (armRotateOnly || armScaleOnly)
             {
-                touchpoint = new Point(800.0, 550.0);
+                touchpoint = new Point(1200.0, 550.0);
             }
 
             int touchpointX = (int)(touchpoint.X + 0.5) * 512;
