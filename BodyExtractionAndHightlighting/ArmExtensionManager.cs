@@ -675,7 +675,7 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 //increment counter
-                if (++xDepthSpace == colorBufferWidth)
+                if (++xDepthSpace == bodyIndexBufferWidth)
                 {
                     xDepthSpace = 0;
                     yDepthSpace++;
@@ -749,7 +749,7 @@ namespace BodyExtractionAndHightlighting
                 } //if body
 
                 //increment counter
-                if (++xDepthSpace == colorBufferWidth)
+                if (++xDepthSpace == bodyIndexBufferWidth)
                 {
                     xDepthSpace = 0;
                     yDepthSpace++;
