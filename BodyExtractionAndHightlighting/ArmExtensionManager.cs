@@ -612,13 +612,14 @@ namespace BodyExtractionAndHightlighting
         {
             double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
 
+            //save computing power by incrementing x, y without division/modulo
+            int xDepthSpace = 0;
+            int yDepthSpace = 0;
+
             int lengthOfMapper = bodyIndexBufferHeight * bodyIndexBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < lengthOfMapper; idxDepthSpace++)
             {
                 bool extendedHandDrawn = false;
-
-                int xDepthSpace = idxDepthSpace % bodyIndexBufferWidth;
-                int yDepthSpace = (int)(((float)idxDepthSpace) / bodyIndexBufferWidth + 0.5);
 
                 if (xDepthSpace > xElbow)
                 {
@@ -672,6 +673,13 @@ namespace BodyExtractionAndHightlighting
                     // overwrite the alpha value
                     *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
                 }
+
+                //increment counter
+                if (++xDepthSpace == colorBufferWidth)
+                {
+                    xDepthSpace = 0;
+                    yDepthSpace++;
+                }
             } //end for
         }
 
@@ -689,11 +697,13 @@ namespace BodyExtractionAndHightlighting
             int handTipBoundaryX = (int)(xHandTip + 0.5);// +handOffset;
             int handTipBoundaryY = (int)(yHandTip + 0.5);// -handOffset;
 
+            //save computing power by incrementing x, y without division/modulo
+            int xDepthSpace = 0;
+            int yDepthSpace = 0;
+
             int depthSpaceSize = bodyIndexBufferHeight * bodyIndexBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
-                int xDepthSpace = idxDepthSpace % bodyIndexBufferWidth;
-                int yDepthSpace = idxDepthSpace / bodyIndexBufferWidth;
                 ptrColorSensorBufferPixelInt = null;
                 
                 if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
@@ -737,6 +747,13 @@ namespace BodyExtractionAndHightlighting
                         }
                     }                                 
                 } //if body
+
+                //increment counter
+                if (++xDepthSpace == colorBufferWidth)
+                {
+                    xDepthSpace = 0;
+                    yDepthSpace++;
+                }
             } //for loop
         }
 
