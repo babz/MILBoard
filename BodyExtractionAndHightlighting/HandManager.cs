@@ -128,7 +128,6 @@ namespace BodyExtractionAndHightlighting
                             {
                                 ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
 
-                                ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
                                 // assign color value (4 bytes)
                                 *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                                 // overwrite the alpha value (last byte)
@@ -153,29 +152,64 @@ namespace BodyExtractionAndHightlighting
             //with the cast to int, step size is 4 bytes
             uint* ptrImgBufferPixelInt = null;
 
+            float xHandTipColorSpace = ptrDepthToColorSpaceMapper[(int)(yHandTip + 0.5) * bodyIndexBufferWidth + (int)(xHandTip + 0.5)].X;
+            float yHandTipColorSpace = ptrDepthToColorSpaceMapper[(int)(yHandTip + 0.5) * bodyIndexBufferWidth + (int)(xHandTip + 0.5)].Y;
+            float xWristColorSpace = ptrDepthToColorSpaceMapper[(int)(yWrist + 0.5) * bodyIndexBufferWidth + (int)(xWrist + 0.5)].X;
+
+            //TODO check boundaries
+            float xOffsetColorSpace = xTouch - xHandTipColorSpace;
+            float yOffsetColorSpace = yTouch - yHandTipColorSpace;
+
+            //save computing power by incrementing x, y without division/modulo
+            int xColorSpace = 0;
+            int yColorSpace = 0;
+
             int lengthColorBuffer = colorBufferHeight * colorBufferWidth;
             //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
-            for (int i = 0; i < lengthColorBuffer; i++)
+            for (int idxColorSpace = 0; idxColorSpace < lengthColorBuffer; idxColorSpace++)
             {
                 //where the color img cannot be mapped to the depth image, there are infinity values
-                if (Single.IsInfinity(ptrColorToDepthSpaceMapper[i].Y) || Single.IsInfinity(ptrColorToDepthSpaceMapper[i].X))
+                if (!Single.IsInfinity(ptrColorToDepthSpaceMapper[idxColorSpace].Y) && !Single.IsInfinity(ptrColorToDepthSpaceMapper[idxColorSpace].X))
                 {
-                    continue;
+                    int idxDepthSpace = (int)(bodyIndexBufferWidth * ptrColorToDepthSpaceMapper[idxColorSpace].Y + ptrColorToDepthSpaceMapper[idxColorSpace].X); //2D to 1D
+
+                    // bodyIndex can be 0, 1, 2, 3, 4, or 5
+                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                    {
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxColorSpace;
+
+                        //with the cast to int, 4 bytes are copied
+                        *ptrImgBufferPixelInt = ptrColorSensorBufferInt[idxColorSpace];
+                        // overwrite the alpha value
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+
+                        #region --- Region of hand
+                        if (xColorSpace >= xWristColorSpace)
+                        {
+                            float xTranslatedColorSpace = xColorSpace + xOffsetColorSpace;
+                            float yTranslatedColorSpace = yColorSpace + yOffsetColorSpace;
+
+                            if ((yTranslatedColorSpace < colorBufferHeight) && (xTranslatedColorSpace < colorBufferWidth) &&
+                                (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
+                            {
+                                ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedColorSpace + 0.5) * colorBufferWidth + (int)(xTranslatedColorSpace + 0.5));
+
+                                //with the cast to int, 4 bytes are copied
+                                *ptrImgBufferPixelInt = ptrColorSensorBufferInt[idxColorSpace];
+                                // overwrite the alpha value
+                                *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                            }
+                        }
+                        #endregion
+                    }
                 }
 
-                int idx = (int)(bodyIndexBufferWidth * ptrColorToDepthSpaceMapper[i].Y + ptrColorToDepthSpaceMapper[i].X); //2D to 1D
-
-                // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                if (ptrBodyIndexSensorBuffer[idx] != 0xff)
+                //increment counter
+                if (++xColorSpace == colorBufferWidth)
                 {
-                    ptrImgBufferPixelInt = ptrImageBufferInt + i;
-
-                    //with the cast to int, 4 bytes are copied
-                    *ptrImgBufferPixelInt = ptrColorSensorBufferInt[i];
-                    // overwrite the alpha value
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    xColorSpace = 0;
+                    yColorSpace++;
                 }
-                    
             } // for loop
         }
 
