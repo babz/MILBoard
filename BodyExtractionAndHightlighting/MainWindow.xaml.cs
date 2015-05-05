@@ -91,7 +91,7 @@ namespace BodyExtractionAndHightlighting
         enum BackgroundType { Black, White, Custom };
         enum GUIPointerType { Arm, Hand, Symbol };
         GUIPointerType guiPointerType = GUIPointerType.Arm;
-        BackgroundType bgType = BackgroundType.Custom;
+        BackgroundType bgType = BackgroundType.White;
 
         // right lower arm detection for scaling
         IReadOnlyDictionary<JointType, Joint> joints;
