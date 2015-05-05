@@ -17,6 +17,16 @@ namespace BodyExtractionAndHightlighting
         {
             this.pTouch = pTouch;
         }
-        
+
+
+        internal void processImageLowRes(byte[] imageBufferLowRes)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void processImageHD(byte[] imageBufferHD)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

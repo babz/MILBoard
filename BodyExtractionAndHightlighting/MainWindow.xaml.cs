@@ -237,36 +237,42 @@ namespace BodyExtractionAndHightlighting
                         //arm operation
                         if (guiPointerType == GUIPointerType.Arm)
                         {
-                            ArmExtensionManager armProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-                            armProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
+                            ArmExtensionManager armManager = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+                            armManager.PropUserTransparency = (byte)this.userTransparency.Value;
                             bool isHDTest = false;
 
                             if (armScaleOnly)
                             {
-                                armProcessor.processImage_scaleOnly(imageBufferLowRes);
+                                armManager.processImage_scaleOnly(imageBufferLowRes);
                             }
                             else if (armRotateOnly)
                             {
-                                armProcessor.processImage_rotationOnly(imageBufferLowRes);
+                                armManager.processImage_rotationOnly(imageBufferLowRes);
                             }
                             else if (isHDTest)
                             {
                                 // HD test
-                                armProcessor.processImageLowRes_HD_test(imageBufferLowRes);
+                                armManager.processImageLowRes_HD_test(imageBufferLowRes);
                             }
                             else
                             {
-                                // normal
-                                armProcessor.processImageLowRes(imageBufferLowRes);
+                                // normal: scale + rotation
+                                armManager.processImageLowRes(imageBufferLowRes);
                             }
                         }
                         else if (guiPointerType == GUIPointerType.Hand) 
                         {
+                            HandManager handManager = new HandManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+                            handManager.PropUserTransparency = (byte)this.userTransparency.Value;
 
+                            handManager.processImageLowRes(imageBufferLowRes);
                         }
                         else if (guiPointerType == GUIPointerType.Symbol)
                         {
+                            SymbolManager symbolManager = new SymbolManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, pTouch);
+                            symbolManager.PropUserTransparency = (byte)this.userTransparency.Value;
 
+                            symbolManager.processImageLowRes(imageBufferLowRes);
                         }
                         else
                         {
@@ -318,11 +324,17 @@ namespace BodyExtractionAndHightlighting
                         }
                         else if (guiPointerType == GUIPointerType.Hand)
                         {
+                            HandManager handManager = new HandManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
+                            handManager.PropUserTransparency = (byte)this.userTransparency.Value;
 
+                            handManager.processImageHD(imageBufferHD);
                         }
                         else if (guiPointerType == GUIPointerType.Symbol)
                         {
+                            SymbolManager symbolManager = new SymbolManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, pTouch);
+                            symbolManager.PropUserTransparency = (byte)this.userTransparency.Value;
 
+                            symbolManager.processImageHD(imageBufferHD);
                         }
                         else
                         {
