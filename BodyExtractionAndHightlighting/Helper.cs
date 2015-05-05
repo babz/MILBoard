@@ -27,13 +27,13 @@ namespace BodyExtractionAndHightlighting
 
             return newAngleRad;
         }
-
+        
         /**
          * @return  Normalized value that is based on the angle between the arm and the button
          * */
-        public double CalculateNormalizedAngle(float v1_StartX, float v1_StartY, float v1_EndX, float v1_EndY)
+        public double CalculateNormalizedAngleToXaxis(float v1_StartX, float v1_StartY, float v1_EndX, float v1_EndY)
         {
-            Vector horizontalLine = new Vector(1, 0);
+            Vector horizontalLine = new Vector(v1_StartX + 1, v1_StartY);
             double angleInDegrees = this.CalculateDotProduct(v1_StartX, v1_StartY, v1_EndX, v1_EndY, (float)horizontalLine.X, (float)horizontalLine.Y);
 
             // no differentiation btw pos or neg slope; normalized direction

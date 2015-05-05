@@ -110,11 +110,13 @@ namespace BodyExtractionAndHightlighting
                 float yElbow = (float)pElbow.Y;
                 float xTouch = (float)pTouch.X;
                 float yTouch = (float)pTouch.Y;
+                float xWrist = (float)pWrist.X;
+                float yWrist = (float)pWrist.Y;
 
                 uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-                this.transform_LowRes_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, xElbow, yElbow, xTouch, yTouch);
+                this.transform_LowRes_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, xElbow, yElbow, xWrist, yWrist, xTouch, yTouch);
 
             } //end fixed
         }
@@ -217,8 +219,8 @@ namespace BodyExtractionAndHightlighting
             //===== CALC_NORMALIZED_ANGLE ==========
             //TODO check if angle need to be calculated from rotated pixel
             //double normalizedAngle = this.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
-            double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
-            normalizedAngle = 0.5;
+            //double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
+            //normalizedAngle = 0.5;
             //Console.Out.Println("Normalized angle: " + normalizedAngle);
 
             // compute strech
@@ -370,7 +372,7 @@ namespace BodyExtractionAndHightlighting
 
             //===== CALC_NORMALIZED_ANGLE ==========
             //TODO check if angle need to be calculated from rotated pixel
-            double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
+            double normalizedAngle = helper.CalculateNormalizedAngleToXaxis(xElbow, yElbow, xWrist, yWrist);
 
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
             uint* ptrImageBufferInt = (uint*)ptrImageBuffer;
@@ -491,7 +493,7 @@ namespace BodyExtractionAndHightlighting
 
             //===== CALC_NORMALIZED_ANGLE ==========
             //TODO check if angle need to be calculated from rotated pixel
-            double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
+            //double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xWrist, yWrist);
 
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
             
@@ -608,9 +610,9 @@ namespace BodyExtractionAndHightlighting
 
         //---------- Rotate only, Scale only
 
-        private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xTouch, float yTouch)
+        private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xTouch, float yTouch)
         {
-            float normalizedAngle = (float) helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
+            float normalizedAngle = (float) helper.CalculateNormalizedAngleToXaxis(xElbow, yElbow, xWrist, yWrist);
             uint transparencyMask = (0xffffff00u | this.userTransparency);
 
             int unsafeColorBufferWidth = this.colorBufferWidth;
@@ -758,7 +760,7 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void transform_HD_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferHDInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
-            double normalizedAngle = helper.CalculateNormalizedAngle(xElbow, yElbow, xTouch, yTouch);
+            double normalizedAngle = helper.CalculateNormalizedAngleToXaxis(xElbow, yElbow, xWrist, yWrist);
 
             float xElbowColorSpace = ptrDepthToColorSpaceMapper[(int)(yElbow + 0.5) * bodyIndexBufferWidth + (int)(xElbow + 0.5)].X;
             float yElbowColorSpace = ptrDepthToColorSpaceMapper[(int)(yElbow + 0.5) * bodyIndexBufferWidth + (int)(xElbow + 0.5)].Y;
