@@ -372,7 +372,8 @@ namespace BodyExtractionAndHightlighting
 
             //===== CALC_NORMALIZED_ANGLE ==========
             //TODO check if angle need to be calculated from rotated pixel
-            double normalizedAngle = helper.CalculateNormalizedAngleToXaxis(xElbow, yElbow, xWrist, yWrist);
+            //double absAngle = helper.CalculateAbsoluteAngleInDegreeToXaxis(xElbow, yElbow, xWrist, yWrist);
+            
 
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
             uint* ptrImageBufferInt = (uint*)ptrImageBuffer;
@@ -612,7 +613,16 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xTouch, float yTouch)
         {
-            float normalizedAngle = (float) helper.CalculateNormalizedAngleToXaxis(xElbow, yElbow, xWrist, yWrist);
+            double absAngle = helper.CalculateAbsoluteAngleInDegreeToXaxis(xElbow, yElbow, xWrist, yWrist);
+            double factorX = Math.Asin(absAngle);
+            double factorY = Math.Acos(absAngle);
+            double testLength = factorX * factorX + factorY * factorY;
+            Console.WriteLine("X: " + factorX + " Y: " + factorY + " Length: " + testLength);
+            float factorXsquare = (float)(factorX * factorX);
+            float factorYsquare = (float)(factorY * factorY);
+
+
+
             uint transparencyMask = (0xffffff00u | this.userTransparency);
 
             int unsafeColorBufferWidth = this.colorBufferWidth;
@@ -633,10 +643,10 @@ namespace BodyExtractionAndHightlighting
                 {
                     // compute stretched point in depth space and transform it in color space for lookup
                     float offsetXdepthSpace = xDepthSpace - xElbow;
-                    int lookupXdepthSpace = (int)(xElbow + (offsetXdepthSpace / (2.0 - normalizedAngle)) + 0.5);
+                    int lookupXdepthSpace = (int)(xElbow + (offsetXdepthSpace / (2.0 - factorXsquare)) + 0.5);
 
                     float offsetYdepthSpace = yDepthSpace - yElbow;
-                    int lookupYdepthSpace = (int)(yElbow + (offsetYdepthSpace / (1.0 + normalizedAngle)) + 0.5);
+                    int lookupYdepthSpace = (int)(yElbow + (offsetYdepthSpace / (1.0 + factorYsquare)) + 0.5);
 
                     int idxStretchedDepthSpace = bodyIndexBufferWidth * lookupYdepthSpace + lookupXdepthSpace;                    
 
@@ -760,7 +770,7 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void transform_HD_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferHDInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
-            double normalizedAngle = helper.CalculateNormalizedAngleToXaxis(xElbow, yElbow, xWrist, yWrist);
+            double normalizedAngle = 0.5; // todo helper.CalculateNormalizedAngleToXaxis(xElbow, yElbow, xWrist, yWrist);
 
             float xElbowColorSpace = ptrDepthToColorSpaceMapper[(int)(yElbow + 0.5) * bodyIndexBufferWidth + (int)(xElbow + 0.5)].X;
             float yElbowColorSpace = ptrDepthToColorSpaceMapper[(int)(yElbow + 0.5) * bodyIndexBufferWidth + (int)(xElbow + 0.5)].Y;
