@@ -79,11 +79,6 @@ namespace BodyExtractionAndHightlighting
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
             uint* ptrColorSensorBufferPixelInt = null;
 
-            //Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
-            //int handOffset = (int)areaOffset.Length / 3;
-            //int handTipBoundaryX = (int)(xHandTip + 0.5);// +handOffset;
-            //int handTipBoundaryY = (int)(yHandTip + 0.5);// -handOffset;
-
             //save computing power by incrementing x, y without division/modulo
             int xDepthSpace = 0;
             int yDepthSpace = 0;
@@ -91,49 +86,48 @@ namespace BodyExtractionAndHightlighting
             int depthSpaceSize = bodyIndexBufferHeight * bodyIndexBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
-                ptrColorSensorBufferPixelInt = null;
+                //ptrColorSensorBufferPixelInt = null;
+                ptrImgBufferPixelInt = null;
 
                 if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
                 {
-                    ptrImgBufferPixelInt = null;
-
                     #region --- Region of hand
                     if (xDepthSpace >= xWrist)
                     {
-                        // compute rotation (in target image buffer)
-                        int xTranslatedDepthSpace = (int)(xWrist + xTouch);
-                        int yTranslatedDepthSpace = (int)(yWrist + yTouch);
+                        float xTranslatedDepthSpace = xTouch;
+                        float yTranslatedDepthSpace = yTouch;
 
                         if ((yTranslatedDepthSpace < bodyIndexBufferHeight) && (xTranslatedDepthSpace < bodyIndexBufferWidth) &&
                             (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
                         {
-                            ptrImgBufferPixelInt = ptrImageBufferInt + (yTranslatedDepthSpace * bodyIndexBufferWidth + xTranslatedDepthSpace);
+                            ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
                         }
                     }
-                    #endregion // lower arm
+                    #endregion // hand
                     else
                     {
                         // point to current pixel in image buffer
                         ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
                     }
-
-                    if (ptrImgBufferPixelInt != null)
-                    {
-                        int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
-                        int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
-
-                        //check boundaries
-                        if ((colorPointY < colorBufferHeight) && (colorPointX < colorBufferWidth) &&
-                                (colorPointY >= 0) && (colorPointX >= 0))
-                        {
-                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
-                            // assign color value (4 bytes)
-                            *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                            // overwrite the alpha value (last byte)
-                            *(((byte*)ptrImgBufferPixelInt) + 3) = base.userTransparency;
-                        }
-                    }
                 } //if body
+
+                if (ptrImgBufferPixelInt != null)
+                {
+                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
+                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+
+                    //check boundaries
+                    if ((colorPointY < colorBufferHeight) && (colorPointX < colorBufferWidth) &&
+                            (colorPointY >= 0) && (colorPointX >= 0))
+                    {
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
+                        // assign color value (4 bytes)
+                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = base.userTransparency;
+                    }
+                }
+            
 
                 //increment counter
                 if (++xDepthSpace == bodyIndexBufferWidth)
@@ -159,8 +153,8 @@ namespace BodyExtractionAndHightlighting
             uint* ptrImgBufferHDPixelInt = null; // this is where we want to write the pixel
             uint* ptrColorSensorBufferPixelInt = null;
 
-            float xTouchColorSpace = ptrDepthToColorSpaceMapper[(int)(xTouch + 0.5)].X;
-            float yTouchColorSpace = ptrDepthToColorSpaceMapper[(int)(yTouch + 0.5)].Y;
+            float xTouchColorSpace = ptrDepthToColorSpaceMapper[(int)(yTouch + 0.5) * bodyIndexBufferWidth + (int)(xTouch + 0.5)].X;
+            float yTouchColorSpace = ptrDepthToColorSpaceMapper[(int)(yTouch + 0.5) * bodyIndexBufferWidth + (int)(xTouch + 0.5)].Y;
 
             //Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
             //int handOffset = (int)areaOffset.Length / 3;
@@ -189,8 +183,10 @@ namespace BodyExtractionAndHightlighting
                         {
                             //TODO convert touch into color space
                             // compute translation (in target image buffer)
-                            int xTranslatedColorSpace = (int)(xWristColorSpace + xTouchColorSpace);
-                            int yTranslatedColorSpace = (int)(yWristColorSpace + yTouchColorSpace);
+                            //int xTranslatedColorSpace = (int)(xWristColorSpace + xTouchColorSpace);
+                            //int yTranslatedColorSpace = (int)(yWristColorSpace + yTouchColorSpace);
+                            int xTranslatedColorSpace = (int)(xTouchColorSpace);
+                            int yTranslatedColorSpace = (int)(yTouchColorSpace);
 
                             if ((yTranslatedColorSpace < colorBufferHeight) && (xTranslatedColorSpace < colorBufferWidth) &&
                                 (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))

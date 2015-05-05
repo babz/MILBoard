@@ -365,7 +365,7 @@ namespace BodyExtractionAndHightlighting
 
         private Point GetKinectCoordinates(Point touchpoint)
         {
-            if (armRotateOnly || armScaleOnly)
+            if (armRotateOnly || armScaleOnly || (guiPointerType == GUIPointerType.Hand) || (guiPointerType == GUIPointerType.Symbol))
             {
                 touchpoint = new Point(1200.0, 550.0);
             }
@@ -484,16 +484,19 @@ namespace BodyExtractionAndHightlighting
         private void GUIArmPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Arm;
+            hasTouchOccurred = false;
         }
 
         private void GUIHandPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Hand;
+            hasTouchOccurred = true;
         }
 
         private void GUISymbolPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Symbol;
+            hasTouchOccurred = true;
         }
 
         private void checkBoxShowFps_Unchecked(object sender, RoutedEventArgs e)
