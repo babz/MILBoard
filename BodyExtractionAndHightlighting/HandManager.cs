@@ -85,52 +85,58 @@ namespace BodyExtractionAndHightlighting
 
             float xOffset = xTouch - xWrist;
             float yOffset = yTouch - yWrist;
-
+            
             int depthSpaceSize = bodyIndexBufferHeight * bodyIndexBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
                 //ptrColorSensorBufferPixelInt = null;
                 ptrImgBufferPixelInt = null;
+                bool isColorPixelInValidRange = false;
 
                 if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
-                {
-                    #region --- Region of hand
-                    if (xDepthSpace >= xWrist)
-                    {
-                        float xTranslatedDepthSpace = xDepthSpace + xOffset;
-                        float yTranslatedDepthSpace = yDepthSpace + yOffset;
-
-                        if ((yTranslatedDepthSpace < bodyIndexBufferHeight) && (xTranslatedDepthSpace < bodyIndexBufferWidth) &&
-                            (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
-                        {
-                            ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
-                        }
-                    }
-                    #endregion // hand
-                    else
-                    {
-                        // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
-                    }
-                } //if body
-
-                if (ptrImgBufferPixelInt != null)
                 {
                     int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
                     int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
 
-                    //check boundaries
                     if ((colorPointY < colorBufferHeight) && (colorPointX < colorBufferWidth) &&
                             (colorPointY >= 0) && (colorPointX >= 0))
                     {
+                        isColorPixelInValidRange = true;
+                    }
+
+                    if (isColorPixelInValidRange)
+                    {
+                        // point to current pixel in image buffer
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+
                         ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
                         // assign color value (4 bytes)
                         *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                         // overwrite the alpha value (last byte)
                         *(((byte*)ptrImgBufferPixelInt) + 3) = base.userTransparency;
+
+
+                        #region --- Region of hand
+                        if (xDepthSpace >= xWrist)
+                        {
+                            float xTranslatedDepthSpace = xDepthSpace + xOffset;
+                            float yTranslatedDepthSpace = yDepthSpace + yOffset;
+
+                            if ((yTranslatedDepthSpace < bodyIndexBufferHeight) && (xTranslatedDepthSpace < bodyIndexBufferWidth) &&
+                                (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
+                            {
+                                ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
+
+                                ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorBufferWidth + colorPointX);
+                                // assign color value (4 bytes)
+                                *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                                // overwrite the alpha value (last byte)
+                                *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(base.userTransparency * 0.75);
+                            }
+                        }
+                        #endregion // hand
                     }
-                }
-            
+                } //if body
 
                 //increment counter
                 if (++xDepthSpace == bodyIndexBufferWidth)
