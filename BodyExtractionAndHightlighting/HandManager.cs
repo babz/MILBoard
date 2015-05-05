@@ -83,6 +83,9 @@ namespace BodyExtractionAndHightlighting
             int xDepthSpace = 0;
             int yDepthSpace = 0;
 
+            float xOffset = xTouch - xWrist;
+            float yOffset = yTouch - yWrist;
+
             int depthSpaceSize = bodyIndexBufferHeight * bodyIndexBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
@@ -94,8 +97,8 @@ namespace BodyExtractionAndHightlighting
                     #region --- Region of hand
                     if (xDepthSpace >= xWrist)
                     {
-                        float xTranslatedDepthSpace = xTouch;
-                        float yTranslatedDepthSpace = yTouch;
+                        float xTranslatedDepthSpace = xDepthSpace + xOffset;
+                        float yTranslatedDepthSpace = yDepthSpace + yOffset;
 
                         if ((yTranslatedDepthSpace < bodyIndexBufferHeight) && (xTranslatedDepthSpace < bodyIndexBufferWidth) &&
                             (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
