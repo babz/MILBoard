@@ -84,8 +84,8 @@ namespace BodyExtractionAndHightlighting
             int xDepthSpace = 0;
             int yDepthSpace = 0;
 
-            float xOffset = xTouch - xWrist;
-            float yOffset = yTouch - yWrist;
+            float xOffset = xTouch - xHandTip;
+            float yOffset = yTouch - yHandTip;
             
             int depthSpaceSize = bodyIndexBufferHeight * bodyIndexBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
@@ -148,91 +148,35 @@ namespace BodyExtractionAndHightlighting
             } //for loop
         }
 
-        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferHDInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
-            float xWristColorSpace = ptrDepthToColorSpaceMapper[(int)(yWrist + 0.5) * bodyIndexBufferWidth + (int)(xWrist + 0.5)].X;
-            float yWristColorSpace = ptrDepthToColorSpaceMapper[(int)(yWrist + 0.5) * bodyIndexBufferWidth + (int)(xWrist + 0.5)].Y;
+            //with the cast to int, step size is 4 bytes
+            uint* ptrImgBufferPixelInt = null;
 
-            bool isWristOutOfBound = false;
-            //where the color img cannot be mapped to the depth image, there are infinity values
-            if (Single.IsInfinity(xWristColorSpace) || Single.IsInfinity(yWristColorSpace))
+            int lengthColorBuffer = colorBufferHeight * colorBufferWidth;
+            //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+            for (int i = 0; i < lengthColorBuffer; i++)
             {
-                isWristOutOfBound = true;
-            }
-
-            uint* ptrImgBufferHDPixelInt = null; // this is where we want to write the pixel
-            uint* ptrColorSensorBufferPixelInt = null;
-
-            float xTouchColorSpace = ptrDepthToColorSpaceMapper[(int)(yTouch + 0.5) * bodyIndexBufferWidth + (int)(xTouch + 0.5)].X;
-            float yTouchColorSpace = ptrDepthToColorSpaceMapper[(int)(yTouch + 0.5) * bodyIndexBufferWidth + (int)(xTouch + 0.5)].Y;
-
-            //Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
-            //int handOffset = (int)areaOffset.Length / 3;
-            //int handTipBoundaryX = (int)(xHandTip + 0.5);// +handOffset;
-            //int handTipBoundaryY = (int)(yHandTip + 0.5);// -handOffset;
-
-            //save computing power by incrementing x, y without division/modulo
-            int xColorSpace = 0;
-            int yColorSpace = 0;
-
-            int colorSpaceSize = colorBufferHeight * colorBufferWidth;
-            for (int idxColorSpace = 0; idxColorSpace < colorSpaceSize; idxColorSpace++)
-            {
-                ptrColorSensorBufferPixelInt = null;
-
-                float xDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].X;
-                float yDepthSpace = ptrColorToDepthSpaceMapper[idxColorSpace].Y;
-                int idxDepthSpace = (int)(yDepthSpace + 0.5) * bodyIndexBufferWidth + (int)(xDepthSpace + 0.5);
-
-                if (!Single.IsInfinity(xDepthSpace) && !Single.IsInfinity(yDepthSpace))
+                //where the color img cannot be mapped to the depth image, there are infinity values
+                if (Single.IsInfinity(ptrColorToDepthSpaceMapper[i].Y) || Single.IsInfinity(ptrColorToDepthSpaceMapper[i].X))
                 {
-                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
-                    {
-                        // right arm
-                        if (!isWristOutOfBound && (xColorSpace >= xWristColorSpace))
-                        {
-                            //TODO convert touch into color space
-                            // compute translation (in target image buffer)
-                            //int xTranslatedColorSpace = (int)(xWristColorSpace + xTouchColorSpace);
-                            //int yTranslatedColorSpace = (int)(yWristColorSpace + yTouchColorSpace);
-                            int xTranslatedColorSpace = (int)(xTouchColorSpace);
-                            int yTranslatedColorSpace = (int)(yTouchColorSpace);
-
-                            if ((yTranslatedColorSpace < colorBufferHeight) && (xTranslatedColorSpace < colorBufferWidth) &&
-                                (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
-                            {
-                                ptrImgBufferHDPixelInt = ptrImageBufferHDInt + (yTranslatedColorSpace * colorBufferWidth + xTranslatedColorSpace);
-                            }
-                        }
-                        else //rest of body
-                        {
-                            //point to current pixel in target imgBuffer
-                            ptrImgBufferHDPixelInt = ptrImageBufferHDInt + idxColorSpace;
-                        }
-                    } //if body
-                } //if idxDepth not infinity
-
-                if (ptrImgBufferHDPixelInt != null)
-                {
-                    //check boundaries
-                    if ((yColorSpace < colorBufferHeight) && (xColorSpace < colorBufferWidth) &&
-                            (yColorSpace >= 0) && (xColorSpace >= 0))
-                    {
-                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (yColorSpace * colorBufferWidth + xColorSpace);
-                        // assign color value (4 bytes)
-                        *ptrImgBufferHDPixelInt = *ptrColorSensorBufferPixelInt;
-                        // overwrite the alpha value (last byte)
-                        *(((byte*)ptrImgBufferHDPixelInt) + 3) = base.userTransparency;
-                    }
+                    continue;
                 }
 
-                //increment counter
-                if (++xColorSpace == colorBufferWidth)
+                int idx = (int)(bodyIndexBufferWidth * ptrColorToDepthSpaceMapper[i].Y + ptrColorToDepthSpaceMapper[i].X); //2D to 1D
+
+                // bodyIndex can be 0, 1, 2, 3, 4, or 5
+                if (ptrBodyIndexSensorBuffer[idx] != 0xff)
                 {
-                    xColorSpace = 0;
-                    yColorSpace++;
+                    ptrImgBufferPixelInt = ptrImageBufferInt + i;
+
+                    //with the cast to int, 4 bytes are copied
+                    *ptrImgBufferPixelInt = ptrColorSensorBufferInt[i];
+                    // overwrite the alpha value
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
                 }
-            } //for loop
+                    
+            } // for loop
         }
 
         #endregion
