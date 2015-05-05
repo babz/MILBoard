@@ -369,11 +369,16 @@ namespace BodyExtractionAndHightlighting
             {
                 touchpoint = new Point(1200.0, 550.0);
             }
+            //considers the discrepancy btw position of canvas and actual image;
+            //canvas relative point is translated to image relative point
+            Point relativeTouchpoint = this.imageCanvas.TranslatePoint(touchpoint, imageCombi);
 
-            int touchpointX = (int)(touchpoint.X + 0.5) * 512;
-            int touchpointY = (int)(touchpoint.Y + 0.5) * 424;
-            int Kx = touchpointX / (int)(this.imageCanvas.ActualWidth + 0.5);
-            int Ky = touchpointY / (int)(this.imageCanvas.ActualHeight + 0.5);
+            //source image buffer is smaller than image on screen
+            //source image is either 512x424 or fullHD
+            int touchpointX = (int)(relativeTouchpoint.X * imageCombi.Source.Width + 0.5);
+            int touchpointY = (int)(relativeTouchpoint.Y * imageCombi.Source.Height + 0.5);
+            int Kx = touchpointX / (int)(this.imageCombi.ActualWidth + 0.5);
+            int Ky = touchpointY / (int)(this.imageCombi.ActualHeight + 0.5);
 
             return new Point(Kx, Ky);
         }

@@ -11,6 +11,7 @@ namespace BodyExtractionAndHightlighting
     public class HandManager : ImageProcessor
     {
         Point pWrist, pHandTip, pTouch;
+        private const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
         public HandManager(int bodyIndexSensorBufferWidth, int bodyIndexSensorBufferHeight, int colorSensorBufferWidth, int colorSensorBufferHeight, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, KinectSensor sensor, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch)
             : base(bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource)
@@ -131,7 +132,7 @@ namespace BodyExtractionAndHightlighting
                                 // assign color value (4 bytes)
                                 *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                                 // overwrite the alpha value (last byte)
-                                *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(base.userTransparency * 0.75);
+                                *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(base.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
                             }
                         }
                         #endregion // hand
