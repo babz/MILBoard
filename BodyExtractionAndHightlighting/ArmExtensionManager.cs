@@ -614,13 +614,14 @@ namespace BodyExtractionAndHightlighting
         private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xTouch, float yTouch)
         {
             double absAngle = helper.CalculateAbsoluteAngleInDegreeToXaxis(xElbow, yElbow, xWrist, yWrist);
-            double factorX = Math.Asin(absAngle);
-            double factorY = Math.Acos(absAngle);
+            double factorX = Math.Cos(absAngle);
+            double factorY = Math.Sin(absAngle);
             double testLength = factorX * factorX + factorY * factorY;
-            Console.WriteLine("X: " + factorX + " Y: " + factorY + " Length: " + testLength);
-            float factorXsquare = (float)(factorX * factorX);
-            float factorYsquare = (float)(factorY * factorY);
-
+            //Console.WriteLine("X: " + factorX + " Y: " + factorY + " Length: " + testLength);
+            float factorXsquare = (float)(1.0 + factorX * factorX);
+            float factorYsquare = (float)(1.0 + factorY * factorY);
+            //factorXsquare = 1.5f;
+            //factorYsquare = 1.5f;
 
 
             uint transparencyMask = (0xffffff00u | this.userTransparency);
@@ -643,14 +644,14 @@ namespace BodyExtractionAndHightlighting
                 {
                     // compute stretched point in depth space and transform it in color space for lookup
                     float offsetXdepthSpace = xDepthSpace - xElbow;
-                    int lookupXdepthSpace = (int)(xElbow + (offsetXdepthSpace / (2.0 - factorXsquare)) + 0.5);
+                    int lookupXdepthSpace = (int)(xElbow + (offsetXdepthSpace / factorXsquare) + 0.5);
 
                     float offsetYdepthSpace = yDepthSpace - yElbow;
-                    int lookupYdepthSpace = (int)(yElbow + (offsetYdepthSpace / (1.0 + factorYsquare)) + 0.5);
+                    int lookupYdepthSpace = (int)(yElbow + (offsetYdepthSpace / factorYsquare) + 0.5);
 
                     int idxStretchedDepthSpace = bodyIndexBufferWidth * lookupYdepthSpace + lookupXdepthSpace;                    
 
-                    if (ptrBodyIndexSensorBuffer[idxStretchedDepthSpace] != 0xff) 
+                    if ((idxStretchedDepthSpace < depthSpaceSize) && (ptrBodyIndexSensorBuffer[idxStretchedDepthSpace] != 0xff))
                     {
                         int colorPointXstretched = (int)(ptrDepthToColorSpaceMapper[idxStretchedDepthSpace].X + 0.5);
                         int colorPointYstretched = (int)(ptrDepthToColorSpaceMapper[idxStretchedDepthSpace].Y + 0.5);
