@@ -21,7 +21,7 @@ namespace BodyExtractionAndHightlighting
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
         protected byte userTransparency;
-        protected Helper helper;
+        public Helper helper;
 
         public ImageProcessor(int bodyIndexSensorBufferWidth, int bodyIndexSensorBufferHeight, int colorSensorBufferWidth, int colorSensorBufferHeight, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, KinectSensor sensor, ushort[] depthDataSource)
         {

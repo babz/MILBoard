@@ -218,20 +218,35 @@ namespace BodyExtractionAndHightlighting
                 ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource);
                 imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
 
+                /*
+                     * Get Right Arm Joint-Points
+                     * @return true if right elbow, right wrist AND right handTip are tracked by the sensor
+                     * */
+                bool armDetected = this.DetectArm();
+
                 // --- 512x424 ---
                 if (!isFullHD)
                 {
                     Array.Clear(imageBufferLowRes, 0, imageBufferLowRes.Length);
-                    //########### Get Right Arm Joint-Points ###########
-                    bool armDetected = this.DetectArm();
 
-                    //normal image writethrough
+                    /*
+                     * Normal image writethrough
+                     * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
+                     * */
                     if (!hasTouchOccurred || !armDetected)
                     {
                         imgProcessor.processImageSimple_LowRes(imageBufferLowRes);
                     }
                     else
                     {
+                        /*
+                         * Touchpoint coordinates
+                         * @GUIPointerType.Hand: Button5 (1200.0, 550.0)
+                         * @GUIPointerType.Symbol: Button5 (1200.0, 550.0)
+                         * @Mode == Rotate only: Button5 (1200.0, 550.0)
+                         * @Mode == Scale only: Button5 (1200.0, 550.0)
+                         * @MousePressed: Actual mouse position
+                         * */
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
                         
                         //arm operation
@@ -290,16 +305,26 @@ namespace BodyExtractionAndHightlighting
                 else if (isFullHD)
                 {
                     Array.Clear(imageBufferHD, 0, imageBufferHD.Length);
-                    //########### Get Right Arm Joint-Points ###########
-                    bool armDetected = this.DetectArm();
+                    
 
-                    //normal image writethrough
+                    /*
+                     * Normal image writethrough
+                     * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
+                     * */
                     if (!hasTouchOccurred || !armDetected)
                     {
                         imgProcessor.processImageSimple_HD(imageBufferHD);
                     }
                     else
                     {
+                        /*
+                         * Touchpoint coordinates
+                         * @GUIPointerType.Hand: Button5 (1200.0, 550.0)
+                         * @GUIPointerType.Symbol: Button5 (1200.0, 550.0)
+                         * @Mode == Rotate only: Button5 (1200.0, 550.0)
+                         * @Mode == Scale only: Button5 (1200.0, 550.0)
+                         * @MousePressed: Actual mouse position
+                         * */
                         Point pTouch = this.GetKinectCoordinates(this.touchPosition);
                         
                         //arm operation

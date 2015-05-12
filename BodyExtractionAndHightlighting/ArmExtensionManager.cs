@@ -723,6 +723,7 @@ namespace BodyExtractionAndHightlighting
                     ptrImgBufferPixelInt = null;
 
                     #region --- Region of lower arm
+                    //TODO determine region of hand with floodfill (start: xWrist/yWrist until xElbow)
                     if (xDepthSpace >= xElbow)
                     {
                         // compute rotation (in target image buffer)

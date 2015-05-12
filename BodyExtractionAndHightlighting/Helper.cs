@@ -62,5 +62,29 @@ namespace BodyExtractionAndHightlighting
             return angleInDegrees;
         }
 
+        List<Point> targetNodes = null; //points of region that is supposed to be manipulated 
+        /*
+         * @param endNode: left most node that is included by the floodfill
+         * */
+        public void floodfill(int xStart, int yStart, int xEnd, int yEnd)
+        {
+            int threshold = 10;
+            if (xStart < xEnd)
+                return;
+            if ((yStart < (yEnd + threshold)) || (yStart > (yEnd - threshold)))
+                return;
+
+            targetNodes.Add(new Point(xStart, yStart));
+
+            this.floodfill((xStart + 1), yStart, xEnd, yEnd);
+            this.floodfill((xStart - 1), yStart, xEnd, yEnd);
+            this.floodfill(xStart, (yStart + 1), xEnd, yEnd);
+            this.floodfill(xStart, (yStart - 1), xEnd, yEnd);
+        }
+
+        public List<Point> GetTargetNodes()
+        {
+            return targetNodes;
+        }
     }
 }

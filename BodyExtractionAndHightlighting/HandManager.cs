@@ -31,6 +31,14 @@ namespace BodyExtractionAndHightlighting
             fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
+                //TODO open new thread for that?
+                //NOTE specific for each manager!!
+                int xStart = (int)(pHandTip.X + 0.5);
+                int yStart = (int)(pHandTip.Y + 0.5);
+                int xEnd = (int)(pWrist.X + 0.5);
+                int yEnd = (int)(pWrist.Y + 0.5);
+                helper.floodfill(xStart, yStart, xEnd, yEnd);
+                
                 float xWrist = (float)pWrist.X;
                 float yWrist = (float)pWrist.Y;
                 float xHandTip = (float)pHandTip.X;
@@ -118,6 +126,9 @@ namespace BodyExtractionAndHightlighting
 
 
                         #region --- Region of hand
+                        if (helper.GetTargetNodes() != null)
+
+                        //TODO determine region of hand with floodfill (start: xHandTip/yHandTip until xWrist)
                         if (xDepthSpace >= xWrist)
                         {
                             float xTranslatedDepthSpace = xDepthSpace + xOffset;
