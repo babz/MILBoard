@@ -38,9 +38,6 @@ namespace BodyExtractionAndHightlighting
         private bool hasTouchOccurred = false;
         private Point touchPosition = new Point(0, 0);
 
-        // coordinate mapper
-        private CoordinateMapper coordinateMapper = null;
-
         /// <summary>
         /// Constant for clamping Z values of camera space points from being negative
         /// </summary>
@@ -65,11 +62,9 @@ namespace BodyExtractionAndHightlighting
 
         // color
         WriteableBitmap colorBitmap;
-        FrameDescription fdColor;
 
         // depth
-        ushort[] depthDataSource;
-        FrameDescription fdDepth;
+        ushort[] depthSensorBuffer;
 
         // combined color - bodyIndex
         ushort[] stencilBuffer;
@@ -87,11 +82,14 @@ namespace BodyExtractionAndHightlighting
         long prevTick = 0, ticksNow = 0;
 
         //gui logic
-        bool isFullHD = false;
         enum BackgroundType { Black, White, Custom };
         enum GUIPointerType { Arm, Hand, Symbol };
+        //default settings
+        bool isFullHD = false;
         GUIPointerType guiPointerType = GUIPointerType.Arm;
         BackgroundType bgType = BackgroundType.White;
+
+        IImgProcessorFactory imgProcessor = null;
 
         // right lower arm detection for scaling
         IReadOnlyDictionary<JointType, Joint> joints;
@@ -117,7 +115,7 @@ namespace BodyExtractionAndHightlighting
             bodies = new Body[6];
 
             // color
-            fdColor = sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
+            FrameDescription fdColor = sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
             colorBitmap = new WriteableBitmap(fdColor.Width, fdColor.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
             //imageColor.Source = colorBitmap; //color img only
 
@@ -129,8 +127,8 @@ namespace BodyExtractionAndHightlighting
             //imageBi.Source = biBitmap; //body index img only
 
             // depth (same resolution as body index)
-            fdDepth = sensor.DepthFrameSource.FrameDescription;
-            depthDataSource = new ushort[fdDepth.LengthInPixels];
+            FrameDescription fdDepth = sensor.DepthFrameSource.FrameDescription;
+            depthSensorBuffer = new ushort[fdDepth.LengthInPixels];
 
             // combination 1080p
             stencilBuffer = new ushort[fdBi.LengthInPixels];
@@ -146,7 +144,19 @@ namespace BodyExtractionAndHightlighting
             imageCombi.Source = writeableBitmapLowRes; //img with 512x424-color of body index frame;
 
             // get the coordinate mapper
-            this.coordinateMapper = this.sensor.CoordinateMapper;
+            CoordinateMapper coordinateMapper = this.sensor.CoordinateMapper;
+
+            //inits
+            Constants.initConstants(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, coordinateMapper);
+            if (isFullHD)
+            {
+                imgProcessor = new ImgProcessorFactoryHD();
+            }
+            else
+            {
+                imgProcessor = new ImgProcessorFactoryLowRes();
+            }
+
 
             if (sensor != null)
             {
@@ -185,7 +195,7 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 // writes depth values from frame into an array
-                dFrame.CopyFrameDataToArray(depthDataSource);
+                dFrame.CopyFrameDataToArray(depthSensorBuffer);
                 // writes body index values from frame into an array
                 biFrame.CopyFrameDataToArray(bodyIndexSensorBuffer);
 
@@ -213,175 +223,96 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 //########################## Start processing ##########################
-
-
-                ImageProcessor imgProcessor = new ImageProcessor(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource);
-                imgProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
-
-                /*
-                     * Get Right Arm Joint-Points
-                     * @return true if right elbow, right wrist AND right handTip are tracked by the sensor
-                     * */
-                bool armDetected = this.DetectArm();
-
-                // --- 512x424 ---
-                if (!isFullHD)
+                byte[] imageBuffer = null;
+                WriteableBitmap writeableBitmap = null;
+                if (isFullHD)
                 {
-                    Array.Clear(imageBufferLowRes, 0, imageBufferLowRes.Length);
-
-                    /*
-                     * Normal image writethrough
-                     * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
-                     * */
-                    if (!hasTouchOccurred || !armDetected)
-                    {
-                        imgProcessor.processImageSimple_LowRes(imageBufferLowRes);
-                    }
-                    else
-                    {
-                        /*
-                         * Touchpoint coordinates
-                         * @GUIPointerType.Hand: Button5 (1200.0, 550.0)
-                         * @GUIPointerType.Symbol: Button5 (1200.0, 550.0)
-                         * @Mode == Rotate only: Button5 (1200.0, 550.0)
-                         * @Mode == Scale only: Button5 (1200.0, 550.0)
-                         * @MousePressed: Actual mouse position
-                         * */
-                        Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        
-                        //arm operation
-                        if (guiPointerType == GUIPointerType.Arm)
-                        {
-                            ArmExtensionManager armManager = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-                            armManager.PropUserTransparency = (byte)this.userTransparency.Value;
-                            bool isHDTest = false;
-
-                            if (armScaleOnly)
-                            {
-                                armManager.processImage_scaleOnly(imageBufferLowRes);
-                            }
-                            else if (armRotateOnly)
-                            {
-                                armManager.processImage_rotationOnly(imageBufferLowRes);
-                            }
-                            else if (isHDTest)
-                            {
-                                // HD test
-                                armManager.processImageLowRes_HD_test(imageBufferLowRes);
-                            }
-                            else
-                            {
-                                // normal: scale + rotation
-                                armManager.processImageLowRes(imageBufferLowRes);
-                            }
-                        }
-                        else if (guiPointerType == GUIPointerType.Hand) 
-                        {
-                            HandManager handManager = new HandManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-                            handManager.PropUserTransparency = (byte)this.userTransparency.Value;
-
-                            handManager.processImageLowRes(imageBufferLowRes);
-                        }
-                        else if (guiPointerType == GUIPointerType.Symbol)
-                        {
-                            SymbolManager symbolManager = new SymbolManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, pTouch);
-                            symbolManager.PropUserTransparency = (byte)this.userTransparency.Value;
-
-                            symbolManager.processImageLowRes(imageBufferLowRes);
-                        }
-                        else
-                        {
-                            throw new ApplicationException("Error: undefined pointer state");
-                        }
-                    } 
-                    
-                    //===========
-                    writeableBitmapLowRes.Lock();
-                    Marshal.Copy(imageBufferLowRes, 0, writeableBitmapLowRes.BackBuffer, imageBufferLowRes.Length);
-                    writeableBitmapLowRes.AddDirtyRect(new Int32Rect(0, 0, (int)writeableBitmapLowRes.Width, (int)writeableBitmapLowRes.Height));
-                    writeableBitmapLowRes.Unlock();
-                }
-                // --- FullHD 1920 x 1080 ---
-                else if (isFullHD)
-                {
-                    Array.Clear(imageBufferHD, 0, imageBufferHD.Length);
-                    
-
-                    /*
-                     * Normal image writethrough
-                     * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
-                     * */
-                    if (!hasTouchOccurred || !armDetected)
-                    {
-                        imgProcessor.processImageSimple_HD(imageBufferHD);
-                    }
-                    else
-                    {
-                        /*
-                         * Touchpoint coordinates
-                         * @GUIPointerType.Hand: Button5 (1200.0, 550.0)
-                         * @GUIPointerType.Symbol: Button5 (1200.0, 550.0)
-                         * @Mode == Rotate only: Button5 (1200.0, 550.0)
-                         * @Mode == Scale only: Button5 (1200.0, 550.0)
-                         * @MousePressed: Actual mouse position
-                         * */
-                        Point pTouch = this.GetKinectCoordinates(this.touchPosition);
-                        
-                        //arm operation
-                        if (guiPointerType == GUIPointerType.Arm)
-                        {
-                            ArmExtensionManager aemProcessor = new ArmExtensionManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-                            aemProcessor.PropUserTransparency = (byte)this.userTransparency.Value;
-
-                            if (armScaleOnly)
-                            {
-                                aemProcessor.processImageHD_scaleOnly(imageBufferHD);
-                            }
-                            else if (armRotateOnly)
-                            {
-                                aemProcessor.processImageHD_rotationOnly(imageBufferHD);
-                            }
-                            else
-                            {
-                                // normal
-                                aemProcessor.processImageHD(imageBufferHD);
-                            }
-                        }
-                        else if (guiPointerType == GUIPointerType.Hand)
-                        {
-                            HandManager handManager = new HandManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, armJointPoints, pTouch);
-                            handManager.PropUserTransparency = (byte)this.userTransparency.Value;
-
-                            handManager.processImageHD(imageBufferHD);
-                        }
-                        else if (guiPointerType == GUIPointerType.Symbol)
-                        {
-                            SymbolManager symbolManager = new SymbolManager(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, bodyIndexSensorBuffer, colorSensorBuffer, sensor, depthDataSource, pTouch);
-                            symbolManager.PropUserTransparency = (byte)this.userTransparency.Value;
-
-                            symbolManager.processImageHD(imageBufferHD);
-                        }
-                        else
-                        {
-                            throw new ApplicationException("Error: undefined pointer state");
-                        }
-                    } 
-
-                    //===========
-                    //combiColorBuffer1080p contains all required information
-                    writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), imageBufferHD, writeableBitmapHD.PixelWidth * sizeof(int), 0);
+                    imageBuffer = imageBufferHD;
+                    writeableBitmap = writeableBitmapHD;
                 }
                 else
                 {
-                    Console.Out.WriteLine("Something went terribly wrong! Frame is disposed.");
-                    cFrame.Dispose();
-                    dFrame.Dispose();
-                    biFrame.Dispose();
-                    bodyFrame.Dispose();
-                    return;
+                    imageBuffer = imageBufferLowRes;
+                    writeableBitmap = writeableBitmapLowRes;
                 }
+                Array.Clear(imageBuffer, 0, imageBuffer.Length);
 
-                
+                byte userTransparency = (byte)this.userTransparency.Value;
+
+                /*
+                    * Get Right Arm Joint-Points
+                    * @return true if right elbow, right wrist AND right handTip are tracked by the sensor
+                    * */
+                bool armDetected = this.DetectArm();
+
+                /*
+                * Normal image writethrough
+                * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
+                * */
+                if (!hasTouchOccurred || !armDetected)
+                {
+                    imgProcessor.createBasicManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency).processImage(imageBuffer);
+                }
+                else
+                {
+                    /*
+                    * Touchpoint coordinates
+                    * @GUIPointerType.Hand: Button5 (1200.0, 550.0)
+                    * @GUIPointerType.Symbol: Button5 (1200.0, 550.0)
+                    * @Mode == Rotate only: Button5 (1200.0, 550.0)
+                    * @Mode == Scale only: Button5 (1200.0, 550.0)
+                    * @MousePressed: Actual mouse position
+                    * */
+                    Point pTouch = this.GetKinectCoordinates(this.touchPosition);
+                        
+                    //arm operation
+                    if (guiPointerType == GUIPointerType.Arm)
+                    {
+                        IArmExtensionManager armExtensionManager = imgProcessor.createArmExtensionManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPoints, pTouch, userTransparency);
+
+                        if (armScaleOnly)
+                        {
+                            armExtensionManager.processImage_scaleOnly(imageBuffer);
+                        }
+                        else if (armRotateOnly)
+                        {
+                            armExtensionManager.processImage_rotationOnly(imageBuffer);
+                        }
+                        else
+                        {
+                            // normal: scale + rotation
+                            armExtensionManager.processImage(imageBuffer);
+                        }
+                    }
+                    else if (guiPointerType == GUIPointerType.Hand) 
+                    {
+                        imgProcessor.createHandManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPoints, pTouch, userTransparency).processImage(imageBuffer);
+                    }
+                    else if (guiPointerType == GUIPointerType.Symbol)
+                    {
+                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch);
+                    }
+                    else
+                    {
+                        throw new ApplicationException("Error: undefined pointer state");
+                    }
+                } 
+                    
+                //===========
+                writeableBitmap.Lock();
+                Marshal.Copy(imageBuffer, 0, writeableBitmap.BackBuffer, imageBuffer.Length);
+                writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)writeableBitmap.Width, (int)writeableBitmap.Height));
+                //NOTE alternative; performance unknown
+                //writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), imageBufferHD, writeableBitmapHD.PixelWidth * sizeof(int), 0);
+                writeableBitmap.Unlock();
+
+                //NOTE save for later when UIThread is implemented
+                //Console.Out.WriteLine("Something went terribly wrong! Frame is disposed.");
+                //cFrame.Dispose();
+                //dFrame.Dispose();
+                //biFrame.Dispose();
+                //bodyFrame.Dispose();
+
             } // using Frames
         }
         
@@ -453,7 +384,7 @@ namespace BodyExtractionAndHightlighting
                 if ((wristRight.TrackingState == TrackingState.Tracked) && (elbowRight.TrackingState == TrackingState.Tracked) && (handTipRight.TrackingState == TrackingState.Tracked))
                 {
                     DepthSpacePoint[] depthSpacePosJoints = new DepthSpacePoint[3];
-                    this.coordinateMapper.MapCameraPointsToDepthSpace(camSpacePosJoints, depthSpacePosJoints);
+                    this.sensor.CoordinateMapper.MapCameraPointsToDepthSpace(camSpacePosJoints, depthSpacePosJoints);
 
                     DepthSpacePoint wrist = depthSpacePosJoints[0];
                     DepthSpacePoint elbow = depthSpacePosJoints[1];
@@ -482,6 +413,7 @@ namespace BodyExtractionAndHightlighting
             {
                 imageCombi.Source = writeableBitmapLowRes; //img with 512x424-color of body index frame;
             }
+            imgProcessor = new ImgProcessorFactoryLowRes();
         }
 
         private void fullHD_Checked(object sender, RoutedEventArgs e)
@@ -491,6 +423,7 @@ namespace BodyExtractionAndHightlighting
             {
                 imageCombi.Source = writeableBitmapHD; //img with 1080p-color of body index frame;
             }
+            imgProcessor = new ImgProcessorFactoryHD();
         }
 
         private void BlackBG_Checked(object sender, RoutedEventArgs e)

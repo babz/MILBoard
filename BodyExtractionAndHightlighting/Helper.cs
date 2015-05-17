@@ -9,6 +9,19 @@ namespace BodyExtractionAndHightlighting
 {
     public class Helper
     {
+        private static Helper instance = null;
+
+        private Helper() {}
+
+        public static Helper getInstance()
+        {
+            if (instance == null)
+            {
+                return new Helper();
+            }
+            return instance;
+        }
+
         /**
          * @return  Angle in radians
          * */
@@ -65,10 +78,12 @@ namespace BodyExtractionAndHightlighting
         List<Point> targetNodes = null; //points of region that is supposed to be manipulated 
         /*
          * @param endNode: left most node that is included by the floodfill
+         * @param xStart, yStart: current node
          * */
         public void floodfill(int xStart, int yStart, int xEnd, int yEnd)
         {
             int threshold = 10;
+            
             if (xStart < xEnd)
                 return;
             if ((yStart < (yEnd + threshold)) || (yStart > (yEnd - threshold)))
