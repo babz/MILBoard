@@ -185,37 +185,37 @@ namespace BodyExtractionAndHightlighting
                 float yNormLeft = yCurrOrigArm + (float)vNormLeftOrigArm.Y;
                 int lookupIdxNormLeft = (int)(yNormLeft * bodyIndexSensorBufferWidth + xNormLeft + 0.5);
 
-                //while (ptrBodyIndexSensorBuffer[lookupIdxNormLeft] != 0xff)
-                //{
-                //    //normal might point inside body
-                //    if (xNormLeft <= xElbow)
-                //    {
-                //        continue;
-                //    }
+                while (ptrBodyIndexSensorBuffer[lookupIdxNormLeft] != 0xff)
+                {
+                    //normal might point inside body
+                    if (xNormLeft <= xElbow)
+                    {
+                        break;
+                    }
 
-                //    int normLeftColorPointX = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormLeft].X + 0.5);
-                //    int normLeftColorPointY = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormLeft].Y + 0.5);
+                    int normLeftColorPointX = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormLeft].X + 0.5);
+                    int normLeftColorPointY = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormLeft].Y + 0.5);
 
-                //    if ((xNormLeft < bodyIndexSensorBufferWidth) && (yNormLeft < bodyIndexSensorBufferHeight) && (xNormLeft >= 0) && (yNormLeft >= 0) && (normLeftColorPointY < colorSensorBufferHeight) && (normLeftColorPointX < colorSensorBufferWidth) &&
-                //   (normLeftColorPointY >= 0) && (normLeftColorPointX >= 0))
-                //    {
-                //        //write color pixel into position of new arm
-                //        int newPosNormLeftX = (int)(xCurrNewArm + (float)vNormLeftNewArm.X + 0.5);
-                //        int newPosNormLeftY = (int)(yCurrNewArm + (float)vNormLeftNewArm.Y + 0.5);
-                //        ptrImgBufferPixelInt = ptrImageBufferInt + (newPosNormLeftY * bodyIndexSensorBufferWidth + newPosNormLeftX);
+                    if ((xNormLeft < bodyIndexSensorBufferWidth) && (yNormLeft < bodyIndexSensorBufferHeight) && (xNormLeft >= 0) && (yNormLeft >= 0) && (normLeftColorPointY < colorSensorBufferHeight) && (normLeftColorPointX < colorSensorBufferWidth) &&
+                   (normLeftColorPointY >= 0) && (normLeftColorPointX >= 0))
+                    {
+                        //write color pixel into position of new arm
+                        int newPosNormLeftX = (int)(xCurrNewArm + (float)vNormLeftNewArm.X + 0.5);
+                        int newPosNormLeftY = (int)(yCurrNewArm + (float)vNormLeftNewArm.Y + 0.5);
+                        ptrImgBufferPixelInt = ptrImageBufferInt + (newPosNormLeftY * bodyIndexSensorBufferWidth + newPosNormLeftX);
 
-                //        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (normLeftColorPointY * colorSensorBufferWidth + normLeftColorPointX);
-                //        // assign color value (4 bytes)
-                //        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                //        // overwrite the alpha value (last byte)
-                //        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
-                //    }
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (normLeftColorPointY * colorSensorBufferWidth + normLeftColorPointX);
+                        // assign color value (4 bytes)
+                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    }
 
-                //    //increment to move along left normal vector
-                //    xNormLeft += (float)vNormLeftOrigArm.X;
-                //    yNormLeft += (float)vNormLeftOrigArm.Y;
-                //    lookupIdxNormLeft = (int)(yNormLeft * bodyIndexSensorBufferWidth + xNormLeft + 0.5);
-                //}
+                    //increment to move along left normal vector
+                    xNormLeft += (float)vNormLeftOrigArm.X;
+                    yNormLeft += (float)vNormLeftOrigArm.Y;
+                    lookupIdxNormLeft = (int)(yNormLeft * bodyIndexSensorBufferWidth + xNormLeft + 0.5);
+                }
 
                 //calculate for right normal of vector
                 float xNormRight = xCurrOrigArm + (float)vNormRightOrigArm.X;
@@ -227,7 +227,7 @@ namespace BodyExtractionAndHightlighting
                     //normal might point inside body
                     if (xNormRight <= xElbow) //TODO modify abbruchbedingung
                     {
-                        continue;
+                        break;
                     }
 
                     int normRightColorPointX = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormRight].X + 0.5);

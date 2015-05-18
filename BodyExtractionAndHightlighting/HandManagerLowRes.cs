@@ -166,8 +166,10 @@ namespace BodyExtractionAndHightlighting
         private unsafe void floodfill(float xStartF, float yStartF, float xEndF, float yEndF, float xOffset, float yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
         {
             //xEnd is left outer boundary
-            if (xStartF < xEndF)
+            if ((xStartF < xEndF) || (xStartF >= bodyIndexSensorBufferWidth) || (yStartF >= bodyIndexSensorBufferHeight) || (xStartF < 0) || (yStartF < 0))
+            {
                 return;
+            }
 
             int depthLookup = (int)(yStartF + 0.5) * bodyIndexSensorBufferWidth + (int)(xStartF + 0.5);
             if (ptrBodyIndexSensorBuffer[depthLookup] == 0xff)
