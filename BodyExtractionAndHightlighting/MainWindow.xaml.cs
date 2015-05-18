@@ -85,7 +85,7 @@ namespace BodyExtractionAndHightlighting
         enum BackgroundType { Black, White, Custom };
         enum GUIPointerType { Arm, Hand, Symbol };
         //default settings
-        bool isFullHD = false;
+        bool isFullHD = true;
         GUIPointerType guiPointerType = GUIPointerType.Arm;
         BackgroundType bgType = BackgroundType.White;
 
@@ -169,6 +169,13 @@ namespace BodyExtractionAndHightlighting
 
         void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs args)
         {
+            //ISSUES
+            //hd mode only works if first switched to low res, then back to hd
+            //hand manager low res does not work, hd only flickering
+            //arm extension manager: hd does not work
+            //                       low res works if hand is above button
+            //                       infinite loop in Z 226 when checked if there is a body along the right normal vector (check direction of increment)
+
             MultiSourceFrame reference = args.FrameReference.AcquireFrame();
 
             if (reference == null)
@@ -395,6 +402,7 @@ namespace BodyExtractionAndHightlighting
                     this.armJointPoints[JointType.HandTipRight] = new Point(handTip.X, handTip.Y);
 
                     armDetected = true;
+                    //Console.Out.WriteLine("============Arm detected! Body: " + body.TrackingId);
                 }
             }
 

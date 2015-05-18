@@ -12,7 +12,7 @@ namespace BodyExtractionAndHightlighting
     {
         public override IBasicManager createBasicManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, byte userTransparency)
         {
-            return (IBasicManager)(new BasicManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency));
+            return (IBasicManager)(new BasicManagerHD(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency));
         }
 
         public override ISymbolManager createSymbolManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Point pTouch)
