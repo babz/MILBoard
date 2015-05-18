@@ -60,12 +60,12 @@ namespace BodyExtractionAndHightlighting
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 //TODO open new thread for that?
-                //NOTE specific for each manager!!
-                int xStart = (int)(pHandTip.X + 0.5);
-                int yStart = (int)(pHandTip.Y + 0.5);
-                int xEnd = (int)(pWrist.X + 0.5);
-                int yEnd = (int)(pWrist.Y + 0.5);
-                helper.floodfill(xStart, yStart, xEnd, yEnd);
+                ////NOTE specific for each manager!!
+                //int xStart = (int)(pHandTip.X + 0.5);
+                //int yStart = (int)(pHandTip.Y + 0.5);
+                //int xEnd = (int)(pWrist.X + 0.5);
+                //int yEnd = (int)(pWrist.Y + 0.5);
+                //helper.floodfill(xStart, yStart, xEnd, yEnd);
 
                 float xWrist = (float)pWrist.X;
                 float yWrist = (float)pWrist.Y;
@@ -85,7 +85,7 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        private unsafe void transform_floodfill(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWrist, float yWrist, float xHand, float yHand, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        private unsafe void transform_floodfill(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWristF, float yWristF, float xHandF, float yHandF, float xHandTipF, float yHandTipF, float xTouchF, float yTouchF)
         {
             uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
             uint* ptrColorSensorBufferPixelInt = null;
@@ -93,9 +93,6 @@ namespace BodyExtractionAndHightlighting
             //save computing power by incrementing x, y without division/modulo
             int xDepthSpace = 0;
             int yDepthSpace = 0;
-
-            float xOffset = xTouch - xHandTip;
-            float yOffset = yTouch - yHandTip;
 
             int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
@@ -150,9 +147,14 @@ namespace BodyExtractionAndHightlighting
                     }
                 } //if body
 
-                this.floodfill(xHand, yHand, xWrist, yWrist, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+                int xOffset = (int)(xTouchF - xHandTipF + 0.5);
+                int yOffset = (int)(yTouchF - yHandTipF + 0.5);
+                int xHand = (int)(xHandF + 0.5);
+                int yHand = (int)(yHandF + 0.5);
+                int xWrist = (int)(xWristF + 0.5);
+                int yWrist = (int)(yWristF + 0.5);
+                this.floodfill(xHandF, yHandF, xWristF, yWristF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
                 
-
                 //increment counter
                 if (++xDepthSpace == bodyIndexSensorBufferWidth)
                 {
@@ -163,7 +165,7 @@ namespace BodyExtractionAndHightlighting
 
         }
 
-        private unsafe void floodfill(float xStartF, float yStartF, float xEndF, float yEndF, float xOffset, float yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
+        private unsafe void floodfill(int xStartF, int yStartF, int xEndF, int yEndF, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
         {
             //xEnd is left outer boundary
             if (xStartF < xEndF)
@@ -171,15 +173,15 @@ namespace BodyExtractionAndHightlighting
                 return;
             }
 
-            int depthLookup = (int)(yStartF + 0.5) * bodyIndexSensorBufferWidth + (int)(xStartF + 0.5);
+            int depthLookup = yStartF * bodyIndexSensorBufferWidth + xStartF;
             if (ptrBodyIndexSensorBuffer[depthLookup] == 0xff)
             {
                 return;
             }
             else
             {
-                float xTranslatedDepthSpace = xStartF + xOffset;
-                float yTranslatedDepthSpace = yStartF + yOffset;
+                int xTranslatedDepthSpace = xStartF + xOffset;
+                int yTranslatedDepthSpace = yStartF + yOffset;
                 int colorPointX = (int)(ptrDepthToColorSpaceMapper[depthLookup].X + 0.5);
                 int colorPointY = (int)(ptrDepthToColorSpaceMapper[depthLookup].Y + 0.5);
                 if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
@@ -187,7 +189,7 @@ namespace BodyExtractionAndHightlighting
                             (colorPointY >= 0) && (colorPointX >= 0))
                 {
                     // point to current pixel in image buffer
-                    uint* ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexSensorBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
+                    uint* ptrImgBufferPixelInt = ptrImageBufferInt + (yTranslatedDepthSpace * bodyIndexSensorBufferWidth + xTranslatedDepthSpace);
 
                     uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
                     // assign color value (4 bytes)
@@ -199,11 +201,11 @@ namespace BodyExtractionAndHightlighting
             
             if ((xStartF + 1) < bodyIndexSensorBufferWidth)
                 this.floodfill((xStartF + 1), yStartF, xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            if ((xStartF - 1) > 0)
+            if ((xStartF - 1) >= 0)
                 this.floodfill((xStartF - 1), yStartF, xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             if ((yStartF + 1) < bodyIndexSensorBufferHeight)
                 this.floodfill(xStartF, (yStartF + 1), xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            if ((yStartF - 1) > 0)
+            if ((yStartF - 1) >= 0)
                 this.floodfill(xStartF, (yStartF - 1), xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
         }
 
