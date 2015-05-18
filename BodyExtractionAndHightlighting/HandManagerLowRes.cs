@@ -124,25 +124,24 @@ namespace BodyExtractionAndHightlighting
 
 
                         #region --- Region of hand
-                        if (helper.GetTargetNodes() != null)
 
-                            //TODO determine region of hand with floodfill (start: xHandTip/yHandTip until xWrist)
-                            if (xDepthSpace >= xWrist)
+                        //TODO determine region of hand with floodfill (start: xHandTip/yHandTip until xWrist)
+                        if (xDepthSpace >= xWrist)
+                        {
+                            float xTranslatedDepthSpace = xDepthSpace + xOffset;
+                            float yTranslatedDepthSpace = yDepthSpace + yOffset;
+
+                            if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
+                                (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
                             {
-                                float xTranslatedDepthSpace = xDepthSpace + xOffset;
-                                float yTranslatedDepthSpace = yDepthSpace + yOffset;
+                                ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexSensorBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
 
-                                if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
-                                    (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
-                                {
-                                    ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexSensorBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
-
-                                    // assign color value (4 bytes)
-                                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                                    // overwrite the alpha value (last byte)
-                                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
-                                }
+                                // assign color value (4 bytes)
+                                *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                                // overwrite the alpha value (last byte)
+                                *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
                             }
+                        }
                         #endregion // hand
                     }
                 } //if body

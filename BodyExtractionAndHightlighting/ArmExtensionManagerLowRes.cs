@@ -151,7 +151,7 @@ namespace BodyExtractionAndHightlighting
             Vector vNormRightNewArm = new Vector(-(vNewArm.Y), vNewArm.X);
             
 
-            float totalSteps = 100; //TODO set totalSteps = vNewArmLength to avoid holes
+            float totalSteps = vNewArmLength; //TODO set totalSteps = vNewArmLength to avoid holes
             float stepSizeOrigArm = vOrigArmLength / totalSteps;
             float stepSizeNewArm = vNewArmLength / totalSteps;
 
@@ -225,7 +225,7 @@ namespace BodyExtractionAndHightlighting
                 while (ptrBodyIndexSensorBuffer[lookupIdxNormRight] != 0xff)
                 {
                     //normal might point inside body
-                    if (xNormRight <= xElbow)
+                    if (xNormRight <= xElbow) //TODO modify abbruchbedingung
                     {
                         continue;
                     }
