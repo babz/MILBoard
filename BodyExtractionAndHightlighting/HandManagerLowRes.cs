@@ -146,14 +146,6 @@ namespace BodyExtractionAndHightlighting
                         #endregion // hand
                     }
                 } //if body
-
-                int xOffset = (int)(xTouchF - xHandTipF + 0.5);
-                int yOffset = (int)(yTouchF - yHandTipF + 0.5);
-                int xHand = (int)(xHandF + 0.5);
-                int yHand = (int)(yHandF + 0.5);
-                int xWrist = (int)(xWristF + 0.5);
-                int yWrist = (int)(yWristF + 0.5);
-                this.floodfill(xHandF, yHandF, xWristF, yWristF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
                 
                 //increment counter
                 if (++xDepthSpace == bodyIndexSensorBufferWidth)
@@ -163,25 +155,31 @@ namespace BodyExtractionAndHightlighting
                 }
             } //for loop
 
+            int xOffset = (int)(xTouchF - xHandTipF + 0.5);
+            int yOffset = (int)(yTouchF - yHandTipF + 0.5);
+            int xHand = (int)(xHandF + 0.5);
+            int yHand = (int)(yHandF + 0.5);
+            int xWrist = (int)(xWristF + 0.5);
+            this.floodfill(xHand, yHand, xWrist, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
         }
 
-        private unsafe void floodfill(int xStartF, int yStartF, int xEndF, int yEndF, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
+        private unsafe void floodfill(int xStart, int yStart, int xEnd, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
         {
             //xEnd is left outer boundary
-            if (xStartF < xEndF)
+            if ((xStart < xEnd) || (xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
             {
                 return;
             }
 
-            int depthLookup = yStartF * bodyIndexSensorBufferWidth + xStartF;
+            int depthLookup = yStart * bodyIndexSensorBufferWidth + xStart;
             if (ptrBodyIndexSensorBuffer[depthLookup] == 0xff)
             {
                 return;
             }
             else
             {
-                int xTranslatedDepthSpace = xStartF + xOffset;
-                int yTranslatedDepthSpace = yStartF + yOffset;
+                int xTranslatedDepthSpace = xStart + xOffset;
+                int yTranslatedDepthSpace = yStart + yOffset;
                 int colorPointX = (int)(ptrDepthToColorSpaceMapper[depthLookup].X + 0.5);
                 int colorPointY = (int)(ptrDepthToColorSpaceMapper[depthLookup].Y + 0.5);
                 if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
@@ -197,16 +195,16 @@ namespace BodyExtractionAndHightlighting
                     // overwrite the alpha value (last byte)
                     *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
                 }
+                else
+                {
+                    return;
+                }
             }
             
-            if ((xStartF + 1) < bodyIndexSensorBufferWidth)
-                this.floodfill((xStartF + 1), yStartF, xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            if ((xStartF - 1) >= 0)
-                this.floodfill((xStartF - 1), yStartF, xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            if ((yStartF + 1) < bodyIndexSensorBufferHeight)
-                this.floodfill(xStartF, (yStartF + 1), xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            if ((yStartF - 1) >= 0)
-                this.floodfill(xStartF, (yStartF - 1), xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill((xStart + 1), yStart, xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill((xStart - 1), yStart, xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill(xStart, (yStart + 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill(xStart, (yStart - 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
         }
 
         private unsafe void transform_LowRes(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
