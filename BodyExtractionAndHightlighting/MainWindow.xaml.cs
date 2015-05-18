@@ -376,19 +376,24 @@ namespace BodyExtractionAndHightlighting
                 Joint wristRight = joints[JointType.WristRight];
                 Joint elbowRight = joints[JointType.ElbowRight];
                 Joint handTipRight = joints[JointType.HandTipRight];
+                Joint handRight = joints[JointType.HandRight];
 
-                CameraSpacePoint[] camSpacePosJoints = { wristRight.Position, elbowRight.Position, handTipRight.Position };
+                CameraSpacePoint[] camSpacePosJoints = { wristRight.Position, elbowRight.Position, handTipRight.Position, handRight.Position };
 
+                //wristRight
                 if (camSpacePosJoints[0].Z < 0)
                     camSpacePosJoints[0].Z = InferredZPositionClamp;
-
+                //elbowRight
                 if (camSpacePosJoints[1].Z < 0)
                     camSpacePosJoints[1].Z = InferredZPositionClamp;
-
+                //handTipRight
                 if (camSpacePosJoints[2].Z < 0)
                     camSpacePosJoints[2].Z = InferredZPositionClamp;
+                //handRight
+                if (camSpacePosJoints[3].Z < 0)
+                    camSpacePosJoints[3].Z = InferredZPositionClamp;
 
-                if ((wristRight.TrackingState == TrackingState.Tracked) && (elbowRight.TrackingState == TrackingState.Tracked) && (handTipRight.TrackingState == TrackingState.Tracked))
+                if ((wristRight.TrackingState == TrackingState.Tracked) && (elbowRight.TrackingState == TrackingState.Tracked) && (handTipRight.TrackingState == TrackingState.Tracked) && (handRight.TrackingState == TrackingState.Tracked))
                 {
                     DepthSpacePoint[] depthSpacePosJoints = new DepthSpacePoint[3];
                     this.sensor.CoordinateMapper.MapCameraPointsToDepthSpace(camSpacePosJoints, depthSpacePosJoints);
@@ -396,10 +401,12 @@ namespace BodyExtractionAndHightlighting
                     DepthSpacePoint wrist = depthSpacePosJoints[0];
                     DepthSpacePoint elbow = depthSpacePosJoints[1];
                     DepthSpacePoint handTip = depthSpacePosJoints[2];
+                    DepthSpacePoint hand = depthSpacePosJoints[3];
 
                     this.armJointPoints[JointType.WristRight] = new Point(wrist.X, wrist.Y);
                     this.armJointPoints[JointType.ElbowRight] = new Point(elbow.X, elbow.Y);
                     this.armJointPoints[JointType.HandTipRight] = new Point(handTip.X, handTip.Y);
+                    this.armJointPoints[JointType.HandRight] = new Point(hand.X, hand.Y);
 
                     armDetected = true;
                     //Console.Out.WriteLine("============Arm detected! Body: " + body.TrackingId);
