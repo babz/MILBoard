@@ -16,7 +16,7 @@ namespace BodyExtractionAndHightlighting
         private CoordinateMapper coordinateMapper;
         private ushort[] depthDataSource;
 
-        Point pWrist, pHandTip, pTouch;
+        Point pWrist, pHandTip, pTouch, pHand;
         private const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
@@ -41,6 +41,7 @@ namespace BodyExtractionAndHightlighting
             this.pWrist = armJointPoints[JointType.WristRight];
             this.pHandTip = armJointPoints[JointType.HandTipRight];
             this.pTouch = pTouch;
+            this.pHand = armJointPoints[JointType.HandRight];
 
             this.depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
             this.colorToDepthSpaceMapper = new DepthSpacePoint[colorSensorBufferWidth * colorSensorBufferHeight];
@@ -72,20 +73,132 @@ namespace BodyExtractionAndHightlighting
                 float yHandTip = (float)pHandTip.Y;
                 float xTouch = (float)pTouch.X;
                 float yTouch = (float)pTouch.Y;
+                float xHand = (float)pHand.X;
+                float yHand = (float)pHand.Y;
 
                 uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-                this.transform_floodfill(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+                this.transform_floodfill(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, xWrist, yWrist, xHand, yHand, xHandTip, yHandTip, xTouch, yTouch);
                 //this.transform_LowRes(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
         }
 
-        private unsafe void transform_floodfill(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
+        private unsafe void transform_floodfill(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWrist, float yWrist, float xHand, float yHand, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
+            uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
+            uint* ptrColorSensorBufferPixelInt = null;
+
+            //save computing power by incrementing x, y without division/modulo
+            int xDepthSpace = 0;
+            int yDepthSpace = 0;
+
+            float xOffset = xTouch - xHandTip;
+            float yOffset = yTouch - yHandTip;
+
+            int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
+            for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
+            {
+                //ptrColorSensorBufferPixelInt = null;
+                ptrImgBufferPixelInt = null;
+                bool isColorPixelInValidRange = false;
+
+                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                {
+                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
+                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+
+                    if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+                            (colorPointY >= 0) && (colorPointX >= 0))
+                    {
+                        isColorPixelInValidRange = true;
+                    }
+
+                    if (isColorPixelInValidRange)
+                    {
+                        // point to current pixel in image buffer
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+                        // assign color value (4 bytes)
+                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
 
 
+                        #region --- Hand duplication
+
+                        //TODO determine region of hand with floodfill (start: xHandTip/yHandTip until xWrist)
+                        //if (xDepthSpace >= xWrist)
+                        //{
+                        //    float xTranslatedDepthSpace = xDepthSpace + xOffset;
+                        //    float yTranslatedDepthSpace = yDepthSpace + yOffset;
+
+                        //    if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
+                        //        (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
+                        //    {
+                        //        ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexSensorBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
+
+                        //        // assign color value (4 bytes)
+                        //        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        //        // overwrite the alpha value (last byte)
+                        //        *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+                        //    }
+                        //}
+                        #endregion // hand
+                    }
+                } //if body
+
+                this.floodfill(xHand, yHand, xWrist, yWrist, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+                
+
+                //increment counter
+                if (++xDepthSpace == bodyIndexSensorBufferWidth)
+                {
+                    xDepthSpace = 0;
+                    yDepthSpace++;
+                }
+            } //for loop
+
+        }
+
+        private unsafe void floodfill(float xStartF, float yStartF, float xEndF, float yEndF, float xOffset, float yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
+        {
+            //xEnd is left outer boundary
+            if (xStartF < xEndF)
+                return;
+
+            int depthLookup = (int)(yStartF + 0.5) * bodyIndexSensorBufferWidth + (int)(xStartF + 0.5);
+            if (ptrBodyIndexSensorBuffer[depthLookup] == 0xff)
+            {
+                return;
+            }
+            else
+            {
+                float xTranslatedDepthSpace = xStartF + xOffset;
+                float yTranslatedDepthSpace = yStartF + yOffset;
+                int colorPointX = (int)(ptrDepthToColorSpaceMapper[depthLookup].X + 0.5);
+                int colorPointY = (int)(ptrDepthToColorSpaceMapper[depthLookup].Y + 0.5);
+                if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
+                            (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0) && (colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+                            (colorPointY >= 0) && (colorPointX >= 0))
+                {
+                    // point to current pixel in image buffer
+                    uint* ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexSensorBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
+
+                    uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+                    // assign color value (4 bytes)
+                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                    // overwrite the alpha value (last byte)
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+                }
+            }
+            //TODO handle stack overflow
+            this.floodfill((xStartF + 1), yStartF, xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill((xStartF - 1), yStartF, xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill(xStartF, (yStartF + 1), xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill(xStartF, (yStartF - 1), xEndF, yEndF, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
         }
 
         private unsafe void transform_LowRes(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
