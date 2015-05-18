@@ -85,7 +85,7 @@ namespace BodyExtractionAndHightlighting
         enum BackgroundType { Black, White, Custom };
         enum GUIPointerType { Arm, Hand, Symbol };
         //default settings
-        bool isFullHD = true;
+        bool isFullHD = false;
         GUIPointerType guiPointerType = GUIPointerType.Arm;
         BackgroundType bgType = BackgroundType.White;
 
@@ -141,8 +141,6 @@ namespace BodyExtractionAndHightlighting
             imageBufferLowRes = new byte[fdDepth.LengthInPixels * 4];
             writeableBitmapLowRes = new WriteableBitmap(fdDepth.Width, fdDepth.Height, 96, 96, PixelFormats.Bgra32, null);
 
-            imageCombi.Source = writeableBitmapLowRes; //img with 512x424-color of body index frame;
-
             // get the coordinate mapper
             CoordinateMapper coordinateMapper = this.sensor.CoordinateMapper;
 
@@ -151,10 +149,12 @@ namespace BodyExtractionAndHightlighting
             if (isFullHD)
             {
                 imgProcessor = new ImgProcessorFactoryHD();
+                imageCombi.Source = writeableBitmapHD;
             }
             else
             {
                 imgProcessor = new ImgProcessorFactoryLowRes();
+                imageCombi.Source = writeableBitmapLowRes; //img with 512x424-color of body index frame;
             }
 
 
