@@ -211,11 +211,12 @@ namespace BodyExtractionAndHightlighting
                 float xNormLeft = xCurrOrigArm + (float)vNormLeftOrigArm.X;
                 float yNormLeft = yCurrOrigArm + (float)vNormLeftOrigArm.Y;
                 int idxCurrColorPixel = (int)((int)(yNormLeft + 0.5) * colorSensorBufferWidth + xNormLeft + 0.5);
-                int xDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].X + 0.5);
-                int yDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y + 0.5);
+                float xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
+                float yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
                 float newPosNormLeftX = xCurrNewArm + (float)vNormLeftNewArm.X;
                 float newPosNormLeftY = yCurrNewArm + (float)vNormLeftNewArm.Y;
-                while (ptrBodyIndexSensorBuffer[yDepthPixel * bodyIndexSensorBufferWidth + xDepthPixel] != 0xff)
+
+                while (!Single.IsInfinity(xDepthPixel) && !Single.IsInfinity(yDepthPixel) && (ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] != 0xff))
                 {
                     //normal might point inside body;
                     if ((xNormLeft < xElbowColorSpace) || (xNormLeft > colorSensorBufferWidth) || (xNormLeft < 0) || (yNormLeft > colorSensorBufferHeight) || (yNormLeft < 0))
@@ -242,28 +243,20 @@ namespace BodyExtractionAndHightlighting
                     newPosNormLeftX += (float)vNormLeftNewArm.X;
                     newPosNormLeftY += (float)vNormLeftNewArm.Y;
                     idxCurrColorPixel = (int)((int)(yNormLeft + 0.5) * colorSensorBufferWidth + xNormLeft + 0.5);
-                    xDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].X + 0.5);
-                    yDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y + 0.5);
-
-                    //where the color img cannot be mapped to the depth image, there are infinity values
-                    if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel))
-                    {
-                        break;
-                    }
+                    xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
+                    yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
                 }
 
                 //calculate for right normal of vector; all variables in color space unless defined otherwise
                 float xNormRight = xCurrOrigArm + (float)vNormRightOrigArm.X;
                 float yNormRight = yCurrOrigArm + (float)vNormRightOrigArm.Y;
                 idxCurrColorPixel = (int)((int)(yNormRight + 0.5) * colorSensorBufferWidth + xNormRight + 0.5);
-                xDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].X + 0.5);
-                yDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y + 0.5);
+                xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
+                yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
                 float newPosNormRightX = xCurrNewArm + (float)vNormRightNewArm.X;
                 float newPosNormRightY = yCurrNewArm + (float)vNormRightNewArm.Y;
-                while (ptrBodyIndexSensorBuffer[yDepthPixel * bodyIndexSensorBufferWidth + xDepthPixel] != 0xff)
+                while (!Single.IsInfinity(xDepthPixel) && !Single.IsInfinity(yDepthPixel) && (ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] != 0xff))
                 {
-                    
-
                     //normal might point inside body;
                     if ((xNormRight < xElbowColorSpace) || (xNormRight > colorSensorBufferWidth) || (xNormRight < 0) || (yNormRight > colorSensorBufferHeight) || (yNormRight < 0) )
                     {
@@ -278,7 +271,6 @@ namespace BodyExtractionAndHightlighting
 
                         ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
                         // assign color value (4 bytes)
-                        //TODO access violation exception // CHECK BOUNDARIES!!
                         *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                         // overwrite the alpha value (last byte)
                         *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
@@ -290,14 +282,8 @@ namespace BodyExtractionAndHightlighting
                     newPosNormRightX += (float)vNormRightNewArm.X;
                     newPosNormRightY += (float)vNormRightNewArm.Y;
                     idxCurrColorPixel = (int)((int)(yNormRight + 0.5) * colorSensorBufferWidth + xNormRight + 0.5);
-                    xDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].X + 0.5);
-                    yDepthPixel = (int)(ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y + 0.5);
-
-                    //where the color img cannot be mapped to the depth image, there are infinity values
-                    if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel))
-                    {
-                        break;
-                    }
+                    xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
+                    yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
                 }
 
                 //increment to move along vector; use normal vectors for increment

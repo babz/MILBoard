@@ -178,6 +178,7 @@ namespace BodyExtractionAndHightlighting
             }
             else
             {
+                ptrBodyIndexSensorBuffer[depthLookup] = 0xff;
                 int xTranslatedDepthSpace = xStart + xOffset;
                 int yTranslatedDepthSpace = yStart + yOffset;
                 int colorPointX = (int)(ptrDepthToColorSpaceMapper[depthLookup].X + 0.5);
