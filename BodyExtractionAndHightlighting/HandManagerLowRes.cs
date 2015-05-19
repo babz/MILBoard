@@ -178,7 +178,7 @@ namespace BodyExtractionAndHightlighting
             }
             else
             {
-                ptrBodyIndexSensorBuffer[depthLookup] = 0xff;
+                ptrBodyIndexSensorBuffer[depthLookup] = 0xff; //do not visit same pixel twice
                 int xTranslatedDepthSpace = xStart + xOffset;
                 int yTranslatedDepthSpace = yStart + yOffset;
                 int colorPointX = (int)(ptrDepthToColorSpaceMapper[depthLookup].X + 0.5);

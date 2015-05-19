@@ -61,15 +61,6 @@ namespace BodyExtractionAndHightlighting
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
-                //float xElbow = (float)pElbow.X;
-                //float yElbow = (float)pElbow.Y;
-                //float xWrist = (float)pWrist.X;
-                //float yWrist = (float)pWrist.Y;
-                //float xHandTip = (float)pHandTip.X;
-                //float yHandTip = (float)pHandTip.Y;
-                //float xTouch = (float)pTouch.X;
-                //float yTouch = (float)pTouch.Y;
-
                 uint* ptrImageBufferHDInt = (uint*)ptrImageBufferHD;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
@@ -86,11 +77,10 @@ namespace BodyExtractionAndHightlighting
                 int xHandTipColorSpace = (int)(ptrDepthToColorSpaceMapper[idxHandTipDepthSpace].X + 0.5);
                 int yHandTipColorSpace = (int)(ptrDepthToColorSpaceMapper[idxHandTipDepthSpace].Y + 0.5);
 
-                int idxTouchDepthSpace = (int)(bodyIndexSensorBufferWidth * (int)(pTouch.Y + 0.5) + pTouch.X + 0.5);
-                int xTouchColorSpace = (int)(ptrDepthToColorSpaceMapper[idxTouchDepthSpace].X + 0.5);
-                int yTouchColorSpace = (int)(ptrDepthToColorSpaceMapper[idxTouchDepthSpace].Y + 0.5);
+                float xTouch = (float)pTouch.X;
+                float yTouch = (float)pTouch.Y;
 
-                this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandTipColorSpace, yHandTipColorSpace, xTouchColorSpace, yTouchColorSpace);
+                this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandTipColorSpace, yHandTipColorSpace, xTouch, yTouch);
 
             } //end fixed
         }
@@ -151,12 +141,10 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbowColorSpace, int yElbowColorSpace, int xWristColorSpace, int yWristColorSpace, int xHandTipColorSpace, int yHandTipColorSpace, int xTouchColorSpace, int yTouchColorSpace)
+        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbowColorSpace, int yElbowColorSpace, int xWristColorSpace, int yWristColorSpace, int xHandTipColorSpace, int yHandTipColorSpace, float xTouch, float yTouch)
         {
             uint* ptrImgBufferPixelInt = null; // new position where the color is written into
             uint* ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
-
-            
 
             // v = (x, y)
             Vector vOrigArm = new Vector((xHandTipColorSpace - xElbowColorSpace), (yHandTipColorSpace - yElbowColorSpace));
@@ -169,7 +157,7 @@ namespace BodyExtractionAndHightlighting
             //v_nright = (-y, x)
             Vector vNormRightOrigArm = new Vector(-(vOrigArm.Y), vOrigArm.X);
 
-            Vector vNewArm = new Vector((xTouchColorSpace - xElbowColorSpace), (yTouchColorSpace - yElbowColorSpace));
+            Vector vNewArm = new Vector((xTouch - xElbowColorSpace), (yTouch - yElbowColorSpace));
             float vNewArmLength = (float)vNewArm.Length;
             vNewArm.Normalize();
 
