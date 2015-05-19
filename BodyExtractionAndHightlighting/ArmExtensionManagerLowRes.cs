@@ -125,12 +125,11 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        //TODO wrong algorithm!!!!
         private unsafe void transform_LowRes(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
-            
-            uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
-            uint* ptrColorSensorBufferPixelInt = null;
+
+            uint* ptrImgBufferPixelInt = null; // new position where the color is written into
+            uint* ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
 
             // v = (x, y)
             Vector vOrigArm = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
@@ -149,9 +148,13 @@ namespace BodyExtractionAndHightlighting
 
             Vector vNormLeftNewArm = new Vector(vNewArm.Y, -(vNewArm.X));
             Vector vNormRightNewArm = new Vector(-(vNewArm.Y), vNewArm.X);
-            
 
-            float totalSteps = vNewArmLength; //TODO set totalSteps = vNewArmLength to avoid holes
+            //sampling rate
+            float totalSteps;
+            if (vOrigArmLength < vNewArmLength)
+                totalSteps = (float)(vNewArmLength * 2.2);
+            else
+                totalSteps = (float)(vOrigArmLength * 2.2);
             float stepSizeOrigArm = vOrigArmLength / totalSteps;
             float stepSizeNewArm = vNewArmLength / totalSteps;
 
@@ -189,7 +192,7 @@ namespace BodyExtractionAndHightlighting
                 while (ptrBodyIndexSensorBuffer[lookupIdxNormLeft] != 0xff)
                 {
                     //normal might point inside body
-                    if (xNormLeft <= xElbow)
+                    if (xNormLeft < xElbow)
                     {
                         break;
                     }
@@ -227,7 +230,7 @@ namespace BodyExtractionAndHightlighting
                 while (ptrBodyIndexSensorBuffer[lookupIdxNormRight] != 0xff)
                 {
                     //normal might point inside body
-                    if (xNormRight <= xElbow) //TODO modify abbruchbedingung
+                    if (xNormRight < xElbow) //TODO modify abbruchbedingung
                     {
                         break;
                     }
@@ -256,7 +259,7 @@ namespace BodyExtractionAndHightlighting
                     lookupIdxNormRight = (int)((int)(yNormRight + 0.5) * bodyIndexSensorBufferWidth + xNormRight + 0.5);
                 }
 
-                //increment to move along vector
+                //increment to move along vector; use normal vectors for increment
                 xCurrOrigArm += (float)(vOrigArm.X) * stepSizeOrigArm;
                 yCurrOrigArm += (float)(vOrigArm.Y) * stepSizeOrigArm;
                 xCurrNewArm += (float)(vNewArm.X) * stepSizeNewArm;
