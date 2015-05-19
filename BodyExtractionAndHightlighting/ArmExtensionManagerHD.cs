@@ -219,7 +219,7 @@ namespace BodyExtractionAndHightlighting
                 while (!Single.IsInfinity(xDepthPixel) && !Single.IsInfinity(yDepthPixel) && (ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] != 0xff))
                 {
                     //normal might point inside body;
-                    if ((xNormLeft < xElbowColorSpace) || (xNormLeft > colorSensorBufferWidth) || (xNormLeft < 0) || (yNormLeft > colorSensorBufferHeight) || (yNormLeft < 0))
+                    if ((xNormLeft < xElbowColorSpace) || (xNormLeft > colorSensorBufferWidth) || (xNormLeft < 0) || (yNormLeft > colorSensorBufferHeight) || (yNormLeft < 0) || (newPosNormLeftX > colorSensorBufferWidth) || (newPosNormLeftX < 0) || (newPosNormLeftY > colorSensorBufferHeight) || (newPosNormLeftY < 0))
                     {
                         break;
                     }
@@ -258,7 +258,7 @@ namespace BodyExtractionAndHightlighting
                 while (!Single.IsInfinity(xDepthPixel) && !Single.IsInfinity(yDepthPixel) && (ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] != 0xff))
                 {
                     //normal might point inside body;
-                    if ((xNormRight < xElbowColorSpace) || (xNormRight > colorSensorBufferWidth) || (xNormRight < 0) || (yNormRight > colorSensorBufferHeight) || (yNormRight < 0) )
+                    if ((xNormRight < xElbowColorSpace) || (xNormRight > colorSensorBufferWidth) || (xNormRight < 0) || (yNormRight > colorSensorBufferHeight) || (yNormRight < 0) || (newPosNormRightX > colorSensorBufferWidth) || (newPosNormRightX < 0) || (newPosNormRightY > colorSensorBufferHeight) || (newPosNormRightY < 0))
                     {
                         break;
                     }
