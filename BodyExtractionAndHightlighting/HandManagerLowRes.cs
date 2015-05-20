@@ -60,13 +60,6 @@ namespace BodyExtractionAndHightlighting
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 //TODO open new thread for that?
-                ////NOTE specific for each manager!!
-                //int xStart = (int)(pHandTip.X + 0.5);
-                //int yStart = (int)(pHandTip.Y + 0.5);
-                //int xEnd = (int)(pWrist.X + 0.5);
-                //int yEnd = (int)(pWrist.Y + 0.5);
-                //helper.floodfill(xStart, yStart, xEnd, yEnd);
-
                 float xWrist = (float)pWrist.X;
                 float yWrist = (float)pWrist.Y;
                 float xHandTip = (float)pHandTip.X;
@@ -87,14 +80,15 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void transform_floodfill(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWristF, float yWristF, float xHandF, float yHandF, float xHandTipF, float yHandTipF, float xTouchF, float yTouchF)
         {
-            uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
+            //pixel target
+            uint* ptrImgBufferPixelInt = null;
             uint* ptrColorSensorBufferPixelInt = null;
 
             //save computing power by incrementing x, y without division/modulo
             int xDepthSpace = 0;
             int yDepthSpace = 0;
 
-            //draw whole body without manipulation
+            //==draw whole body without manipulation
             int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
@@ -134,7 +128,7 @@ namespace BodyExtractionAndHightlighting
                 }
             } //for loop
 
-            //draw second, translated hand
+            //==draw second, translated hand
             int xOffset = (int)(xTouchF - xHandTipF + 0.5);
             int yOffset = (int)(yTouchF - yHandTipF + 0.5);
             int xHand = (int)(xHandF + 0.5);
@@ -176,12 +170,9 @@ namespace BodyExtractionAndHightlighting
                     // overwrite the alpha value (last byte)
                     *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
                 }
-                else
-                {
-                    return;
-                }
             }
 
+            //TODO sometimes ends up in a stack overflow when hand disappears/hand joint gets lost???
             //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
             this.floodfill((xStart + 1), yStart, xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             this.floodfill((xStart - 1), yStart, xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);

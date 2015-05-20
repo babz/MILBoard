@@ -22,9 +22,9 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
             <ColumnDefinition Width="300" />
-            <ColumnDefinition Width="350" />
-            <ColumnDefinition Width="370"/>
-            <ColumnDefinition Width="340"/>
+            <ColumnDefinition Width="244" />
+            <ColumnDefinition Width="362"/>
+            <ColumnDefinition Width="491"/>
         </Grid.ColumnDefinitions>
         <Border Grid.Row="0" Background="White" Grid.ColumnSpan="5"/>
         <Border Grid.Row="1" Background="White" Grid.ColumnSpan="5"/>
@@ -41,21 +41,24 @@
         <Slider Grid.Column="1" Value="200" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" Margin="5,27,40,3" Grid.RowSpan="2" />
 
         <RadioButton Name="BlackBG" Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" Checked="BlackBG_Checked"/>
-        <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" IsChecked="True" Checked="WhiteBG_Checked" Margin="60,0,230,7" />
-        <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" Checked="CustomBG_Checked" Margin="127,0,4,0"/>
+        <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" IsChecked="True" Checked="WhiteBG_Checked" Margin="60,0,120,7" />
+        <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" Checked="CustomBG_Checked" Margin="130,0,24,0"/>
 
         <RadioButton Name="GUIArmPtr" Grid.Row="1" Grid.Column="3" Content="Arm Extension" GroupName="Mode" IsChecked="True" Checked="GUIArmPtr_Checked" Margin="0,0,254,0"/>
         <RadioButton Name="GUIHandPtr" Grid.Row="1" Grid.Column="3" Content="Hand Pointer" GroupName="Mode" Checked="GUIHandPtr_Checked" Margin="105,0,10,7" />
         <RadioButton Name="GUISymbolPtr" Grid.Row="1" Grid.Column="3" Content="Symbol Pointer" GroupName="Mode" Checked="GUISymbolPtr_Checked" Margin="212,0,10,0" />
         <!--<CheckBox x:Name="checkBoxExtendArm" Content="Arm Extension" Grid.Row="1" Grid.Column="3" HorizontalAlignment="Left" Margin="0,6,0,0" IsChecked="True" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" Height="15" Width="96" />-->
 
-        <CheckBox x:Name="checkBoxShowFps" Content="Log fps" Grid.Column="4" HorizontalAlignment="Right" Margin="0,6,0,0" Unchecked="checkBoxShowFps_Unchecked" Checked="checkBoxShowFps_Checked" />
-        <CheckBox x:Name="checkBoxRotateOnly" Content="Rotate only" Grid.Column="4" Margin="0,6,81,0" Unchecked="checkBoxRotateOnly_Unchecked" Checked="checkBoxRotateOnly_Checked"/>
-        <CheckBox x:Name="checkBoxScaleOnly" Content="Scale only" Grid.Column="4" Grid.Row="1" Margin="0,0,0,0" Unchecked="checkBoxScaleOnly_Unchecked" Checked="checkBoxScaleOnly_Checked"/>
+        <CheckBox x:Name="checkBoxRotateOnly" Content="Rotate only" Grid.Column="4" Margin="0,6,248,0" Unchecked="checkBoxRotateOnly_Unchecked" Checked="checkBoxRotateOnly_Checked"/>
+        <CheckBox x:Name="checkBoxScaleOnly" Content="Scale only" Grid.Column="4" Grid.Row="1" Margin="0,0,248,0" Unchecked="checkBoxScaleOnly_Unchecked" Checked="checkBoxScaleOnly_Checked"/>
+        <CheckBox x:Name="checkBoxShowFps" Content="Log fps" Grid.Column="4" HorizontalAlignment="Right" Margin="0,6,290,0" Unchecked="checkBoxShowFps_Unchecked" Checked="checkBoxShowFps_Checked" Width="59" />
+        <CheckBox x:Name="checkBoxSkeleton" Content="Show skeleton" Grid.Column="4" Grid.Row="1" HorizontalAlignment="Right" Margin="0,0,248,0" Unchecked="checkBoxSkeleton_Unchecked" Checked="checkBoxSkeleton_Checked" Width="101" />
 
-        <Canvas Name="imageCanvas" Grid.Row="2" Grid.ColumnSpan="5" Width="1575" Height="820" Grid.ZIndex="1" >
+        <Canvas Name="imageCanvas" Grid.Row="2" Grid.ColumnSpan="5" Grid.ZIndex="1" Margin="0,0,-58,1" >
+            <!--the bigger the ZIndex, the closer to the foreground-->
             <Image x:Name="imageCombi" Canvas.Left="0" Canvas.Top="0" Width="1575" Height="820" Canvas.ZIndex="0" />
-
+            <!--<Image x:Name="imageBody"  Canvas.Left="0" Canvas.Top="0" Width="1575" Height="820" Canvas.ZIndex="1" />-->
+            
             <Button Content="Button6" Canvas.Left="800" Canvas.Top="550" Height="20" Width="30" />
             <Button Content="Button2" Canvas.Left="900" Canvas.Top="400" Height="20" Width="55"/>
             <Button Content="Button3" Canvas.Left="600" Canvas.Top="600" Height="20" Width="55"/>

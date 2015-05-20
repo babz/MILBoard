@@ -34,10 +34,6 @@ namespace BodyExtractionAndHightlighting
         /// </summary>
         MultiSourceFrameReader reader;
 
-        private bool showFps = false;
-        private bool hasTouchOccurred = false;
-        private Point touchPosition = new Point(0, 0);
-
         /// <summary>
         /// Constant for clamping Z values of camera space points from being negative
         /// </summary>
@@ -98,6 +94,10 @@ namespace BodyExtractionAndHightlighting
         //checkbox values
         bool armScaleOnly = false;
         bool armRotateOnly = false;
+        bool showSkeleton = false;
+        private bool showFps = false;
+        private bool hasTouchOccurred = false;
+        private Point touchPosition = new Point(0, 0);
 
         private double sumFps = 0;
         private int counter = 0;
@@ -143,6 +143,9 @@ namespace BodyExtractionAndHightlighting
 
             // get the coordinate mapper
             CoordinateMapper coordinateMapper = this.sensor.CoordinateMapper;
+
+            //TODO draws skeleton
+            //imageBody.Source = new DrawingImage(this.drawingGroup);
 
             //inits
             Constants.initConstants(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, coordinateMapper);
@@ -217,6 +220,9 @@ namespace BodyExtractionAndHightlighting
                 // As long as those body objects are not disposed and not set to null in the array,
                 // those body objects will be re-used.
                 bodyFrame.GetAndRefreshBodyData(this.bodies);
+
+                //TODO Draw skeleton
+                //DrawBodies();
 
                 // -- Color Frame --
                 //FrameDescription fdColor = cFrame.FrameDescription;
@@ -293,6 +299,7 @@ namespace BodyExtractionAndHightlighting
                     }
                     else if (guiPointerType == GUIPointerType.Hand) 
                     {
+                        //TODO check if hand is tracked
                         imgProcessor.createHandManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPoints, pTouch, userTransparency).processImage(imageBuffer);
                     }
                     else if (guiPointerType == GUIPointerType.Symbol)
@@ -322,7 +329,6 @@ namespace BodyExtractionAndHightlighting
 
             } // using Frames
         }
-        
 
         #region private Methods
 
@@ -379,7 +385,7 @@ namespace BodyExtractionAndHightlighting
                 Joint handRight = joints[JointType.HandRight];
 
                 CameraSpacePoint[] camSpacePosJoints = { wristRight.Position, elbowRight.Position, handTipRight.Position, handRight.Position };
-
+                
                 //wristRight
                 if (camSpacePosJoints[0].Z < 0)
                     camSpacePosJoints[0].Z = InferredZPositionClamp;
@@ -485,6 +491,16 @@ namespace BodyExtractionAndHightlighting
         private void checkBoxShowFps_Checked(object sender, RoutedEventArgs e)
         {
             showFps = true;
+        }
+
+        private void checkBoxSkeleton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            showSkeleton = false;
+        }
+
+        private void checkBoxSkeleton_Checked(object sender, RoutedEventArgs e)
+        {
+            showSkeleton = true;
         }
 
         private void checkBoxRotateOnly_Unchecked(object sender, RoutedEventArgs e)

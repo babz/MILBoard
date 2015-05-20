@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -128,6 +130,7 @@ namespace BodyExtractionAndHightlighting
         private unsafe void transform_LowRes(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
 
+
             uint* ptrImgBufferPixelInt = null; // new position where the color is written into
             uint* ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
 
@@ -151,10 +154,11 @@ namespace BodyExtractionAndHightlighting
 
             //sampling rate
             float totalSteps;
+            //TODO think about factor
             if (vOrigArmLength < vNewArmLength)
-                totalSteps = (float)(vNewArmLength * 2.2);
+                totalSteps = (float)(vNewArmLength * 1.2);
             else
-                totalSteps = (float)(vOrigArmLength * 2.2);
+                totalSteps = (float)(vOrigArmLength * 1.2);
             float stepSizeOrigArm = vOrigArmLength / totalSteps;
             float stepSizeNewArm = vNewArmLength / totalSteps;
 
@@ -178,8 +182,16 @@ namespace BodyExtractionAndHightlighting
 
                     ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
                     // assign color value (4 bytes)
-                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                    //TODO draw yellow line where vector is
+                    *ptrImgBufferPixelInt = 0xFFFF00; //*ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
+                    //*(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+
+                    //TODO
+                    //draw red line where orig hand vector was
+                    ptrImgBufferPixelInt = ptrImageBufferInt + (int)((int)(yCurrOrigArm + 0.5) * bodyIndexSensorBufferWidth + xCurrOrigArm + 0.5);
+                    *ptrImgBufferPixelInt = 0xFF00FF;
+
                     *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
                 }
                 

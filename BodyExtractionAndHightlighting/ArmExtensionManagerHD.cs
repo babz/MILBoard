@@ -239,6 +239,9 @@ namespace BodyExtractionAndHightlighting
                 float xNormRight = xCurrOrigArm + (float)vNormRightOrigArm.X;
                 float yNormRight = yCurrOrigArm + (float)vNormRightOrigArm.Y;
                 idxCurrColorPixel = (int)((int)(yNormRight + 0.5) * colorSensorBufferWidth + xNormRight + 0.5);
+                if (idxCurrColorPixel >= colorToDepthSpaceMapper.Length)
+                    return; 
+
                 xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
                 yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
                 float newPosNormRightX = xCurrNewArm + (float)vNormRightNewArm.X;
