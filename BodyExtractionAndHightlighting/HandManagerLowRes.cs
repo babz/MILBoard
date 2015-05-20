@@ -94,6 +94,7 @@ namespace BodyExtractionAndHightlighting
             int xDepthSpace = 0;
             int yDepthSpace = 0;
 
+            //draw whole body without manipulation
             int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
@@ -122,28 +123,6 @@ namespace BodyExtractionAndHightlighting
                         *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                         // overwrite the alpha value (last byte)
                         *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
-
-
-                        #region --- Hand duplication
-
-                        //TODO determine region of hand with floodfill (start: xHandTip/yHandTip until xWrist)
-                        //if (xDepthSpace >= xWrist)
-                        //{
-                        //    float xTranslatedDepthSpace = xDepthSpace + xOffset;
-                        //    float yTranslatedDepthSpace = yDepthSpace + yOffset;
-
-                        //    if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
-                        //        (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0))
-                        //    {
-                        //        ptrImgBufferPixelInt = ptrImageBufferInt + ((int)(yTranslatedDepthSpace + 0.5) * bodyIndexSensorBufferWidth + (int)(xTranslatedDepthSpace + 0.5));
-
-                        //        // assign color value (4 bytes)
-                        //        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                        //        // overwrite the alpha value (last byte)
-                        //        *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
-                        //    }
-                        //}
-                        #endregion // hand
                     }
                 } //if body
                 
@@ -155,6 +134,7 @@ namespace BodyExtractionAndHightlighting
                 }
             } //for loop
 
+            //draw second, translated hand
             int xOffset = (int)(xTouchF - xHandTipF + 0.5);
             int yOffset = (int)(yTouchF - yHandTipF + 0.5);
             int xHand = (int)(xHandF + 0.5);
@@ -201,11 +181,16 @@ namespace BodyExtractionAndHightlighting
                     return;
                 }
             }
-            
+
+            //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
             this.floodfill((xStart + 1), yStart, xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             this.floodfill((xStart - 1), yStart, xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             this.floodfill(xStart, (yStart + 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             this.floodfill(xStart, (yStart - 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill((xStart - 1), (yStart - 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill((xStart - 1), (yStart + 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill((xStart + 1), (yStart - 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.floodfill((xStart + 1), (yStart + 1), xEnd, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
         }
 
         private unsafe void transform_LowRes(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
