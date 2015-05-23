@@ -143,8 +143,52 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbowColorSpace, int yElbowColorSpace, int xWristColorSpace, int yWristColorSpace, int xHandTipColorSpace, int yHandTipColorSpace, float xTouch, float yTouch)
         {
-            uint* ptrImgBufferPixelInt = null; // new position where the color is written into
-            uint* ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
+            #region Draw body without lower arm
+
+            //with the cast to int, step size is 4 bytes
+            uint* ptrImgBufferPixelInt = null;
+            uint* ptrColorSensorBufferPixelInt = null;
+
+            //save computing power by incrementing x, y without division/modulo
+            int xColorSpace = 0;
+            int yColorSpace = 0;
+
+            //==draw whole body without manipulation
+            int lengthColorBuffer = colorToDepthSpaceMapper.Length; // = colorSensorBufferHeight * colorSensorBufferWidth;
+            //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
+            for (int idxColorSpace = 0; idxColorSpace < lengthColorBuffer; idxColorSpace++)
+            {
+                //where the color img cannot be mapped to the depth image, there are infinity values
+                if (!Single.IsInfinity(ptrColorToDepthSpaceMapper[idxColorSpace].Y) && !Single.IsInfinity(ptrColorToDepthSpaceMapper[idxColorSpace].X))
+                {
+                    int idxDepthSpace = (int)(bodyIndexSensorBufferWidth * ptrColorToDepthSpaceMapper[idxColorSpace].Y + ptrColorToDepthSpaceMapper[idxColorSpace].X); //2D to 1D
+
+                    // bodyIndex can be 0, 1, 2, 3, 4, or 5
+                    if ((ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff) && (xColorSpace <= xElbowColorSpace))
+                    {
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxColorSpace;
+
+                        //with the cast to int, 4 bytes are copied
+                        *ptrImgBufferPixelInt = ptrColorSensorBufferInt[idxColorSpace];
+                        // overwrite the alpha value
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    }
+                }
+
+                //increment counter
+                if (++xColorSpace == colorSensorBufferWidth)
+                {
+                    xColorSpace = 0;
+                    yColorSpace++;
+                }
+            } // for loop
+
+            #endregion
+
+            #region Draw lower arm STRETCHED
+
+            ptrImgBufferPixelInt = null; // new position where the color is written into
+            ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
 
             // v = (x, y)
             Vector vOrigArm = new Vector((xHandTipColorSpace - xElbowColorSpace), (yHandTipColorSpace - yElbowColorSpace));
@@ -284,6 +328,7 @@ namespace BodyExtractionAndHightlighting
                 yCurrNewArm += (float)(vNewArm.Y) * stepSizeNewArm;
 
             }
+            #endregion
         }
 
         private unsafe void transform_HD_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferHDInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)

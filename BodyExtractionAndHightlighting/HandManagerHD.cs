@@ -94,7 +94,7 @@ namespace BodyExtractionAndHightlighting
             int yColorSpace = 0;
 
             //==draw whole body without manipulation
-            int lengthColorBuffer = colorSensorBufferHeight * colorSensorBufferWidth;
+            int lengthColorBuffer = colorToDepthSpaceMapper.Length; // = colorSensorBufferHeight * colorSensorBufferWidth;
             //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
             for (int idxColorSpace = 0; idxColorSpace < lengthColorBuffer; idxColorSpace++)
             {
@@ -141,35 +141,33 @@ namespace BodyExtractionAndHightlighting
             }
 
             int idxCurrColorPixel = yStart * colorSensorBufferWidth + xStart;
-            if (idxCurrColorPixel >= colorToDepthSpaceMapper.Length)
+            if (idxCurrColorPixel >= colorToDepthSpaceMapper.Length) // colorToDepthSpaceMapper.Length = colorSensorBufferWidth * colorSensorBufferHeight
                 return; 
 
             float xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
             float yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
-            if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] == 0xff)
+            if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] == 0xff) || (*(ptrColorSensorBufferInt + idxCurrColorPixel) == 0xFF000000))
             {
                 return;
             }
             else
             {
-                ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] = 0xff; //do not visit same pixel twice
+                uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
+
                 int xTranslatedColorSpace = xStart + xOffset;
                 int yTranslatedColorSpace = yStart + yOffset;
                 if ((yTranslatedColorSpace < colorSensorBufferHeight) && (xTranslatedColorSpace < colorSensorBufferWidth) &&
-                            (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0) && (yStart < colorSensorBufferHeight) && (xStart < colorSensorBufferWidth) &&
-                            (yStart >= 0) && (xStart >= 0))
+                            (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
                 {
                     // point to current pixel in image buffer
                     uint* ptrImgBufferPixelInt = ptrImageBufferInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
-                    
-                    uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
-                    //TODO test!!!
-                    //*ptrImgBufferPixelInt = 0x00;
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
                     *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
                 }
+                //do not visit same pixel twice
+                *ptrColorSensorBufferPixelInt = 0xFF000000;
             }
 
             //TODO sometimes ends up in a stack overflow with 8 neighbours

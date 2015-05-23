@@ -129,13 +129,68 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void transform_LowRes(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {
+            #region Draw body without lower arm
 
+            //pixel target
+            uint* ptrImgBufferPixelInt = null;
+            uint* ptrColorSensorBufferPixelInt = null;
 
-            uint* ptrImgBufferPixelInt = null; // new position where the color is written into
-            uint* ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
+            //save computing power by incrementing x, y without division/modulo
+            int xDepthSpace = 0;
+            int yDepthSpace = 0;
 
+            //==draw whole body without manipulation
+            int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
+            for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
+            {
+                //ptrColorSensorBufferPixelInt = null;
+                ptrImgBufferPixelInt = null;
+                bool isColorPixelInValidRange = false;
+
+                //draw until xElbow
+                if ((ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff) && (xDepthSpace <= xElbow))
+                {
+                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
+                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+
+                    if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+                            (colorPointY >= 0) && (colorPointX >= 0))
+                    {
+                        isColorPixelInValidRange = true;
+                    }
+
+                    if (isColorPixelInValidRange)
+                    {
+                        // point to current pixel in image buffer
+                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+                        // assign color value (4 bytes)
+                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    }
+                } //if body
+
+                //increment counter
+                if (++xDepthSpace == bodyIndexSensorBufferWidth)
+                {
+                    xDepthSpace = 0;
+                    yDepthSpace++;
+                }
+            } //for loop
+
+            #endregion
+
+            #region Draw lower arm STRETCHED
+
+            ptrImgBufferPixelInt = null; // new position where the color is written into
+            ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
+
+            //FROM ELBOW TO WRIST
             // v = (x, y)
-            Vector vOrigArm = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
+            //Vector vOrigArm = new Vector((xHandTip - xElbow), (yHandTip - yElbow));
+            Vector vOrigArm = new Vector((xWrist - xElbow), (yWrist - yElbow));
             float vOrigArmLength = (float)vOrigArm.Length;
             vOrigArm.Normalize();
 
@@ -183,14 +238,14 @@ namespace BodyExtractionAndHightlighting
                     ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
                     // assign color value (4 bytes)
                     //TODO draw yellow line where vector is
-                    *ptrImgBufferPixelInt = 0xFFFF00; //*ptrColorSensorBufferPixelInt;
+                    *ptrImgBufferPixelInt = 0xFF00FFFF; //*ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
                     //*(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
 
                     //TODO
                     //draw red line where orig hand vector was
                     ptrImgBufferPixelInt = ptrImageBufferInt + (int)((int)(yCurrOrigArm + 0.5) * bodyIndexSensorBufferWidth + xCurrOrigArm + 0.5);
-                    *ptrImgBufferPixelInt = 0xFF00FF;
+                    *ptrImgBufferPixelInt = 0xFFFF0000; //ARGB in storage
 
                     *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
                 }
@@ -276,9 +331,10 @@ namespace BodyExtractionAndHightlighting
                 yCurrOrigArm += (float)(vOrigArm.Y) * stepSizeOrigArm;
                 xCurrNewArm += (float)(vNewArm.X) * stepSizeNewArm;
                 yCurrNewArm += (float)(vNewArm.Y) * stepSizeNewArm;
-             
+
             }
-            
+
+            #endregion
         }
 
         private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xTouch, float yTouch)
