@@ -132,6 +132,7 @@ namespace BodyExtractionAndHightlighting
             this.floodfill(xHandColorSpace, yHandColorSpace, xWrist, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
         }
 
+        // important: always stop if an error occurs (out of bounds, pixel already visited)
         private unsafe void floodfill(int xStart, int yStart, int xEnd, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
         {
             //xEnd is left outer boundary
