@@ -142,11 +142,14 @@ namespace BodyExtractionAndHightlighting
 
             int idxCurrColorPixel = yStart * colorSensorBufferWidth + xStart;
             if (idxCurrColorPixel >= colorToDepthSpaceMapper.Length) // colorToDepthSpaceMapper.Length = colorSensorBufferWidth * colorSensorBufferHeight
-                return; 
+            {
+                return;
+            }
 
             float xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
             float yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
-            if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] == 0xff) || (*(ptrColorSensorBufferInt + idxCurrColorPixel) == 0xFF000000))
+            if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (ptrBodyIndexSensorBuffer[(int)((int)(yDepthPixel + 0.5) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] == 0xff) 
+                    || ((*(ptrColorSensorBufferInt + idxCurrColorPixel)) == 0xFF000000))
             {
                 return;
             }
@@ -165,9 +168,15 @@ namespace BodyExtractionAndHightlighting
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
                     *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+
+                    //do not visit same pixel twice
+                    *ptrColorSensorBufferPixelInt = 0xFF000000;
                 }
-                //do not visit same pixel twice
-                *ptrColorSensorBufferPixelInt = 0xFF000000;
+                else
+                {
+                    return;
+                }
+                
             }
 
             //TODO sometimes ends up in a stack overflow with 8 neighbours
