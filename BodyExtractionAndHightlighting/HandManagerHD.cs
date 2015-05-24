@@ -130,7 +130,7 @@ namespace BodyExtractionAndHightlighting
             //start point for floodfill
             int xHandColorSpace = (int)(ptrDepthToColorSpaceMapper[((int)(yHandF + 0.5)) * bodyIndexSensorBufferWidth + ((int)(xHandTipF + 0.5))].X + 0.5);
             int yHandColorSpace = (int)(ptrDepthToColorSpaceMapper[((int)(yHandF + 0.5)) * bodyIndexSensorBufferWidth + ((int)(xHandTipF + 0.5))].Y + 0.5);
-            //termination condition: normal vector of elbow-wrist-vector
+            //termination condition: normal vector of elbow-wrist-vector 
             int xElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[(int)(yElbowF + 0.5) * bodyIndexSensorBufferWidth + (int)(xElbowF + 0.5)].X + 0.5);
             int yElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[(int)(yElbowF + 0.5) * bodyIndexSensorBufferWidth + (int)(xElbowF + 0.5)].Y + 0.5);
             int xWristColorSpace = (int)(ptrDepthToColorSpaceMapper[(int)(yWristF + 0.5) * bodyIndexSensorBufferWidth + (int)(xWristF + 0.5)].X + 0.5);
