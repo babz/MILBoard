@@ -127,7 +127,7 @@ namespace BodyExtractionAndHightlighting
             float yHandTipColorSpace = ptrDepthToColorSpaceMapper[(int)(yHandTipF + 0.5) * bodyIndexSensorBufferWidth + (int)(xHandTipF + 0.5)].Y;
             int xOffset = (int)(xTouchF - xHandTipColorSpace + 0.5);
             int yOffset = (int)(yTouchF - yHandTipColorSpace + 0.5);
-            //start point for floodfill
+            //start point for floodfill 
             int xHandColorSpace = (int)(ptrDepthToColorSpaceMapper[((int)(yHandF + 0.5)) * bodyIndexSensorBufferWidth + ((int)(xHandTipF + 0.5))].X + 0.5);
             int yHandColorSpace = (int)(ptrDepthToColorSpaceMapper[((int)(yHandF + 0.5)) * bodyIndexSensorBufferWidth + ((int)(xHandTipF + 0.5))].Y + 0.5);
             //termination condition: normal vector of elbow-wrist-vector 
