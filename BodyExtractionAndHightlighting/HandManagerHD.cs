@@ -135,14 +135,14 @@ namespace BodyExtractionAndHightlighting
             int yElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[(int)(yElbowF + 0.5) * bodyIndexSensorBufferWidth + (int)(xElbowF + 0.5)].Y + 0.5);
             int xWristColorSpace = (int)(ptrDepthToColorSpaceMapper[(int)(yWristF + 0.5) * bodyIndexSensorBufferWidth + (int)(xWristF + 0.5)].X + 0.5);
             int yWristColorSpace = (int)(ptrDepthToColorSpaceMapper[(int)(yWristF + 0.5) * bodyIndexSensorBufferWidth + (int)(xWristF + 0.5)].Y + 0.5);
-            Vector vElbowWrist = new Vector((xWristColorSpace - xElbowColorSpace), (yWristColorSpace - yElbowColorSpace));
-            vElbowWrist.Normalize();
-            this.floodfill(xHandColorSpace, yHandColorSpace, vElbowWrist, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            int vElbowWristX = xWristColorSpace - xElbowColorSpace;
+            int vElbowWristY = yWristColorSpace - yElbowColorSpace;
+            this.floodfill(xHandColorSpace, yHandColorSpace, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
         }
 
         // important: always stop if an error occurs (out of bounds, pixel already visited)
         // NOTE stack too small for recursive impl
-        private unsafe void floodfill(int xStart, int yStart, Vector vElbowWristNorm, int xWristColorSpace, int yWristColorSpace, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
+        private unsafe void floodfill(int xStart, int yStart, int vElbowWristX, int vElbowWristY, int xWristColorSpace, int yWristColorSpace, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
         {
             if ((xStart >= colorSensorBufferWidth) || (xStart < 0) || (yStart >= colorSensorBufferHeight) || (yStart < 0))
             {
@@ -155,10 +155,11 @@ namespace BodyExtractionAndHightlighting
                 return;
             }
 
-            //boundary: normal vector of wrist
-            Vector vPointWrist = new Vector((xStart - xWristColorSpace), (yStart - yWristColorSpace));
-            vPointWrist.Normalize();
-            int sig = Math.Sign(vElbowWristNorm.X * vPointWrist.X + vElbowWristNorm.Y * vPointWrist.Y);
+            //boundary: normal vector of wrist; no normalization necessary!! (only signum is of value)
+            int vPointWristX = xStart - xWristColorSpace;
+            int vPointWristY = yStart - yWristColorSpace;
+            int sig = vElbowWristX * vPointWristX + vElbowWristY * vPointWristY;
+            //point ON line counts to hand
             if (sig < 0)
             {
                 return;
@@ -201,16 +202,15 @@ namespace BodyExtractionAndHightlighting
                 
             }
 
-            //TODO sometimes ends up in a stack overflow with 8 neighbours
             //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.floodfill((xStart + 1), yStart, vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.floodfill((xStart - 1), yStart, vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.floodfill(xStart, (yStart + 1), vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.floodfill(xStart, (yStart - 1), vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.floodfill((xStart - 1), (yStart - 1), vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.floodfill((xStart - 1), (yStart + 1), vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.floodfill((xStart + 1), (yStart - 1), vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.floodfill((xStart + 1), (yStart + 1), vElbowWristNorm, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill((xStart + 1), yStart, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill((xStart - 1), yStart, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill(xStart, (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill(xStart, (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill((xStart - 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill((xStart - 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill((xStart + 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.floodfill((xStart + 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
         }
 
         private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
