@@ -405,7 +405,7 @@ namespace BodyExtractionAndHightlighting
 
                 if ((wristRight.TrackingState == TrackingState.Tracked) && (elbowRight.TrackingState == TrackingState.Tracked) && (handTipRight.TrackingState == TrackingState.Tracked) && (handRight.TrackingState == TrackingState.Tracked) && (shoulderRight.TrackingState == TrackingState.Tracked))
                 {
-                    DepthSpacePoint[] depthSpacePosJoints = new DepthSpacePoint[4];
+                    DepthSpacePoint[] depthSpacePosJoints = new DepthSpacePoint[5];
                     this.sensor.CoordinateMapper.MapCameraPointsToDepthSpace(camSpacePosJoints, depthSpacePosJoints);
 
                     DepthSpacePoint wrist = depthSpacePosJoints[0];

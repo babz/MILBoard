@@ -88,21 +88,21 @@ namespace BodyExtractionAndHightlighting
 
 
                  //upper boundary: normal vector of wrist
-                Vector vElbowWristOrig = new Vector((pWrist.X - pElbow.X), (pWrist.Y - pElbow.Y));
+                Vector vElbowToWristOrig = new Vector((pWrist.X - pElbow.X), (pWrist.Y - pElbow.Y));
 
                 //lower boundary: half vector of shoulder and wrist
                 // H = (S+W) / |(S+W)|
-                Vector vElbowShoulder = new Vector((pShoulder.X - pElbow.X), (pShoulder.Y - pElbow.Y));
-                Vector vHalfShoulderWrist = new Vector((vElbowShoulder.X + vElbowWristOrig.X), (vElbowShoulder.Y + vElbowWristOrig.Y));
+                Vector vElbowToShoulder = new Vector((pShoulder.X - pElbow.X), (pShoulder.Y - pElbow.Y));
+                Vector vHalfShoulderWrist = new Vector((vElbowToShoulder.X + vElbowToWristOrig.X), (vElbowToShoulder.Y + vElbowToWristOrig.Y));
                 vHalfShoulderWrist.Normalize();
-                Vector vHalfShoulderWrist_NormRight = new Vector(-(vHalfShoulderWrist.Y), vHalfShoulderWrist.X); 
+                Vector vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X); 
 
-                this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vElbowWristOrig, vHalfShoulderWrist_NormRight);
+                this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vElbowToWristOrig, vHalfShoulderWrist_NormRight);
 
                 int xOffset = (int)(pTouch.X - pHandTip.X + 0.5);
                 int yOffset = (int)(pTouch.Y - pHandTip.Y + 0.5);
 
-                this.drawTranslatedRightHand(xHand, yHand, vElbowWristOrig, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+                this.drawTranslatedRightHand(xHand, yHand, vElbowToWristOrig, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             } //end fixed
         }
 
@@ -307,7 +307,7 @@ namespace BodyExtractionAndHightlighting
         //    this.detectRightLowerArm((xStart + 1), (yStart + 1), vElbowWristOrig, xElbow, yElbow, xWrist, yWrist, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
         //}
 
-        private unsafe void drawStretchedRightLowerArm(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, Vector vElbowWristOrig, Vector vHalfShoulderWrist_NormRight)
+        private unsafe void drawStretchedRightLowerArm(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, Vector vElbowToWristOrig, Vector vHalfShoulderWrist_NormRight)
         {
             #region Draw lower arm STRETCHED
 
@@ -316,14 +316,14 @@ namespace BodyExtractionAndHightlighting
 
             //FROM ELBOW TO WRIST
             // v = (x, y)
-            float vOrigArmLength = (float)vElbowWristOrig.Length;
-            vElbowWristOrig.Normalize();
+            float vOrigArmLength = (float)vElbowToWristOrig.Length;
+            vElbowToWristOrig.Normalize();
 
             //NOTE vector normals different as coordinate system origin (0,0) is upper left corner!
             //v_nleft = (y, -x)
-            Vector vNormLeftOrigArm = new Vector(vElbowWristOrig.Y, -(vElbowWristOrig.X));
+            Vector vNormLeftOrigArm = new Vector(vElbowToWristOrig.Y, -(vElbowToWristOrig.X));
             //v_nright = (-y, x)
-            Vector vNormRightOrigArm = new Vector(-(vElbowWristOrig.Y), vElbowWristOrig.X);
+            Vector vNormRightOrigArm = new Vector(-(vElbowToWristOrig.Y), vElbowToWristOrig.X);
 
             Vector vNewArm = new Vector((xTouch - xElbow), (yTouch - yElbow));
             float vNewArmLength = (float)vNewArm.Length;
@@ -391,7 +391,7 @@ namespace BodyExtractionAndHightlighting
                     //upper boundary: normal vector of wrist
                     int vPointWristX = (int)(xNormLeft - xWrist + 0.5);
                     int vPointWristY = (int)(yNormLeft - yWrist + 0.5);
-                    int sigPointWrist = ((int)(vElbowWristOrig.X)) * vPointWristX + ((int)(vElbowWristOrig.Y)) * vPointWristY;
+                    int sigPointWrist = ((int)(vElbowToWristOrig.X)) * vPointWristX + ((int)(vElbowToWristOrig.Y)) * vPointWristY;
                     //point is not drawn if p < Elbow AND p >= Wrist
                     if ((sigPointElbow < 0) || (sigPointWrist >= 0))
                     {
@@ -438,7 +438,7 @@ namespace BodyExtractionAndHightlighting
                     //upper boundary: normal vector of wrist
                     int vPointWristX = (int)(xNormRight - xWrist + 0.5);
                     int vPointWristY = (int)(yNormRight - yWrist + 0.5);
-                    int sigPointWrist = ((int)(vElbowWristOrig.X)) * vPointWristX + ((int)(vElbowWristOrig.Y)) * vPointWristY;
+                    int sigPointWrist = ((int)(vElbowToWristOrig.X)) * vPointWristX + ((int)(vElbowToWristOrig.Y)) * vPointWristY;
                     //point is not drawn if p < Elbow AND p >= Wrist
                     if ((sigPointElbow < 0) || (sigPointWrist >= 0))
                     {
@@ -470,8 +470,8 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 //increment to move along vector; use normal vectors for increment
-                xCurrOrigArm += (float)(vElbowWristOrig.X) * stepSizeOrigArm;
-                yCurrOrigArm += (float)(vElbowWristOrig.Y) * stepSizeOrigArm;
+                xCurrOrigArm += (float)(vElbowToWristOrig.X) * stepSizeOrigArm;
+                yCurrOrigArm += (float)(vElbowToWristOrig.Y) * stepSizeOrigArm;
                 xCurrNewArm += (float)(vNewArm.X) * stepSizeNewArm;
                 yCurrNewArm += (float)(vNewArm.Y) * stepSizeNewArm;
 
