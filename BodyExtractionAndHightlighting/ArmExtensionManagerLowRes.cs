@@ -360,19 +360,28 @@ namespace BodyExtractionAndHightlighting
                     int newPositionY = (int)(yCurrNewArm + 0.5);
                     ptrImgBufferPixelInt = ptrImageBufferInt + (newPositionY * bodyIndexSensorBufferWidth + newPositionX);
 
+                    //color of original arm pixel
                     ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                    // assign color value (4 bytes)
-                    //TODO draw yellow line where vector is
-                    *ptrImgBufferPixelInt = 0xFF00FFFF; //*ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value (last byte)
-                    //*(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
 
-                    //TODO
-                    //draw red line where orig hand vector was
-                    ptrImgBufferPixelInt = ptrImageBufferInt + (int)((int)(yCurrOrigArm + 0.5) * bodyIndexSensorBufferWidth + xCurrOrigArm + 0.5);
-                    *ptrImgBufferPixelInt = 0xFFFF0000; //ARGB in storage
+                    // assign color value
+                    if (Constants.IsSkeletonShown)
+                    {
+                        //draw line where new stretched vector is
+                        *ptrImgBufferPixelInt = 0xFF00FFFF;
 
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                        //draw red line where orig hand vector is
+                        ptrImgBufferPixelInt = ptrImageBufferInt + (int)((int)(yCurrOrigArm + 0.5) * bodyIndexSensorBufferWidth + xCurrOrigArm + 0.5);
+                        *ptrImgBufferPixelInt = 0xFFFF0000; //ARGB in storage
+
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    }
+                    else
+                    {
+                        // assign color value (4 bytes)
+                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    }
                 }
 
                 #region left normal vector of elbow-wrist vector

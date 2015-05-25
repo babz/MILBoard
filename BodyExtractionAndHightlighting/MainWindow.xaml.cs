@@ -94,7 +94,6 @@ namespace BodyExtractionAndHightlighting
         //checkbox values
         bool armScaleOnly = false;
         bool armRotateOnly = false;
-        bool showSkeleton = false;
         private bool showFps = false;
         private bool hasTouchOccurred = false;
         private Point touchPosition = new Point(0, 0);
@@ -148,7 +147,7 @@ namespace BodyExtractionAndHightlighting
             //imageBody.Source = new DrawingImage(this.drawingGroup);
 
             //inits
-            Constants.initConstants(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, coordinateMapper);
+            Constants.initConstants(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, coordinateMapper, false);
             if (isFullHD)
             {
                 imgProcessor = new ImgProcessorFactoryHD();
@@ -501,12 +500,12 @@ namespace BodyExtractionAndHightlighting
 
         private void checkBoxSkeleton_Unchecked(object sender, RoutedEventArgs e)
         {
-            showSkeleton = false;
+            Constants.IsSkeletonShown = false;
         }
 
         private void checkBoxSkeleton_Checked(object sender, RoutedEventArgs e)
         {
-            showSkeleton = true;
+            Constants.IsSkeletonShown = true;
         }
 
         private void checkBoxRotateOnly_Unchecked(object sender, RoutedEventArgs e)

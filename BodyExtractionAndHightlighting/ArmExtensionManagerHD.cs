@@ -258,10 +258,26 @@ namespace BodyExtractionAndHightlighting
 
                     //color of original pixel
                     ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (int)((int)(yCurrOrigArm + 0.5) * colorSensorBufferWidth + xCurrOrigArm + 0.5);
-                    // assign color value (4 bytes)
-                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+
+                    // assign color value
+                    if (Constants.IsSkeletonShown)
+                    {
+                        //draw line where new stretched vector is
+                        *ptrImgBufferPixelInt = 0xFF00FFFF;
+
+                        //draw red line where orig hand vector is
+                        ptrImgBufferPixelInt = ptrImageBufferInt + (int)((int)(yCurrOrigArm + 0.5) * colorSensorBufferWidth + xCurrOrigArm + 0.5);
+                        *ptrImgBufferPixelInt = 0xFFFF0000; //ARGB in storage
+
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    }
+                    else
+                    {
+                        // assign color value (4 bytes)
+                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                    }
                 }
 
                 #region left normal vector of elbow-wrist vector
