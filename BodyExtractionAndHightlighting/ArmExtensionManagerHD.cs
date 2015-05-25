@@ -69,6 +69,8 @@ namespace BodyExtractionAndHightlighting
                 int xElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[idxElbowDepthSpace].X + 0.5);
                 int yElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[idxElbowDepthSpace].Y + 0.5);
 
+                this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrColorToDepthSpaceMapper, xElbowColorSpace);
+
                 int idxWristDepthSpace = (int)(bodyIndexSensorBufferWidth * (int)(pWrist.Y + 0.5) + pWrist.X + 0.5);
                 int xWristColorSpace = (int)(ptrDepthToColorSpaceMapper[idxWristDepthSpace].X + 0.5);
                 int yWristColorSpace = (int)(ptrDepthToColorSpaceMapper[idxWristDepthSpace].Y + 0.5);
@@ -80,7 +82,9 @@ namespace BodyExtractionAndHightlighting
                 float xTouch = (float)pTouch.X;
                 float yTouch = (float)pTouch.Y;
 
-                this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandTipColorSpace, yHandTipColorSpace, xTouch, yTouch);
+                this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandTipColorSpace, yHandTipColorSpace, xTouch, yTouch);
+
+                this.drawTranslatedRightHand();
 
             } //end fixed
         }
@@ -141,10 +145,8 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbowColorSpace, int yElbowColorSpace, int xWristColorSpace, int yWristColorSpace, int xHandTipColorSpace, int yHandTipColorSpace, float xTouch, float yTouch)
+        private unsafe void drawBodyWithoutRightHand(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbowColorSpace)
         {
-            #region Draw body without lower arm
-
             //with the cast to int, step size is 4 bytes
             uint* ptrImgBufferPixelInt = null;
             uint* ptrColorSensorBufferPixelInt = null;
@@ -182,13 +184,14 @@ namespace BodyExtractionAndHightlighting
                     yColorSpace++;
                 }
             } // for loop
+        }
 
-            #endregion
-
+        private unsafe void drawStretchedRightLowerArm(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, int xElbowColorSpace, int yElbowColorSpace, int xWristColorSpace, int yWristColorSpace, int xHandTipColorSpace, int yHandTipColorSpace, float xTouch, float yTouch)
+        {
             #region Draw lower arm STRETCHED
 
-            ptrImgBufferPixelInt = null; // new position where the color is written into
-            ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
+            uint* ptrImgBufferPixelInt = null; // new position where the color is written into
+            uint* ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
 
             // v = (x, y)
             Vector vOrigArm = new Vector((xHandTipColorSpace - xElbowColorSpace), (yHandTipColorSpace - yElbowColorSpace));
@@ -330,6 +333,12 @@ namespace BodyExtractionAndHightlighting
             }
             #endregion
         }
+
+        private unsafe void drawTranslatedRightHand()
+        {
+
+        }
+
 
         private unsafe void transform_HD_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferHDInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
         {

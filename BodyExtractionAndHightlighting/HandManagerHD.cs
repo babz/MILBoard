@@ -87,7 +87,7 @@ namespace BodyExtractionAndHightlighting
                 int vElbowWristX = xWristColorSpace - xElbowColorSpace;
                 int vElbowWristY = yWristColorSpace - yElbowColorSpace;
 
-                this.transformHand(xHandColorSpace, yHandColorSpace, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferHDInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+                this.translateHand(xHandColorSpace, yHandColorSpace, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferHDInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
                 //this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
@@ -136,7 +136,7 @@ namespace BodyExtractionAndHightlighting
 
         // important: always stop if an error occurs (out of bounds, pixel already visited)
         // NOTE stack too small for recursive impl
-        private unsafe void transformHand(int xStart, int yStart, int vElbowWristX, int vElbowWristY, int xWristColorSpace, int yWristColorSpace, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
+        private unsafe void translateHand(int xStart, int yStart, int vElbowWristX, int vElbowWristY, int xWristColorSpace, int yWristColorSpace, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
         {
             if ((xStart >= colorSensorBufferWidth) || (xStart < 0) || (yStart >= colorSensorBufferHeight) || (yStart < 0))
             {
@@ -159,6 +159,7 @@ namespace BodyExtractionAndHightlighting
                 return;
             }
 
+            //pixel already visited
             uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
             if ((*ptrColorSensorBufferPixelInt) == 0xFF000000)
             {
@@ -196,14 +197,14 @@ namespace BodyExtractionAndHightlighting
             }
 
             //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.transformHand((xStart + 1), yStart, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.transformHand((xStart - 1), yStart, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.transformHand(xStart, (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.transformHand(xStart, (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.transformHand((xStart - 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.transformHand((xStart - 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.transformHand((xStart + 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.transformHand((xStart + 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand((xStart + 1), yStart, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand((xStart - 1), yStart, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand(xStart, (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand(xStart, (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand((xStart - 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand((xStart - 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand((xStart + 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.translateHand((xStart + 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
         }
 
         private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
