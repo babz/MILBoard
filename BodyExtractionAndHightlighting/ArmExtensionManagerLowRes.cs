@@ -86,15 +86,14 @@ namespace BodyExtractionAndHightlighting
                 //start point is (xElbow + 1)
                 //this.detectRightLowerArm((xElbow + 1), yElbow, vElbowWristOrig, xElbow, yElbow, xWrist, yWrist, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
 
-
                  //upper boundary: normal vector of wrist
                 Vector vElbowToWristOrig = new Vector((pWrist.X - pElbow.X), (pWrist.Y - pElbow.Y));
 
                 //lower boundary: half vector of shoulder and wrist
-                // H = (S+W) / |(S+W)|
                 Vector vElbowToShoulder = new Vector((pShoulder.X - pElbow.X), (pShoulder.Y - pElbow.Y));
+                // H = (S+W)
                 Vector vHalfShoulderWrist = new Vector((vElbowToShoulder.X + vElbowToWristOrig.X), (vElbowToShoulder.Y + vElbowToWristOrig.Y));
-                vHalfShoulderWrist.Normalize();
+                //vHalfShoulderWrist.Normalize();
                 Vector vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X); 
 
                 this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vElbowToWristOrig, vHalfShoulderWrist_NormRight);
@@ -325,7 +324,10 @@ namespace BodyExtractionAndHightlighting
             //v_nright = (-y, x)
             Vector vNormRightOrigArm = new Vector(-(vElbowToWristOrig.Y), vElbowToWristOrig.X);
 
-            Vector vNewArm = new Vector((xTouch - xElbow), (yTouch - yElbow));
+            //move arm so that it fits to the shifted hand
+            Vector offsetNewArmWrist = this.pHandTip - this.pWrist;
+
+            Vector vNewArm = new Vector((xTouch - ((int)offsetNewArmWrist.X) - xElbow), (yTouch - ((int)offsetNewArmWrist.Y) - yElbow));
             float vNewArmLength = (float)vNewArm.Length;
             vNewArm.Normalize();
 
@@ -384,16 +386,12 @@ namespace BodyExtractionAndHightlighting
                 while (ptrBodyIndexSensorBuffer[lookupIdxNormLeft] != 0xff)
                 {
                     //normal might point inside body
-                    //lower boundary: half vector of shoulder and wrist
+                    //lower boundary: half vector of shoulder and wrist (upper boundary implicitly given through touch point)
                     int vPointElbowX = (int)(xNormLeft - xElbow + 0.5);
                     int vPointElbowY = (int)(yNormLeft - yElbow + 0.5);
                     int sigPointElbow = ((int)(vHalfShoulderWrist_NormRight.X)) * vPointElbowX + ((int)(vHalfShoulderWrist_NormRight.Y)) * vPointElbowY;
-                    //upper boundary: normal vector of wrist
-                    int vPointWristX = (int)(xNormLeft - xWrist + 0.5);
-                    int vPointWristY = (int)(yNormLeft - yWrist + 0.5);
-                    int sigPointWrist = ((int)(vElbowToWristOrig.X)) * vPointWristX + ((int)(vElbowToWristOrig.Y)) * vPointWristY;
-                    //point is not drawn if p < Elbow AND p >= Wrist
-                    if ((sigPointElbow < 0) || (sigPointWrist >= 0))
+                    //point is not drawn if p < Elbow
+                    if (sigPointElbow < 0)
                     {
                         break;
                     }
@@ -431,16 +429,12 @@ namespace BodyExtractionAndHightlighting
                 while (ptrBodyIndexSensorBuffer[lookupIdxNormRight] != 0xff)
                 {
                     //normal might point inside body
-                    //lower boundary: half vector of shoulder and wrist
+                    //lower boundary: half vector of shoulder and wrist (upper boundary implicitly given through touch point)
                     int vPointElbowX = (int)(xNormRight - xElbow + 0.5);
                     int vPointElbowY = (int)(yNormRight - yElbow + 0.5);
                     int sigPointElbow = ((int)(vHalfShoulderWrist_NormRight.X)) * vPointElbowX + ((int)(vHalfShoulderWrist_NormRight.Y)) * vPointElbowY;
-                    //upper boundary: normal vector of wrist
-                    int vPointWristX = (int)(xNormRight - xWrist + 0.5);
-                    int vPointWristY = (int)(yNormRight - yWrist + 0.5);
-                    int sigPointWrist = ((int)(vElbowToWristOrig.X)) * vPointWristX + ((int)(vElbowToWristOrig.Y)) * vPointWristY;
-                    //point is not drawn if p < Elbow AND p >= Wrist
-                    if ((sigPointElbow < 0) || (sigPointWrist >= 0))
+                    //point is not drawn if p < Elbow
+                    if (sigPointElbow < 0)
                     {
                         break;
                     }
