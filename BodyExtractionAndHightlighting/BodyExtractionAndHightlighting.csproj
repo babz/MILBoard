@@ -89,7 +89,6 @@
     <Compile Include="ImgProcessorFactoryHD.cs" />
     <Compile Include="ImgProcessorFactoryLowRes.cs" />
     <Compile Include="ISymbolManager.cs" />
-    <Compile Include="Settings.cs" />
     <Compile Include="SymbolManagerHD.cs" />
     <Compile Include="SymbolManagerLowRes.cs" />
     <Page Include="MainWindow.xaml">
