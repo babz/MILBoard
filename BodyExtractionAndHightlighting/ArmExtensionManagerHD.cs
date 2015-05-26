@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Threading;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -27,6 +28,13 @@ namespace BodyExtractionAndHightlighting
         private byte userTransparency;
 
         private unsafe Vector vElbowToWristOrig, vHalfShoulderWrist_NormRight;
+
+        private volatile unsafe byte* ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferHD;
+        private volatile unsafe uint* ptrImageBufferHDInt, ptrColorSensorBufferInt;
+        private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
+        private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
+
+        private unsafe Object thisLock = new Object();
 
         public ArmExtensionManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)
         {
@@ -66,6 +74,16 @@ namespace BodyExtractionAndHightlighting
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
+                this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
+                this.ptrColorSensorBuffer = ptrColorSensorBuffer;
+                this.ptrImageBufferHD = ptrImageBufferHD;
+
+                this.ptrDepthToColorSpaceMapper = ptrDepthToColorSpaceMapper;
+                this.ptrColorToDepthSpaceMapper = ptrColorToDepthSpaceMapper;
+
+                this.ptrImageBufferHDInt = (uint*)ptrImageBufferHD;
+                this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
+
                 uint* ptrImageBufferHDInt = (uint*)ptrImageBufferHD;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
@@ -108,7 +126,12 @@ namespace BodyExtractionAndHightlighting
                 this.xTranslationOffset = (int)(pTouch.X - xHandTipColorSpace + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - yHandTipColorSpace + 0.5);
 
-                this.drawTranslatedRightHand(xHandColorSpace, yHandColorSpace, ptrBodyIndexSensorBuffer, ptrImageBufferHDInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+                int stackSize = 10000000;
+                Thread thread = new Thread(() => drawTranslatedRightHand(xHandColorSpace, yHandColorSpace), stackSize);
+                thread.Start();
+                thread.Join();
+
+                //this.drawTranslatedRightHand(xHandColorSpace, yHandColorSpace, ptrBodyIndexSensorBuffer, ptrImageBufferHDInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
 
             } //end fixed
         }
@@ -403,7 +426,7 @@ namespace BodyExtractionAndHightlighting
             
         }
 
-        private unsafe void drawTranslatedRightHand(int xStart, int yStart, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
+        private unsafe void drawTranslatedRightHand(int xStart, int yStart)
         {
             if ((xStart >= colorSensorBufferWidth) || (xStart < 0) || (yStart >= colorSensorBufferHeight) || (yStart < 0))
             {
@@ -447,15 +470,18 @@ namespace BodyExtractionAndHightlighting
                 if ((yTranslatedColorSpace < colorSensorBufferHeight) && (xTranslatedColorSpace < colorSensorBufferWidth) &&
                             (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
                 {
-                    // point to current pixel in image buffer
-                    uint* ptrImgBufferPixelInt = ptrImageBufferInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
-                    // assign color value (4 bytes)
-                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
+                    lock (thisLock)
+                    {
+                        // point to current pixel in image buffer
+                        uint* ptrImgBufferPixelInt = ptrImageBufferHDInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
+                        // assign color value (4 bytes)
+                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
 
-                    //do not visit same pixel twice
-                    *ptrColorSensorBufferPixelInt = 0xFF000000;
+                        //do not visit same pixel twice
+                        *ptrColorSensorBufferPixelInt = 0xFF000000;
+                    }
                 }
                 else
                 {
@@ -464,14 +490,14 @@ namespace BodyExtractionAndHightlighting
             }
 
             //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.drawTranslatedRightHand((xStart + 1), yStart, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.drawTranslatedRightHand((xStart - 1), yStart, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.drawTranslatedRightHand(xStart, (yStart + 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.drawTranslatedRightHand(xStart, (yStart - 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.drawTranslatedRightHand((xStart - 1), (yStart - 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.drawTranslatedRightHand((xStart - 1), (yStart + 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.drawTranslatedRightHand((xStart + 1), (yStart - 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.drawTranslatedRightHand((xStart + 1), (yStart + 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            this.drawTranslatedRightHand((xStart + 1), yStart);
+            this.drawTranslatedRightHand((xStart - 1), yStart);
+            this.drawTranslatedRightHand(xStart, (yStart + 1));
+            this.drawTranslatedRightHand(xStart, (yStart - 1));
+            this.drawTranslatedRightHand((xStart - 1), (yStart - 1));
+            this.drawTranslatedRightHand((xStart - 1), (yStart + 1));
+            this.drawTranslatedRightHand((xStart + 1), (yStart - 1));
+            this.drawTranslatedRightHand((xStart + 1), (yStart + 1));
         }
 
 

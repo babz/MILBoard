@@ -33,7 +33,7 @@ namespace BodyExtractionAndHightlighting
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
         private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
 
-        private Object thisLock = new Object();
+        private unsafe Object thisLock = new Object();
 
         public HandManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency) 
         {
@@ -112,10 +112,10 @@ namespace BodyExtractionAndHightlighting
                 this.yTranslationOffset = (int)(pTouch.Y - yHandTipColorSpace + 0.5);
 
                 int stackSize = 10000000;
-                //Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), stackSize);
-                //thread.Priority = ThreadPriority.BelowNormal;
-                //thread.Start();
-                this.translateHand(xHandColorSpace, yHandColorSpace);
+                Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), stackSize);
+                thread.Start();
+                thread.Join();
+                //this.translateHand(xHandColorSpace, yHandColorSpace);
                 //this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
             } //end fixed
@@ -173,7 +173,6 @@ namespace BodyExtractionAndHightlighting
 
             int idxCurrColorPixel = yStart * colorSensorBufferWidth + xStart;
             if (idxCurrColorPixel >= colorToDepthSpaceMapper.Length) // colorToDepthSpaceMapper.Length = colorSensorBufferWidth * colorSensorBufferHeight
-            //if ((yStart * colorSensorBufferWidth + xStart) >= colorToDepthSpaceMapper.Length)
             {
                 return;
             }
@@ -184,7 +183,6 @@ namespace BodyExtractionAndHightlighting
             int sig = ((int)(vElbowToWristOrig.X + 0.5)) * vPointWristX + ((int)(vElbowToWristOrig.Y + 0.5)) * vPointWristY;
             //point ON line counts to hand
             if (sig < 0)
-            //if ((((int)(vElbowToWristOrig.X + 0.5)) * (xStart - xWristColorSpace) + ((int)(vElbowToWristOrig.Y + 0.5)) * (yStart - yWristColorSpace)) < 0)
             {
                 return;
             }
@@ -192,7 +190,6 @@ namespace BodyExtractionAndHightlighting
             //pixel already visited
             uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
             if ((*ptrColorSensorBufferPixelInt) == 0xFF000000)
-            //if ((*(ptrColorSensorBufferInt + (yStart * colorSensorBufferWidth + xStart))) == 0xFF000000)
             {
                 return;
             }
@@ -201,7 +198,6 @@ namespace BodyExtractionAndHightlighting
             float yDepthPixel = ptrColorToDepthSpaceMapper[yStart * colorSensorBufferWidth + xStart].Y;
             int idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
             if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (ptrBodyIndexSensorBuffer[idxDepthPixel] == 0xff))
-            //if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (ptrBodyIndexSensorBuffer[(int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5)] == 0xff))
             {
                 return;
             }
@@ -211,14 +207,13 @@ namespace BodyExtractionAndHightlighting
                 int yTranslatedColorSpace = yStart + yTranslationOffset;
                 if ((yTranslatedColorSpace < colorSensorBufferHeight) && (xTranslatedColorSpace < colorSensorBufferWidth) && (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
                 {
-                    // point to current pixel in image buffer
-                    uint* ptrImgBufferPixelInt = ptrImageBufferHDInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
                     lock (thisLock)
                     {
+                        // point to current pixel in image buffer
+                        uint* ptrImgBufferPixelInt = ptrImageBufferHDInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
+                    
                         // assign color value (4 bytes)
                         *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-
-                        //*ptrImgBufferPixelInt = *(ptrColorSensorBufferInt + (yStart * colorSensorBufferWidth + xStart));
                         // overwrite the alpha value (last byte)
                         *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
 
