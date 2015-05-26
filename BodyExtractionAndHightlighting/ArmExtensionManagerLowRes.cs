@@ -344,9 +344,9 @@ namespace BodyExtractionAndHightlighting
             float totalSteps;
             //TODO think about factor
             if (vOrigArmLength < vNewArmLength)
-                totalSteps = (float)(vNewArmLength * 1.5);
+                totalSteps = (float)(vNewArmLength * 2.2);
             else
-                totalSteps = (float)(vOrigArmLength * 1.5);
+                totalSteps = (float)(vOrigArmLength * 2.2);
             float stepSizeOrigArm = vOrigArmLength / totalSteps;
             float stepSizeNewArm = vNewArmLength / totalSteps;
 

@@ -135,7 +135,6 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void translateHand(int xStart, int yStart, int vElbowWristX, int vElbowWristY, int xWrist, int yWrist, int xOffset, int yOffset, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
         {
-            //xEnd is left outer boundary
             if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
             {
                 return;
