@@ -157,6 +157,10 @@
     <Resource Include="Resources\pencil_blue_rot_low.png" />
     <Resource Include="Resources\pencil_orange_rot_low.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\pencil_blue_96dpi.png" />
+    <Resource Include="Resources\pencil_orange_96dpi.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -57,7 +57,7 @@
             <!--the bigger the ZIndex, the closer to the foreground-->
             <Image x:Name="imageCombi" Canvas.Left="0" Canvas.Top="0" Width="1575" Height="820" Canvas.ZIndex="0" />
             <!--<Image x:Name="imageBody"  Canvas.Left="0" Canvas.Top="0" Width="1575" Height="820" Canvas.ZIndex="1" />-->
-            <Image x:Name="pointerSymbol" Canvas.Left="0" Canvas.Top="0" Height="46" Width="60" Source="Resources\pencil_blue.png" Visibility="Hidden" />
+            <Image x:Name="pointerSymbol" Canvas.Left="0" Canvas.Top="0" Height="46" Width="60" Source="Resources\pencil_blue_96dpi.png" Visibility="Hidden" />
             
             <Button Content="Button6" Canvas.Left="800" Canvas.Top="550" Height="20" Width="30" />
             <Button Content="Button2" Canvas.Left="900" Canvas.Top="400" Height="20" Width="55"/>
