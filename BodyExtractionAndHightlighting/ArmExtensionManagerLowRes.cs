@@ -20,7 +20,6 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe Point pElbow, pWrist, pHandTip, pTouch, pHand, pShoulder;
         private unsafe int xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch, xHand, yHand, xShoulder, yShoulder;
-        private const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
@@ -166,7 +165,7 @@ namespace BodyExtractionAndHightlighting
             int yDepthSpace = 0;
 
             //==draw whole body without manipulation
-            int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
+            int depthSpaceSize = depthDataSource.Length; //bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
                 //ptrColorSensorBufferPixelInt = null;
@@ -535,7 +534,7 @@ namespace BodyExtractionAndHightlighting
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
                 }
             }
 

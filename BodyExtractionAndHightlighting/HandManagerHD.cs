@@ -16,8 +16,7 @@ namespace BodyExtractionAndHightlighting
         private CoordinateMapper coordinateMapper;
         private ushort[] depthDataSource;
 
-        Point pWrist, pHandTip, pTouch, pHand, pElbow;
-        private const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
+        private unsafe Point pWrist, pHandTip, pTouch, pHand, pElbow;
 
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
@@ -104,7 +103,7 @@ namespace BodyExtractionAndHightlighting
             int yColorSpace = 0;
 
             //==draw whole body without manipulation
-            int lengthColorBuffer = colorToDepthSpaceMapper.Length; // = colorSensorBufferHeight * colorSensorBufferWidth;
+            int lengthColorBuffer = colorToDepthSpaceMapper.Length; //colorSensorBufferHeight * colorSensorBufferWidth;
             //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
             for (int idxColorSpace = 0; idxColorSpace < lengthColorBuffer; idxColorSpace++)
             {

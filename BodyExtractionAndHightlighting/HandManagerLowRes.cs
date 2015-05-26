@@ -16,8 +16,7 @@ namespace BodyExtractionAndHightlighting
         private CoordinateMapper coordinateMapper;
         private ushort[] depthDataSource;
 
-        Point pWrist, pHandTip, pTouch, pHand, pElbow;
-        private const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
+        private unsafe Point pWrist, pHandTip, pTouch, pHand, pElbow;
 
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
@@ -94,7 +93,7 @@ namespace BodyExtractionAndHightlighting
             int yDepthSpace = 0;
 
             //==draw whole body without manipulation
-            int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
+            int depthSpaceSize = depthDataSource.Length; //bodyIndexSensorBufferHeight* bodyIndexSensorBufferWidth;
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; idxDepthSpace++)
             {
                 //ptrColorSensorBufferPixelInt = null;
@@ -176,7 +175,7 @@ namespace BodyExtractionAndHightlighting
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
                 }
             }
 
@@ -249,7 +248,7 @@ namespace BodyExtractionAndHightlighting
                                 // assign color value (4 bytes)
                                 *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                                 // overwrite the alpha value (last byte)
-                                *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+                                *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
                             }
                         }
                         #endregion // hand

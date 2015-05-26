@@ -47,7 +47,6 @@
         <RadioButton Name="GUIArmPtr" Grid.Row="1" Grid.Column="3" Content="Arm Extension" GroupName="Mode" IsChecked="True" Checked="GUIArmPtr_Checked" Margin="0,0,254,0"/>
         <RadioButton Name="GUIHandPtr" Grid.Row="1" Grid.Column="3" Content="Hand Pointer" GroupName="Mode" Checked="GUIHandPtr_Checked" Margin="105,0,10,7" />
         <RadioButton Name="GUISymbolPtr" Grid.Row="1" Grid.Column="3" Content="Symbol Pointer" GroupName="Mode" Checked="GUISymbolPtr_Checked" Margin="212,0,10,0" />
-        <!--<CheckBox x:Name="checkBoxExtendArm" Content="Arm Extension" Grid.Row="1" Grid.Column="3" HorizontalAlignment="Left" Margin="0,6,0,0" IsChecked="True" VerticalAlignment="Top" Checked="checkBoxExtendArm_Checked" Unchecked="checkBoxExtendArm_Unchecked" Height="15" Width="96" />-->
 
         <CheckBox x:Name="checkBoxRotateOnly" Content="Rotate only" Grid.Column="4" Margin="0,6,248,0" Unchecked="checkBoxRotateOnly_Unchecked" Checked="checkBoxRotateOnly_Checked"/>
         <CheckBox x:Name="checkBoxScaleOnly" Content="Scale only" Grid.Column="4" Grid.Row="1" Margin="0,0,248,0" Unchecked="checkBoxScaleOnly_Unchecked" Checked="checkBoxScaleOnly_Checked"/>

@@ -18,7 +18,6 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe Point pElbow, pWrist, pHandTip, pTouch, pHand, pShoulder;
         private unsafe int xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandTipColorSpace, yHandTipColorSpace, xHandColorSpace, yHandColorSpace, xShoulderColorSpace, yShoulderColorSpace;
-        private const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
@@ -442,7 +441,7 @@ namespace BodyExtractionAndHightlighting
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
 
                     //do not visit same pixel twice
                     *ptrColorSensorBufferPixelInt = 0xFF000000;
