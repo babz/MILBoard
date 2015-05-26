@@ -78,8 +78,7 @@ namespace BodyExtractionAndHightlighting
             {
                 uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
-
-                this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper);
+                
                 //this.drawBodyfloodfill((xElbow - 1), yElbow, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
 
                 //start point is (xElbow + 1)
@@ -93,7 +92,9 @@ namespace BodyExtractionAndHightlighting
                 // H = (S+W)
                 Vector vHalfShoulderWrist = new Vector((vElbowToShoulder.X + vElbowToWristOrig.X), (vElbowToShoulder.Y + vElbowToWristOrig.Y));
                 //vHalfShoulderWrist.Normalize();
-                Vector vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X); 
+                Vector vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X);
+
+                this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vHalfShoulderWrist_NormRight);
 
                 this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vElbowToWristOrig, vHalfShoulderWrist_NormRight);
 
@@ -154,7 +155,7 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        private unsafe void drawBodyWithoutRightHand(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
+        private unsafe void drawBodyWithoutRightHand(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, Vector vHalfShoulderWrist_NormRight)
         {
             //pixel target
             uint* ptrImgBufferPixelInt = null;
@@ -173,27 +174,35 @@ namespace BodyExtractionAndHightlighting
                 bool isColorPixelInValidRange = false;
 
                 //draw until xElbow
-                if ((ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff) && (xDepthSpace <= xElbow))
+                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
                 {
-                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
-                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
-
-                    if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-                            (colorPointY >= 0) && (colorPointX >= 0))
+                    //omit right lower hand pixel; use half vector btw shoulder and wrist as termination criteria
+                    int vPointElbowX = (int)(xDepthSpace - xElbow + 0.5);
+                    int vPointElbowY = (int)(yDepthSpace - yElbow + 0.5);
+                    int sigPointElbow = ((int)(vHalfShoulderWrist_NormRight.X + 0.5)) * vPointElbowX + ((int)(vHalfShoulderWrist_NormRight.Y + 0.5)) * vPointElbowY;
+                    //point is not drawn if p > Elbow
+                    if (sigPointElbow <= 0)
                     {
-                        isColorPixelInValidRange = true;
-                    }
+                        int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
+                        int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
 
-                    if (isColorPixelInValidRange)
-                    {
-                        // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+                        if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+                                (colorPointY >= 0) && (colorPointX >= 0))
+                        {
+                            isColorPixelInValidRange = true;
+                        }
 
-                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                        // assign color value (4 bytes)
-                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                        // overwrite the alpha value (last byte)
-                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                        if (isColorPixelInValidRange)
+                        {
+                            // point to current pixel in image buffer
+                            ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+
+                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+                            // assign color value (4 bytes)
+                            *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                            // overwrite the alpha value (last byte)
+                            *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                        }
                     }
                 } //if body
 
@@ -335,9 +344,9 @@ namespace BodyExtractionAndHightlighting
             float totalSteps;
             //TODO think about factor
             if (vOrigArmLength < vNewArmLength)
-                totalSteps = (float)(vNewArmLength * 1.2);
+                totalSteps = (float)(vNewArmLength * 1.5);
             else
-                totalSteps = (float)(vOrigArmLength * 1.2);
+                totalSteps = (float)(vOrigArmLength * 1.5);
             float stepSizeOrigArm = vOrigArmLength / totalSteps;
             float stepSizeNewArm = vNewArmLength / totalSteps;
 

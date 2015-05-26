@@ -176,8 +176,7 @@ namespace BodyExtractionAndHightlighting
             {
                 int xTranslatedColorSpace = xStart + xOffset;
                 int yTranslatedColorSpace = yStart + yOffset;
-                if ((yTranslatedColorSpace < colorSensorBufferHeight) && (xTranslatedColorSpace < colorSensorBufferWidth) &&
-                            (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
+                if ((yTranslatedColorSpace < colorSensorBufferHeight) && (xTranslatedColorSpace < colorSensorBufferWidth) && (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
                 {
                     // point to current pixel in image buffer
                     uint* ptrImgBufferPixelInt = ptrImageBufferInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
@@ -200,10 +199,10 @@ namespace BodyExtractionAndHightlighting
             this.translateHand((xStart - 1), yStart, vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
             this.translateHand(xStart, (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
             this.translateHand(xStart, (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.translateHand((xStart - 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.translateHand((xStart - 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.translateHand((xStart + 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
-            this.translateHand((xStart + 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            //this.translateHand((xStart - 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            //this.translateHand((xStart - 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            //this.translateHand((xStart + 1), (yStart - 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
+            //this.translateHand((xStart + 1), (yStart + 1), vElbowWristX, vElbowWristY, xWristColorSpace, yWristColorSpace, xOffset, yOffset, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
         }
 
         private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)

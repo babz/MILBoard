@@ -71,8 +71,6 @@ namespace BodyExtractionAndHightlighting
                 this.xElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[idxElbowDepthSpace].X + 0.5);
                 this.yElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[idxElbowDepthSpace].Y + 0.5);
 
-                this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrColorToDepthSpaceMapper);
-
                 int idxWristDepthSpace = (int)(bodyIndexSensorBufferWidth * (int)(pWrist.Y + 0.5) + pWrist.X + 0.5);
                 this.xWristColorSpace = (int)(ptrDepthToColorSpaceMapper[idxWristDepthSpace].X + 0.5);
                 this.yWristColorSpace = (int)(ptrDepthToColorSpaceMapper[idxWristDepthSpace].Y + 0.5);
@@ -94,6 +92,8 @@ namespace BodyExtractionAndHightlighting
                 Vector vHalfShoulderWrist = new Vector((vElbowToShoulder.X + vElbowToWristOrig.X), (vElbowToShoulder.Y + vElbowToWristOrig.Y));
                 //vHalfShoulderWrist.Normalize();
                 Vector vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X);
+
+                this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrColorToDepthSpaceMapper, vHalfShoulderWrist_NormRight);
 
                 this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, vElbowToWristOrig, vHalfShoulderWrist_NormRight);
 
@@ -166,7 +166,7 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        private unsafe void drawBodyWithoutRightHand(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
+        private unsafe void drawBodyWithoutRightHand(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper, Vector vHalfShoulderWrist_NormRight)
         {
             //with the cast to int, step size is 4 bytes
             uint* ptrImgBufferPixelInt = null;
@@ -187,14 +187,22 @@ namespace BodyExtractionAndHightlighting
                     int idxDepthSpace = (int)(bodyIndexSensorBufferWidth * ptrColorToDepthSpaceMapper[idxColorSpace].Y + ptrColorToDepthSpaceMapper[idxColorSpace].X); //2D to 1D
 
                     // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                    if ((ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff) && (xColorSpace <= xElbowColorSpace))
+                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
                     {
-                        ptrImgBufferPixelInt = ptrImageBufferInt + idxColorSpace;
+                        //omit right lower hand pixel; use half vector btw shoulder and wrist as termination criteria
+                        int vPointElbowX = (int)(xColorSpace - xElbowColorSpace + 0.5);
+                        int vPointElbowY = (int)(yColorSpace - yElbowColorSpace + 0.5);
+                        int sigPointElbow = ((int)(vHalfShoulderWrist_NormRight.X + 0.5)) * vPointElbowX + ((int)(vHalfShoulderWrist_NormRight.Y + 0.5)) * vPointElbowY;
+                        //point is not drawn if p > Elbow
+                        if (sigPointElbow <= 0)
+                        {
+                            ptrImgBufferPixelInt = ptrImageBufferInt + idxColorSpace;
 
-                        //with the cast to int, 4 bytes are copied
-                        *ptrImgBufferPixelInt = ptrColorSensorBufferInt[idxColorSpace];
-                        // overwrite the alpha value
-                        *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                            //with the cast to int, 4 bytes are copied
+                            *ptrImgBufferPixelInt = ptrColorSensorBufferInt[idxColorSpace];
+                            // overwrite the alpha value
+                            *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                        }
                     }
                 }
 
@@ -441,7 +449,7 @@ namespace BodyExtractionAndHightlighting
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
 
                     //do not visit same pixel twice
                     *ptrColorSensorBufferPixelInt = 0xFF000000;
