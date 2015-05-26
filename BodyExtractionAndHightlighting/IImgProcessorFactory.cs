@@ -14,7 +14,7 @@ namespace BodyExtractionAndHightlighting
     {
         public abstract IBasicManager createBasicManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, byte userTransparency);
 
-        public abstract ISymbolManager createSymbolManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Point pTouch);
+        public abstract ISymbolManager createSymbolManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Point pTouch, byte userTransparency);
 
         public abstract IHandManager createHandManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency);
 

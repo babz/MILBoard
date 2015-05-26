@@ -9,7 +9,7 @@ namespace BodyExtractionAndHightlighting
 {
     public class Constants
     {
-        public static const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
+        public static double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
         private static int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
         private static CoordinateMapper coordinateMapper;

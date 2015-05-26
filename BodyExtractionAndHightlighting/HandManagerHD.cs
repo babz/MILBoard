@@ -184,7 +184,7 @@ namespace BodyExtractionAndHightlighting
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * HAND_TRANSLATED_ALPHAFACTOR);
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
 
                     //do not visit same pixel twice
                     *ptrColorSensorBufferPixelInt = 0xFF000000;

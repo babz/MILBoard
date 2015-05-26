@@ -303,7 +303,7 @@ namespace BodyExtractionAndHightlighting
                     }
                     else if (guiPointerType == GUIPointerType.Symbol)
                     {
-                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch);
+                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency);
                     }
                     else
                     {
