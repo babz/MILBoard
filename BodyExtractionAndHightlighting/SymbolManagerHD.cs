@@ -101,8 +101,9 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void drawSymbol()
         {
-            guiSymbol.Visibility = Visibility.Visible;
-            
+            System.Windows.Controls.Canvas.SetTop(guiSymbol, 100);
+            System.Windows.Controls.Canvas.SetLeft(guiSymbol, 100);
+            System.Windows.Controls.Canvas.SetZIndex(guiSymbol, 5);
         }
     }
 }

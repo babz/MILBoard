@@ -300,8 +300,8 @@ namespace BodyExtractionAndHightlighting
                     }
                     else if (guiPointerType == GUIPointerType.Symbol)
                     {
-                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol);
-                        pointerSymbol.Visibility = Visibility.Hidden;
+                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(imageBufferLowRes);
+                        
                     }
                     else
                     {
@@ -471,19 +471,22 @@ namespace BodyExtractionAndHightlighting
         private void GUIArmPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Arm;
-            hasTouchOccurred = false;
+            hasTouchOccurred = false; 
+            pointerSymbol.Visibility = Visibility.Hidden;
         }
 
         private void GUIHandPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Hand;
             hasTouchOccurred = true;
+            pointerSymbol.Visibility = Visibility.Hidden;
         }
 
         private void GUISymbolPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Symbol;
-            hasTouchOccurred = true;
+            hasTouchOccurred = true; 
+            pointerSymbol.Visibility = Visibility.Visible;
         }
 
         private void checkBoxShowFps_Unchecked(object sender, RoutedEventArgs e)

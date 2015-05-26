@@ -20,7 +20,7 @@ namespace BodyExtractionAndHightlighting
 
         private byte userTransparency;
         private unsafe Point pTouch;
-        System.Windows.Controls.Image guiSymbol;
+        private System.Windows.Controls.Image guiSymbol;
 
         public SymbolManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Point pTouch, byte userTransparency, System.Windows.Controls.Image guiPointerSymbol)
         {
@@ -112,7 +112,6 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void drawSymbol()
         {
-            guiSymbol.Visibility = Visibility.Visible;
             System.Windows.Controls.Canvas.SetTop(guiSymbol, 100);
             System.Windows.Controls.Canvas.SetLeft(guiSymbol, 100);
             System.Windows.Controls.Canvas.SetZIndex(guiSymbol, 5);
