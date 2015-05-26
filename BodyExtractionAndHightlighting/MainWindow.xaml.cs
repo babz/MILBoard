@@ -471,8 +471,11 @@ namespace BodyExtractionAndHightlighting
         private void GUIArmPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Arm;
-            hasTouchOccurred = false; 
-            pointerSymbol.Visibility = Visibility.Hidden;
+            hasTouchOccurred = false;
+            if (pointerSymbol != null)
+            {
+                pointerSymbol.Visibility = Visibility.Hidden;
+            }
         }
 
         private void GUIHandPtr_Checked(object sender, RoutedEventArgs e)
@@ -486,6 +489,9 @@ namespace BodyExtractionAndHightlighting
         {
             guiPointerType = GUIPointerType.Symbol;
             hasTouchOccurred = true; 
+            //TODO 
+            //1. bool for pencil enabled
+            //2. enabled && touch {pencil visible}
             pointerSymbol.Visibility = Visibility.Visible;
         }
 
