@@ -20,8 +20,9 @@ namespace BodyExtractionAndHightlighting
 
         private byte userTransparency;
         private unsafe Point pTouch;
+        System.Windows.Controls.Image guiSymbol;
 
-        public SymbolManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Point pTouch, byte userTransparency)
+        public SymbolManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Point pTouch, byte userTransparency, System.Windows.Controls.Image guiPointerSymbol)
         {
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
             this.colorSensorBufferWidth = Constants.GetColorSensorBufferWidth();
@@ -35,6 +36,7 @@ namespace BodyExtractionAndHightlighting
 
             this.depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
 
+            this.guiSymbol = guiPointerSymbol;
             this.userTransparency = userTransparency;
             this.pTouch = pTouch;
         }
@@ -110,7 +112,7 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void drawSymbol()
         {
-
+            
         }
     }
 }

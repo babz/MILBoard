@@ -15,9 +15,9 @@ namespace BodyExtractionAndHightlighting
             return (IBasicManager)(new BasicManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency));
         }
 
-        public override ISymbolManager createSymbolManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Point pTouch, byte userTransparency)
+        public override ISymbolManager createSymbolManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Point pTouch, byte userTransparency, System.Windows.Controls.Image guiPointerSymbol)
         {
-            return (ISymbolManager)(new SymbolManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency));
+            return (ISymbolManager)(new SymbolManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, guiPointerSymbol));
         }
 
         public override IHandManager createHandManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)

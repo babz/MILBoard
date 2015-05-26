@@ -143,9 +143,6 @@ namespace BodyExtractionAndHightlighting
             // get the coordinate mapper
             CoordinateMapper coordinateMapper = this.sensor.CoordinateMapper;
 
-            //TODO draws skeleton
-            //imageBody.Source = new DrawingImage(this.drawingGroup);
-
             //inits
             Constants.initConstants(fdDepth.Width, fdDepth.Height, fdColor.Width, fdColor.Height, coordinateMapper, false);
             if (isFullHD)
@@ -303,7 +300,8 @@ namespace BodyExtractionAndHightlighting
                     }
                     else if (guiPointerType == GUIPointerType.Symbol)
                     {
-                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency);
+                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol);
+                        pointerSymbol.Visibility = Visibility.Hidden;
                     }
                     else
                     {
