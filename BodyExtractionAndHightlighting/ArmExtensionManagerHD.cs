@@ -17,7 +17,7 @@ namespace BodyExtractionAndHightlighting
         private CoordinateMapper coordinateMapper;
         private ushort[] depthDataSource;
 
-        private unsafe Point pElbow, pWrist, pHandTip, pTouch, pHand, pShoulder;
+        private /*unsafe*/ Point pElbow, pWrist, pHandTip, pTouch, pHand, pShoulder;
         private unsafe int xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandTipColorSpace, yHandTipColorSpace, xHandColorSpace, yHandColorSpace, xShoulderColorSpace, yShoulderColorSpace;
         private unsafe int xTranslationOffset, yTranslationOffset;
 
@@ -27,7 +27,7 @@ namespace BodyExtractionAndHightlighting
         private Helper helper;
         private byte userTransparency;
 
-        private unsafe Vector vElbowToWristOrig, vElbowToWristOrigNorm, vHalfShoulderWrist_NormRight;
+        private /*unsafe*/ Vector vElbowToWristOrig, vElbowToWristOrigNorm, vHalfShoulderWrist_NormRight;
 
         private volatile unsafe byte* ptrBodyIndexSensorBuffer, ptrColorSensorBuffer, ptrImageBufferHD;
         private volatile unsafe uint* ptrImageBufferHDInt, ptrColorSensorBufferInt;
@@ -126,10 +126,11 @@ namespace BodyExtractionAndHightlighting
                 this.xTranslationOffset = (int)(pTouch.X - xHandTipColorSpace + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - yHandTipColorSpace + 0.5);
 
-                int stackSize = int.MaxValue;
+                int stackSize = 1024 * 1024 * 20;
                 Thread thread = new Thread(() => drawTranslatedRightHand(xHandColorSpace, yHandColorSpace), stackSize);
                 thread.Start();
                 thread.Join(); //out of mem
+                
 
                 //this.drawTranslatedRightHand(xHandColorSpace, yHandColorSpace, ptrBodyIndexSensorBuffer, ptrImageBufferHDInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
 
