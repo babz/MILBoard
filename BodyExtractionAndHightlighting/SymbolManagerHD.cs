@@ -18,6 +18,10 @@ namespace BodyExtractionAndHightlighting
 
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
+        private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
+        private volatile unsafe byte* ptrBodyIndexSensorBuffer;
+        private volatile unsafe uint* ptrImageBufferHDInt, ptrColorSensorBufferInt;
+
         private byte userTransparency;
         Point pTouch;
         System.Windows.Controls.Image guiSymbol;
@@ -49,16 +53,18 @@ namespace BodyExtractionAndHightlighting
             fixed (byte* ptrImageBufferHD = imageBufferHD)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
-                uint* ptrImageBufferHDInt = (uint*)ptrImageBufferHD;
-                uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
+                this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
+                this.ptrColorToDepthSpaceMapper = ptrColorToDepthSpaceMapper;
 
-                this.drawBody(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrColorToDepthSpaceMapper);
+                this.ptrImageBufferHDInt = (uint*)ptrImageBufferHD;
+                this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
+                this.drawBody();
                 this.drawSymbol();
             }
         }
 
-        private unsafe void drawBody(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, DepthSpacePoint* ptrColorToDepthSpaceMapper)
+        private unsafe void drawBody()
         {
             //with the cast to int, step size is 4 bytes
             uint* ptrImgBufferPixelInt = null;
@@ -81,7 +87,7 @@ namespace BodyExtractionAndHightlighting
                     // bodyIndex can be 0, 1, 2, 3, 4, or 5
                     if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
                     {
-                        ptrImgBufferPixelInt = ptrImageBufferInt + idxColorSpace;
+                        ptrImgBufferPixelInt = ptrImageBufferHDInt + idxColorSpace;
 
                         //with the cast to int, 4 bytes are copied
                         *ptrImgBufferPixelInt = ptrColorSensorBufferInt[idxColorSpace];
@@ -101,8 +107,8 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void drawSymbol()
         {
-            System.Windows.Controls.Canvas.SetTop(guiSymbol, 100);
-            System.Windows.Controls.Canvas.SetLeft(guiSymbol, 100);
+            System.Windows.Controls.Canvas.SetTop(guiSymbol, pTouch.Y);
+            System.Windows.Controls.Canvas.SetLeft(guiSymbol, pTouch.X);
             System.Windows.Controls.Canvas.SetZIndex(guiSymbol, 5);
         }
     }

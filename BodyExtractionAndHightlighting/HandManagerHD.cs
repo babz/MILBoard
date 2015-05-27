@@ -111,14 +111,68 @@ namespace BodyExtractionAndHightlighting
                 this.xTranslationOffset = (int)(pTouch.X - xHandTipColorSpace + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - yHandTipColorSpace + 0.5);
 
-                int stackSize = 10000000;
+                int stackSize = 1000000000;
                 Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), stackSize);
                 thread.Start();
                 thread.Join();
                 //this.translateHand(xHandColorSpace, yHandColorSpace);
                 //this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
+                if (Constants.IsSkeletonShown)
+                {
+                    this.drawWristVector();
+                }
+
             } //end fixed
+        }
+
+        private unsafe void drawWristVector()
+        {
+            //==== Elbow-Wrist
+            vElbowToWristOrig.Normalize();
+
+            float xCurrOrigArm = xWristColorSpace;
+            float yCurrOrigArm = yWristColorSpace;
+            int stepsOnVector = 50;
+            for (int i = 0; i < stepsOnVector; i++)
+            {
+                if ((xCurrOrigArm < colorSensorBufferWidth) && (xCurrOrigArm >= 0) && (yCurrOrigArm < colorSensorBufferHeight) && (yCurrOrigArm >= 0))
+                {
+                    uint* ptrImgBufferPixelInt = ptrImageBufferHDInt + (((int)(yCurrOrigArm + 0.5)) * colorSensorBufferWidth + ((int)(xCurrOrigArm + 0.5)));
+                    *ptrImgBufferPixelInt = 0xFF00FFFF;
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = 255;
+                }
+
+                xCurrOrigArm += (float)vElbowToWristOrig.X;
+                yCurrOrigArm += (float)vElbowToWristOrig.Y;
+            }
+
+            //==== WRIST
+            //wrist vector is normal to elbowToWrist vector
+            Vector vWristRight = new Vector(-vElbowToWristOrig.Y, vElbowToWristOrig.X);
+            vWristRight.Normalize();
+            //int vWristRightNormX = ((int)(vWristRight.X + 0.5));
+            //int vWristRightNormY = ((int)(vWristRight.Y + 0.5));
+
+            // new position where the color is written into
+            //uint* ptrImgBufferPixelInt = null; 
+
+            //start at 50 pixel right on wrist vector
+            float vWrist_posX = (float)(xWristColorSpace - vWristRight.X * 50);
+            float vWrist_posY = (float)(yWristColorSpace - vWristRight.Y * 50);
+            stepsOnVector = 100;
+            for (int i = 0; i < stepsOnVector; i++)
+            {
+                if ((vWrist_posX < colorSensorBufferWidth) && (vWrist_posX >= 0) && (vWrist_posY < colorSensorBufferHeight) && (vWrist_posY >= 0))
+                {
+                    uint* ptrImgBufferPixelInt = ptrImageBufferHDInt + (((int)(vWrist_posY + 0.5)) * colorSensorBufferWidth + ((int)(vWrist_posX + 0.5)));
+                    *ptrImgBufferPixelInt = 0xFFFF0000;
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = 255;
+                }
+
+                vWrist_posX += (float)vWristRight.X;
+                vWrist_posY += (float)vWristRight.Y;
+            }
         }
 
         private unsafe void drawBody()
@@ -194,8 +248,8 @@ namespace BodyExtractionAndHightlighting
                 return;
             }
 
-            float xDepthPixel = ptrColorToDepthSpaceMapper[yStart * colorSensorBufferWidth + xStart].X;
-            float yDepthPixel = ptrColorToDepthSpaceMapper[yStart * colorSensorBufferWidth + xStart].Y;
+            float xDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].X;
+            float yDepthPixel = ptrColorToDepthSpaceMapper[idxCurrColorPixel].Y;
             int idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
             if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (ptrBodyIndexSensorBuffer[idxDepthPixel] == 0xff))
             {
@@ -218,7 +272,7 @@ namespace BodyExtractionAndHightlighting
                         *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
 
                         //do not visit same pixel twice
-                        *(ptrColorSensorBufferInt + (yStart * colorSensorBufferWidth + xStart)) = 0xFF000000;
+                        *ptrColorSensorBufferPixelInt = 0xFF000000;
                     }
                 }
                 else

@@ -295,17 +295,16 @@ namespace BodyExtractionAndHightlighting
                     }
                     else if (guiPointerType == GUIPointerType.Hand) 
                     {
-                        //TODO check if hand is tracked
                         imgProcessor.createHandManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPoints, pTouch, userTransparency).processImage(imageBuffer);
                     }
                     else if (guiPointerType == GUIPointerType.Symbol)
                     {
-                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(imageBufferLowRes);
-                        
+                        pointerSymbol.Visibility = Visibility.Visible;
+                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(imageBuffer);
                     }
                     else
                     {
-                        throw new ApplicationException("Error: undefined pointer state");
+                        throw new ApplicationException("Error: undefined gui pointer state");
                     }
                 } 
                     
@@ -331,10 +330,16 @@ namespace BodyExtractionAndHightlighting
 
         private Point GetKinectCoordinates(Point touchpoint)
         {
-            if (armRotateOnly || armScaleOnly || (guiPointerType == GUIPointerType.Hand) || (guiPointerType == GUIPointerType.Symbol))
+            if (armRotateOnly || armScaleOnly || (guiPointerType == GUIPointerType.Hand))
             {
                 touchpoint = new Point(1200.0, 550.0);
             }
+
+            if (guiPointerType == GUIPointerType.Symbol)
+            {
+                return new Point(1200.0, 550.0);
+            }
+
             //considers the discrepancy btw position of canvas and actual image;
             //canvas relative point is translated to image relative point
             Point relativeTouchpoint = this.imageCanvas.TranslatePoint(touchpoint, imageCombi);
@@ -482,17 +487,16 @@ namespace BodyExtractionAndHightlighting
         {
             guiPointerType = GUIPointerType.Hand;
             hasTouchOccurred = true;
-            pointerSymbol.Visibility = Visibility.Hidden;
+            if (pointerSymbol != null)
+            {
+                pointerSymbol.Visibility = Visibility.Hidden;
+            }
         }
 
         private void GUISymbolPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Symbol;
-            hasTouchOccurred = true; 
-            //TODO 
-            //1. bool for pencil enabled
-            //2. enabled && touch {pencil visible}
-            pointerSymbol.Visibility = Visibility.Visible;
+            hasTouchOccurred = true;
         }
 
         private void checkBoxShowFps_Unchecked(object sender, RoutedEventArgs e)

@@ -49,7 +49,7 @@ namespace BodyExtractionAndHightlighting
                 uint* ptrImageBufferInt = (uint*)ptrImageBufferHD;
                 uint* ptrImgBufferPixelInt = null;
 
-                int lengthColorBuffer = colorSensorBufferHeight * colorSensorBufferWidth;
+                int lengthColorBuffer = colorToDepthSpaceMapper.Length; //colorSensorBufferHeight * colorSensorBufferWidth;
                 //after the loop, only color pixels with a body index value that can be mapped to a depth value will remain in the buffer
                 for (int i = 0; i < lengthColorBuffer; i++)
                 {
