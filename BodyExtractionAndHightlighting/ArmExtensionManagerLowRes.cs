@@ -21,7 +21,7 @@ namespace BodyExtractionAndHightlighting
         private unsafe Point pElbow, pWrist, pHandTip, pTouch, pHand, pShoulder;
         private unsafe int xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch, xHand, yHand, xShoulder, yShoulder;
         private volatile unsafe int xTranslationOffset, yTranslationOffset;
-        private unsafe Vector vElbowToWristOrig, vElbowToWristOrigNorm, vHalfShoulderWrist_NormRight;
+        private unsafe Vector vElbowToWristOrig, vElbowToWristOrigNorm, vHalfShoulderWrist_NormRight, vElbowToHandTip;
 
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
@@ -96,9 +96,12 @@ namespace BodyExtractionAndHightlighting
                 this.vElbowToWristOrig = new Vector((pWrist.X - pElbow.X), (pWrist.Y - pElbow.Y));
                 this.vElbowToWristOrigNorm = vElbowToWristOrig;
                 this.vElbowToWristOrigNorm.Normalize();
+                //TEST artefacts: gaps
+                this.vElbowToHandTip = new Vector((pHandTip.X - pElbow.X), (pHandTip.Y - pElbow.Y));
 
                 //lower boundary: half vector of shoulder and wrist
                 Vector vElbowToShoulder = new Vector((pShoulder.X - pElbow.X), (pShoulder.Y - pElbow.Y));
+
                 // H = (S+W)
                 Vector vHalfShoulderWrist = new Vector((vElbowToShoulder.X + vElbowToWristOrig.X), (vElbowToShoulder.Y + vElbowToWristOrig.Y));
                 //vHalfShoulderWrist.Normalize();
@@ -113,7 +116,7 @@ namespace BodyExtractionAndHightlighting
                 this.xTranslationOffset = (int)(pTouch.X - pHandTip.X + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - pHandTip.Y + 0.5);
 
-                this.drawTranslatedRightHand(xHand, yHand);
+                //this.drawTranslatedRightHand(xHand, yHand);
             } //end fixed
         }
 
@@ -336,7 +339,9 @@ namespace BodyExtractionAndHightlighting
 
             //FROM ELBOW TO WRIST
             // v = (x, y)
-            float vOrigArmLength = (float)vElbowToWristOrig.Length;
+            //float vOrigArmLength = (float)vElbowToWristOrig.Length;
+            //TEST
+            float vOrigArmLength = (float)vElbowToHandTip.Length;
 
             //NOTE vector normals different as coordinate system origin (0,0) is upper left corner!
             //v_nleft = (y, -x)
