@@ -89,7 +89,7 @@ namespace BodyExtractionAndHightlighting
                 this.ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-                this.drawBodyfloodfill((xElbow - 1), yElbow);
+                
 
                 //start point is (xElbow + 1)
                 //this.detectRightLowerArm((xElbow + 1), yElbow, vElbowWristOrig, xElbow, yElbow, xWrist, yWrist, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
@@ -104,7 +104,9 @@ namespace BodyExtractionAndHightlighting
                 //vHalfShoulderWrist.Normalize();
                 Vector vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X);
 
-                this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vHalfShoulderWrist_NormRight);
+
+                this.drawBodyfloodfill(xShoulder, yShoulder);
+                //this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vHalfShoulderWrist_NormRight);
 
                 this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vElbowToWristOrig, vHalfShoulderWrist_NormRight);
 
