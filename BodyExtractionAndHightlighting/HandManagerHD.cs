@@ -114,13 +114,13 @@ namespace BodyExtractionAndHightlighting
                 this.xTranslationOffset = (int)(pTouch.X - xHandTipColorSpace + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - yHandTipColorSpace + 0.5);
 
-                Thread threadBody = new Thread(() => bodyFloodFill(xElbowColorSpace, yElbowColorSpace), Constants.STACK_SIZE);
-                threadBody.Start();
-                threadBody.Join();
-
                 Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), Constants.STACK_SIZE);
                 thread.Start();
                 thread.Join();
+
+                Thread threadBody = new Thread(() => bodyFloodFill(xElbowColorSpace, yElbowColorSpace), Constants.STACK_SIZE);
+                threadBody.Start();
+                threadBody.Join();
                 
                 /*
                 ThreadPool.QueueUserWorkItem(() => translateHand(xHandColorSpace, yHandColorSpace));
