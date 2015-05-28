@@ -11,7 +11,7 @@ namespace BodyExtractionAndHightlighting
 {
     public class HandManagerHD : IHandManager
     {
-        private static ManualResetEvent resetEvent = new ManualResetEvent(false);
+        private byte handAlphaValue;
 
         private int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
@@ -67,6 +67,8 @@ namespace BodyExtractionAndHightlighting
 
         public unsafe void processImage(byte[] imageBufferHD)
         {
+            handAlphaValue = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
+
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
             coordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
 
@@ -116,9 +118,10 @@ namespace BodyExtractionAndHightlighting
                 threadBody.Start();
                 threadBody.Join();
 
-                //Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), Constants.STACK_SIZE);
-                //thread.Start();
-                //thread.Join();
+                Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), Constants.STACK_SIZE);
+                thread.Start();
+                thread.Join();
+                
                 /*
                 ThreadPool.QueueUserWorkItem(() => translateHand(xHandColorSpace, yHandColorSpace));
                 resetEvent.WaitOne();
@@ -252,10 +255,6 @@ namespace BodyExtractionAndHightlighting
 
             //pixel already visited
             uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
-            if ((*ptrColorSensorBufferPixelInt) == 0xFF000000)
-            {
-                return;
-            }
 
             float xDepthPixel = (ptrColorToDepthSpaceMapper+idxCurrColorPixel)->X;
             float yDepthPixel = (ptrColorToDepthSpaceMapper+idxCurrColorPixel)->Y;
@@ -274,14 +273,17 @@ namespace BodyExtractionAndHightlighting
                     {
                         // point to current pixel in image buffer
                         uint* ptrImgBufferPixelInt = ptrImageBufferHDInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
+
+                        if (*(((byte*)ptrImgBufferPixelInt) + 3) == handAlphaValue)
+                        {
+                            return;
+                        }
                     
                         // assign color value (4 bytes)
                         *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                         // overwrite the alpha value (last byte)
-                        *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
+                        *(((byte*)ptrImgBufferPixelInt) + 3) = handAlphaValue;
 
-                        //do not visit same pixel twice
-                        *ptrColorSensorBufferPixelInt = 0xFF000000;
                     }
                 }
                 else
@@ -314,17 +316,7 @@ namespace BodyExtractionAndHightlighting
             if (idxCurrColorPixel >= colorToDepthSpaceMapper.Length) // colorToDepthSpaceMapper.Length = colorSensorBufferWidth * colorSensorBufferHeight
             {
                 return;
-            }
-
-            //boundary: normal vector of wrist; no normalization necessary!! (only signum is of value)
-            //int vPointWristX = xStart - xWristColorSpace;
-            //int vPointWristY = yStart - yWristColorSpace;
-            //int sig = ((int)(vElbowToWristOrig.X + 0.5)) * vPointWristX + ((int)(vElbowToWristOrig.Y + 0.5)) * vPointWristY;
-            ////point ON line counts to hand
-            //if (sig < 0)
-            //{
-            //    return;
-            //}
+            }       
 
             //pixel already visited
             uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
@@ -356,29 +348,7 @@ namespace BodyExtractionAndHightlighting
                 *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                 // overwrite the alpha value (last byte)
                 *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
-
-                if (sig >= 0)
-                {
-                    xTranslatedColorSpace = xStart + xTranslationOffset;
-                    yTranslatedColorSpace = yStart + yTranslationOffset;
-                    if ((yTranslatedColorSpace < colorSensorBufferHeight) && (xTranslatedColorSpace < colorSensorBufferWidth) && (yTranslatedColorSpace >= 0) && (xTranslatedColorSpace >= 0))
-                    {
-                        // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrImageBufferHDInt + (yTranslatedColorSpace * colorSensorBufferWidth + xTranslatedColorSpace);
-
-                        // assign color value (4 bytes)
-                        *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                        // overwrite the alpha value (last byte)
-                        *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
-
-                    }
-                    else
-                    {
-                        //do not visit same pixel twice
-                        *ptrColorSensorBufferPixelInt = 0xFF000000;
-                        return;
-                    }
-                }
+             
                 //do not visit same pixel twice
                 *ptrColorSensorBufferPixelInt = 0xFF000000;
             }
