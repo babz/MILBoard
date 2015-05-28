@@ -9,7 +9,7 @@ namespace BodyExtractionAndHightlighting
 {
     public class Constants
     {
-        public const int STACK_SIZE = 1024 * 1024 * 20;
+        public const int STACK_SIZE = 1024 * 1024 * 50;
         public const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
         private static int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;

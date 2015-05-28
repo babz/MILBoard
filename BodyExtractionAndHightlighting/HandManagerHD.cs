@@ -103,8 +103,9 @@ namespace BodyExtractionAndHightlighting
 
                 // write-through
                 //this.drawBody();
-                this.bodyFloodFill(xElbowColorSpace, yElbowColorSpace);
-
+                Thread threadBody = new Thread(() => bodyFloodFill(xElbowColorSpace, yElbowColorSpace), Constants.STACK_SIZE);
+                threadBody.Start();
+                threadBody.Join();
                 //==draw a translated right hand duplicate
                 
                 //upper boundary: normal vector of wrist
