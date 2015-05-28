@@ -11,6 +11,8 @@ namespace BodyExtractionAndHightlighting
 {
     public class HandManagerHD : IHandManager
     {
+        private static ManualResetEvent resetEvent = new ManualResetEvent(false);
+
         private int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
 
@@ -111,10 +113,13 @@ namespace BodyExtractionAndHightlighting
                 this.xTranslationOffset = (int)(pTouch.X - xHandTipColorSpace + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - yHandTipColorSpace + 0.5);
 
-                
                 Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), Constants.STACK_SIZE);
                 thread.Start();
                 thread.Join();
+                /*
+                ThreadPool.QueueUserWorkItem(() => translateHand(xHandColorSpace, yHandColorSpace));
+                resetEvent.WaitOne();
+                */
 
                 //this.translateHand(xHandColorSpace, yHandColorSpace);
                 //this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);

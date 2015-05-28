@@ -89,7 +89,7 @@ namespace BodyExtractionAndHightlighting
                 this.ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-                //this.drawBodyfloodfill((xElbow - 1), yElbow, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+                this.drawBodyfloodfill((xElbow - 1), yElbow);
 
                 //start point is (xElbow + 1)
                 //this.detectRightLowerArm((xElbow + 1), yElbow, vElbowWristOrig, xElbow, yElbow, xWrist, yWrist, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
@@ -225,7 +225,7 @@ namespace BodyExtractionAndHightlighting
             } //for loop
         }
 
-        private unsafe void drawBodyfloodfill(int xStart, int yStart, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
+        private unsafe void drawBodyfloodfill(int xStart, int yStart)
         {
             if ((xStart >= pElbow.X) || (xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
             {
@@ -269,15 +269,19 @@ namespace BodyExtractionAndHightlighting
             }
 
             //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.drawBodyfloodfill((xStart + 1), yStart, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            this.drawBodyfloodfill((xStart - 1), yStart, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            this.drawBodyfloodfill(xStart, (yStart + 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
-            this.drawBodyfloodfill(xStart, (yStart - 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            this.drawBodyfloodfill((xStart + 1), yStart);
+            this.drawBodyfloodfill((xStart - 1), yStart);
+            this.drawBodyfloodfill(xStart, (yStart + 1));
+            this.drawBodyfloodfill(xStart, (yStart - 1));
+            /*
             this.drawBodyfloodfill((xStart - 1), (yStart - 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             this.drawBodyfloodfill((xStart - 1), (yStart + 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             this.drawBodyfloodfill((xStart + 1), (yStart - 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             this.drawBodyfloodfill((xStart + 1), (yStart + 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+            */
         }
+
+
         //private unsafe void detectRightLowerArm(int xStart, int yStart, Vector vElbowWristOrig, int xElbow, int yElbow, int xWrist, int yWrist, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
         //{
         //     //xEnd is left outer boundary

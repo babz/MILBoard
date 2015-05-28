@@ -128,8 +128,10 @@ namespace BodyExtractionAndHightlighting
 
                 int stackSize = 1024 * 1024 * 20;
                 Thread thread = new Thread(() => drawTranslatedRightHand(xHandColorSpace, yHandColorSpace), stackSize);
+                thread.Priority = ThreadPriority.AboveNormal;
                 thread.Start();
                 thread.Join(); //out of mem
+                
                 
 
                 //this.drawTranslatedRightHand(xHandColorSpace, yHandColorSpace, ptrBodyIndexSensorBuffer, ptrImageBufferHDInt, ptrColorSensorBufferInt, ptrColorToDepthSpaceMapper);
