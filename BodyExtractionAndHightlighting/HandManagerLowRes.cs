@@ -166,10 +166,10 @@ namespace BodyExtractionAndHightlighting
                 ptrImgBufferPixelInt = null;
                 bool isColorPixelInValidRange = false;
 
-                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
                 {
-                    int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
-                    int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+                    int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
+                    int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
 
                     if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
                             (colorPointY >= 0) && (colorPointX >= 0))
@@ -218,7 +218,7 @@ namespace BodyExtractionAndHightlighting
 
             //pixel already visited
             int depthLookup = yStart * bodyIndexSensorBufferWidth + xStart;
-            if (ptrBodyIndexSensorBuffer[depthLookup] == 0xff)
+            if (*(ptrBodyIndexSensorBuffer + depthLookup) == 0xff)
             {
                 return;
             }

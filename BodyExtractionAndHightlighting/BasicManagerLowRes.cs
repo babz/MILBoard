@@ -56,10 +56,10 @@ namespace BodyExtractionAndHightlighting
                 for (int i = 0; i < length; i++)
                 {
                     // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                    if (ptrBodyIndexSensorBuffer[i] != 0xff)
+                    if (*(ptrBodyIndexSensorBuffer + i) != 0xff)
                     {
-                        int colorPointX = (int)(ptrDepthToColorSpaceMapper[i].X + 0.5);
-                        int colorPointY = (int)(ptrDepthToColorSpaceMapper[i].Y + 0.5);
+                        int colorPointX = (int)((ptrDepthToColorSpaceMapper + i)->X + 0.5);
+                        int colorPointY = (int)((ptrDepthToColorSpaceMapper + i)->Y + 0.5);
 
                         //check boundaries
                         if ((colorPointY >= colorSensorBufferHeight) || (colorPointX >= colorSensorBufferWidth) ||

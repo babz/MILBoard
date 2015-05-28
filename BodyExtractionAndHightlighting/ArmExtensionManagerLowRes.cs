@@ -21,7 +21,7 @@ namespace BodyExtractionAndHightlighting
         private unsafe Point pElbow, pWrist, pHandTip, pTouch, pHand, pShoulder;
         private unsafe int xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch, xHand, yHand, xShoulder, yShoulder;
         private volatile unsafe int xTranslationOffset, yTranslationOffset;
-        private unsafe Vector vElbowToWristOrig;
+        private unsafe Vector vElbowToWristOrig, vElbowToWristOrigNorm, vHalfShoulderWrist_NormRight;
 
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
@@ -89,26 +89,26 @@ namespace BodyExtractionAndHightlighting
                 this.ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-                
-
                 //start point is (xElbow + 1)
                 //this.detectRightLowerArm((xElbow + 1), yElbow, vElbowWristOrig, xElbow, yElbow, xWrist, yWrist, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
 
                 //upper boundary: normal vector of wrist
                 this.vElbowToWristOrig = new Vector((pWrist.X - pElbow.X), (pWrist.Y - pElbow.Y));
+                this.vElbowToWristOrigNorm = vElbowToWristOrig;
+                this.vElbowToWristOrigNorm.Normalize();
 
                 //lower boundary: half vector of shoulder and wrist
                 Vector vElbowToShoulder = new Vector((pShoulder.X - pElbow.X), (pShoulder.Y - pElbow.Y));
                 // H = (S+W)
                 Vector vHalfShoulderWrist = new Vector((vElbowToShoulder.X + vElbowToWristOrig.X), (vElbowToShoulder.Y + vElbowToWristOrig.Y));
                 //vHalfShoulderWrist.Normalize();
-                Vector vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X);
+                this.vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X);
 
 
-                this.drawBodyfloodfill(xShoulder, yShoulder);
-                //this.drawBodyWithoutRightHand(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vHalfShoulderWrist_NormRight);
+                //this.drawBodyfloodfill(xShoulder, yShoulder);
+                this.drawBodyWithoutRightHand();
 
-                this.drawStretchedRightLowerArm(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, vElbowToWristOrig, vHalfShoulderWrist_NormRight);
+                this.drawStretchedRightLowerArm();
 
                 this.xTranslationOffset = (int)(pTouch.X - pHandTip.X + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - pHandTip.Y + 0.5);
@@ -167,7 +167,7 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        private unsafe void drawBodyWithoutRightHand(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, Vector vHalfShoulderWrist_NormRight)
+        private unsafe void drawBodyWithoutRightHand()
         {
             //pixel target
             uint* ptrImgBufferPixelInt = null;
@@ -186,7 +186,7 @@ namespace BodyExtractionAndHightlighting
                 bool isColorPixelInValidRange = false;
 
                 //draw until xElbow
-                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
                 {
                     //omit right lower hand pixel; use half vector btw shoulder and wrist as termination criteria
                     int vPointElbowX = (int)(xDepthSpace - xElbow + 0.5);
@@ -195,8 +195,8 @@ namespace BodyExtractionAndHightlighting
                     //point is not drawn if p > Elbow
                     if (sigPointElbow <= 0)
                     {
-                        int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
-                        int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+                        int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
+                        int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
 
                         if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
                                 (colorPointY >= 0) && (colorPointX >= 0))
@@ -241,15 +241,15 @@ namespace BodyExtractionAndHightlighting
 
             //pixel already visited
             int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
-            if (ptrBodyIndexSensorBuffer[idxDepthSpace] == 0xff)
+            if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff)
             {
                 return;
             }
             else
             {
-                ptrBodyIndexSensorBuffer[idxDepthSpace] = 0xff; //do not visit same pixel twice
-                int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
-                int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+                *(ptrBodyIndexSensorBuffer + idxDepthSpace) = 0xff; //do not visit same pixel twice
+                int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
+                int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
 
                 if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
                         (colorPointY >= 0) && (colorPointX >= 0))
@@ -282,7 +282,6 @@ namespace BodyExtractionAndHightlighting
             this.drawBodyfloodfill((xStart + 1), (yStart + 1), ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
             */
         }
-
 
         //private unsafe void detectRightLowerArm(int xStart, int yStart, Vector vElbowWristOrig, int xElbow, int yElbow, int xWrist, int yWrist, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
         //{
@@ -330,7 +329,7 @@ namespace BodyExtractionAndHightlighting
         //    this.detectRightLowerArm((xStart + 1), (yStart + 1), vElbowWristOrig, xElbow, yElbow, xWrist, yWrist, ptrBodyIndexSensorBuffer, ptrImageBufferInt, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
         //}
 
-        private unsafe void drawStretchedRightLowerArm(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, Vector vElbowToWristOrig, Vector vHalfShoulderWrist_NormRight)
+        private unsafe void drawStretchedRightLowerArm()
         {
             uint* ptrImgBufferPixelInt = null; // new position where the color is written into
             uint* ptrColorSensorBufferPixelInt = null; // color pixel position in color frame
@@ -338,13 +337,12 @@ namespace BodyExtractionAndHightlighting
             //FROM ELBOW TO WRIST
             // v = (x, y)
             float vOrigArmLength = (float)vElbowToWristOrig.Length;
-            vElbowToWristOrig.Normalize();
 
             //NOTE vector normals different as coordinate system origin (0,0) is upper left corner!
             //v_nleft = (y, -x)
-            Vector vNormLeftOrigArm = new Vector(vElbowToWristOrig.Y, -(vElbowToWristOrig.X));
+            Vector vNormLeftOrigArm = new Vector(vElbowToWristOrigNorm.Y, -(vElbowToWristOrigNorm.X));
             //v_nright = (-y, x)
-            Vector vNormRightOrigArm = new Vector(-(vElbowToWristOrig.Y), vElbowToWristOrig.X);
+            Vector vNormRightOrigArm = new Vector(-(vElbowToWristOrigNorm.Y), vElbowToWristOrigNorm.X);
 
             //move arm so that it fits to the shifted hand
             Vector offsetNewArmWrist = this.pHandTip - this.pWrist;
@@ -373,8 +371,8 @@ namespace BodyExtractionAndHightlighting
             for (int i = 0; i < totalSteps; i++)
             {
                 int colorLookup = (int)(bodyIndexSensorBufferWidth * (int)(yCurrOrigArm + 0.5) + xCurrOrigArm + 0.5);
-                int colorPointX = (int)(ptrDepthToColorSpaceMapper[colorLookup].X + 0.5);
-                int colorPointY = (int)(ptrDepthToColorSpaceMapper[colorLookup].Y + 0.5);
+                int colorPointX = (int)((ptrDepthToColorSpaceMapper + colorLookup)->X + 0.5);
+                int colorPointY = (int)((ptrDepthToColorSpaceMapper + colorLookup)->Y + 0.5);
 
                 if ((xCurrNewArm < bodyIndexSensorBufferWidth) && (yCurrNewArm < bodyIndexSensorBufferHeight) && (xCurrNewArm >= 0) && (yCurrNewArm >= 0) && (colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
                     (colorPointY >= 0) && (colorPointX >= 0))
@@ -383,9 +381,6 @@ namespace BodyExtractionAndHightlighting
                     int newPositionX = (int)(xCurrNewArm + 0.5);
                     int newPositionY = (int)(yCurrNewArm + 0.5);
                     ptrImgBufferPixelInt = ptrImageBufferInt + (newPositionY * bodyIndexSensorBufferWidth + newPositionX);
-
-                    //color of original arm pixel
-                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
 
                     // assign color value
                     if (Constants.IsSkeletonShown)
@@ -401,6 +396,8 @@ namespace BodyExtractionAndHightlighting
                     }
                     else
                     {
+                        //color of original arm pixel
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
                         // assign color value (4 bytes)
                         *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                         // overwrite the alpha value (last byte)
@@ -416,7 +413,7 @@ namespace BodyExtractionAndHightlighting
                 int lookupIdxNormLeft = (int)((int)(yNormLeft + 0.5) * bodyIndexSensorBufferWidth + xNormLeft + 0.5);
                 float newPosNormLeftX = xCurrNewArm + (float)vNormLeftNewArm.X;
                 float newPosNormLeftY = yCurrNewArm + (float)vNormLeftNewArm.Y;
-                while (ptrBodyIndexSensorBuffer[lookupIdxNormLeft] != 0xff)
+                while (*(ptrBodyIndexSensorBuffer + lookupIdxNormLeft) != 0xff)
                 {
                     if ((xNormLeft >= bodyIndexSensorBufferWidth) || (yNormLeft >= bodyIndexSensorBufferHeight) || (xNormLeft < 0) || (yNormLeft < 0) || (newPosNormLeftX >= bodyIndexSensorBufferWidth) || (newPosNormLeftX < 0) || (newPosNormLeftY >= bodyIndexSensorBufferWidth) || (newPosNormLeftY < 0)) 
                     {
@@ -434,8 +431,8 @@ namespace BodyExtractionAndHightlighting
                         break;
                     }
 
-                    int normLeftColorPointX = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormLeft].X + 0.5);
-                    int normLeftColorPointY = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormLeft].Y + 0.5);
+                    int normLeftColorPointX = (int)((ptrDepthToColorSpaceMapper + lookupIdxNormLeft)->X + 0.5);
+                    int normLeftColorPointY = (int)((ptrDepthToColorSpaceMapper + lookupIdxNormLeft)->Y + 0.5);
 
                     if ((normLeftColorPointY < colorSensorBufferHeight) && (normLeftColorPointX < colorSensorBufferWidth) && (normLeftColorPointY >= 0) && (normLeftColorPointX >= 0))
                     {
@@ -466,7 +463,7 @@ namespace BodyExtractionAndHightlighting
                 int lookupIdxNormRight = (int)((int)(yNormRight + 0.5) * bodyIndexSensorBufferWidth + xNormRight + 0.5);
                 float newPosNormRightX = xCurrNewArm + (float)vNormRightNewArm.X;
                 float newPosNormRightY = yCurrNewArm + (float)vNormRightNewArm.Y;
-                while (ptrBodyIndexSensorBuffer[lookupIdxNormRight] != 0xff)
+                while (*(ptrBodyIndexSensorBuffer + lookupIdxNormRight) != 0xff)
                 {
                     if ((xNormRight >= bodyIndexSensorBufferWidth) || (yNormRight >= bodyIndexSensorBufferHeight) || (xNormRight < 0) || (yNormRight < 0) || (newPosNormRightX >= bodyIndexSensorBufferWidth) || (newPosNormRightX < 0) || (newPosNormRightY >= bodyIndexSensorBufferWidth) || (newPosNormRightY < 0))
                     {
@@ -484,8 +481,8 @@ namespace BodyExtractionAndHightlighting
                         break;
                     }
 
-                    int normRightColorPointX = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormRight].X + 0.5);
-                    int normRightColorPointY = (int)(ptrDepthToColorSpaceMapper[lookupIdxNormRight].Y + 0.5);
+                    int normRightColorPointX = (int)((ptrDepthToColorSpaceMapper + lookupIdxNormRight)->X + 0.5);
+                    int normRightColorPointY = (int)((ptrDepthToColorSpaceMapper + lookupIdxNormRight)->Y + 0.5);
 
                     if ((normRightColorPointY < colorSensorBufferHeight) && (normRightColorPointX < colorSensorBufferWidth) && (normRightColorPointY >= 0) && (normRightColorPointX >= 0))
                     {
@@ -509,8 +506,8 @@ namespace BodyExtractionAndHightlighting
                 #endregion
 
                 //increment to move along vector; use normal vectors for increment
-                xCurrOrigArm += (float)(vElbowToWristOrig.X) * stepSizeOrigArm;
-                yCurrOrigArm += (float)(vElbowToWristOrig.Y) * stepSizeOrigArm;
+                xCurrOrigArm += (float)(vElbowToWristOrigNorm.X) * stepSizeOrigArm;
+                yCurrOrigArm += (float)(vElbowToWristOrigNorm.Y) * stepSizeOrigArm;
                 xCurrNewArm += (float)(vNewArm.X) * stepSizeNewArm;
                 yCurrNewArm += (float)(vNewArm.Y) * stepSizeNewArm;
 
@@ -537,17 +534,17 @@ namespace BodyExtractionAndHightlighting
 
             //pixel already visited
             int depthLookup = yStart * bodyIndexSensorBufferWidth + xStart;
-            if (ptrBodyIndexSensorBuffer[depthLookup] == 0xff)
+            if (*(ptrBodyIndexSensorBuffer + depthLookup) == 0xff)
             {
                 return;
             }
             else
             {
-                ptrBodyIndexSensorBuffer[depthLookup] = 0xff; //do not visit same pixel twice
+                *(ptrBodyIndexSensorBuffer + depthLookup) = 0xff; //do not visit same pixel twice
                 int xTranslatedDepthSpace = xStart + xTranslationOffset;
                 int yTranslatedDepthSpace = yStart + yTranslationOffset;
-                int colorPointX = (int)(ptrDepthToColorSpaceMapper[depthLookup].X + 0.5);
-                int colorPointY = (int)(ptrDepthToColorSpaceMapper[depthLookup].Y + 0.5);
+                int colorPointX = (int)((ptrDepthToColorSpaceMapper + depthLookup)->X + 0.5);
+                int colorPointY = (int)((ptrDepthToColorSpaceMapper + depthLookup)->Y + 0.5);
                 if ((yTranslatedDepthSpace < bodyIndexSensorBufferHeight) && (xTranslatedDepthSpace < bodyIndexSensorBufferWidth) &&
                             (yTranslatedDepthSpace >= 0) && (xTranslatedDepthSpace >= 0) && (colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
                             (colorPointY >= 0) && (colorPointX >= 0))
@@ -559,7 +556,7 @@ namespace BodyExtractionAndHightlighting
                     // assign color value (4 bytes)
                     *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
                     // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
                 }
             }
 
@@ -568,10 +565,6 @@ namespace BodyExtractionAndHightlighting
             this.drawTranslatedRightHand((xStart - 1), yStart);
             this.drawTranslatedRightHand(xStart, (yStart + 1));
             this.drawTranslatedRightHand(xStart, (yStart - 1));
-            this.drawTranslatedRightHand((xStart - 1), (yStart - 1));
-            this.drawTranslatedRightHand((xStart - 1), (yStart + 1));
-            this.drawTranslatedRightHand((xStart + 1), (yStart - 1));
-            this.drawTranslatedRightHand((xStart + 1), (yStart + 1));
         }
 
         private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xTouch, float yTouch)
@@ -614,10 +607,10 @@ namespace BodyExtractionAndHightlighting
 
                     int idxStretchedDepthSpace = bodyIndexSensorBufferWidth * lookupYdepthSpace + lookupXdepthSpace;
 
-                    if ((idxStretchedDepthSpace < depthSpaceSize) && (ptrBodyIndexSensorBuffer[idxStretchedDepthSpace] != 0xff))
+                    if ((idxStretchedDepthSpace < depthSpaceSize) && (*(ptrBodyIndexSensorBuffer + idxStretchedDepthSpace) != 0xff))
                     {
-                        int colorPointXstretched = (int)(ptrDepthToColorSpaceMapper[idxStretchedDepthSpace].X + 0.5);
-                        int colorPointYstretched = (int)(ptrDepthToColorSpaceMapper[idxStretchedDepthSpace].Y + 0.5);
+                        int colorPointXstretched = (int)((ptrDepthToColorSpaceMapper + idxStretchedDepthSpace)->X + 0.5);
+                        int colorPointYstretched = (int)((ptrDepthToColorSpaceMapper + idxStretchedDepthSpace)->Y + 0.5);
 
                         if ((colorPointYstretched < unsafecolorSensorBufferHeight) && (colorPointXstretched < unsafecolorSensorBufferWidth) &&
                                 (colorPointYstretched >= 0) && (colorPointXstretched >= 0))
@@ -628,10 +621,10 @@ namespace BodyExtractionAndHightlighting
                 }
                 else // handle rest of the body
                 {
-                    if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                    if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
                     {
-                        int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
-                        int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+                        int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
+                        int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
 
                         if ((colorPointY < unsafecolorSensorBufferHeight) && (colorPointX < unsafecolorSensorBufferWidth) &&
                         (colorPointY >= 0) && (colorPointX >= 0))
@@ -681,7 +674,7 @@ namespace BodyExtractionAndHightlighting
             {
                 ptrColorSensorBufferPixelInt = null;
 
-                if (ptrBodyIndexSensorBuffer[idxDepthSpace] != 0xff)
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
                 {
                     ptrImgBufferPixelInt = null;
 
@@ -708,8 +701,8 @@ namespace BodyExtractionAndHightlighting
 
                     if (ptrImgBufferPixelInt != null)
                     {
-                        int colorPointX = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].X + 0.5);
-                        int colorPointY = (int)(ptrDepthToColorSpaceMapper[idxDepthSpace].Y + 0.5);
+                        int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
+                        int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
 
                         //check boundaries
                         if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&

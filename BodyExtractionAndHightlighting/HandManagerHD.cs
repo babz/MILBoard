@@ -13,36 +13,31 @@ namespace BodyExtractionAndHightlighting
     {
         private byte handAlphaValue;
 
-        private int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
+        private int bodyIndexSensorBufferWidth, colorSensorBufferWidth, colorSensorBufferHeight;
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
 
         private CoordinateMapper coordinateMapper;
         private ushort[] depthDataSource;
 
         private Point pWrist, pHandTip, pTouch, pHand, pElbow;
-        private int xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandTipColorSpace, yHandTipColorSpace, xHandColorSpace, yHandColorSpace;
+        private int xElbowColorSpace, yElbowColorSpace, xWristColorSpace, yWristColorSpace, xHandColorSpace, yHandColorSpace;
         private int xTranslationOffset, yTranslationOffset;
 
         private ColorSpacePoint[] depthToColorSpaceMapper = null;
         private DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
-        private Helper helper;
         private byte userTransparency;
 
         private Vector vElbowToWristOrig;
 
         private volatile unsafe byte* ptrBodyIndexSensorBuffer;
-
         private volatile unsafe uint* ptrImageBufferHDInt, ptrColorSensorBufferInt;
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
         private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
 
-        private Object thisLock = new Object();
-
         public HandManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency) 
         {
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
-            this.bodyIndexSensorBufferHeight = Constants.GetBodyIndexSensorBufferHeight();
             this.colorSensorBufferWidth = Constants.GetColorSensorBufferWidth();
             this.colorSensorBufferHeight = Constants.GetColorSensorBufferHeight();
 
@@ -61,7 +56,6 @@ namespace BodyExtractionAndHightlighting
             this.depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
             this.colorToDepthSpaceMapper = new DepthSpacePoint[colorSensorBufferWidth * colorSensorBufferHeight];
 
-            this.helper = Helper.getInstance();
             this.userTransparency = userTransparency;
         }
 
@@ -87,37 +81,37 @@ namespace BodyExtractionAndHightlighting
 
                 // convert body joints to color space
                 int idxElbowDepthSpace = (int)(bodyIndexSensorBufferWidth * ((int)(pElbow.Y + 0.5)) + pElbow.X + 0.5);
-                this.xElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[idxElbowDepthSpace].X + 0.5);
-                this.yElbowColorSpace = (int)(ptrDepthToColorSpaceMapper[idxElbowDepthSpace].Y + 0.5);
+                this.xElbowColorSpace = (int)((ptrDepthToColorSpaceMapper + idxElbowDepthSpace)->X + 0.5);
+                this.yElbowColorSpace = (int)((ptrDepthToColorSpaceMapper + idxElbowDepthSpace)->Y + 0.5);
 
                 int idxWristDepthSpace = (int)(bodyIndexSensorBufferWidth * ((int)(pWrist.Y + 0.5)) + pWrist.X + 0.5);
-                this.xWristColorSpace = (int)(ptrDepthToColorSpaceMapper[idxWristDepthSpace].X + 0.5);
-                this.yWristColorSpace = (int)(ptrDepthToColorSpaceMapper[idxWristDepthSpace].Y + 0.5);
+                this.xWristColorSpace = (int)((ptrDepthToColorSpaceMapper + idxWristDepthSpace)->X + 0.5);
+                this.yWristColorSpace = (int)((ptrDepthToColorSpaceMapper + idxWristDepthSpace)->Y + 0.5);
 
                 int idxHandTipDepthSpace = (int)(bodyIndexSensorBufferWidth * ((int)(pHandTip.Y + 0.5)) + pHandTip.X + 0.5);
-                this.xHandTipColorSpace = (int)(ptrDepthToColorSpaceMapper[idxHandTipDepthSpace].X + 0.5);
-                this.yHandTipColorSpace = (int)(ptrDepthToColorSpaceMapper[idxHandTipDepthSpace].Y + 0.5);
+                int xHandTipColorSpace = (int)((ptrDepthToColorSpaceMapper + idxHandTipDepthSpace)->X + 0.5);
+                int yHandTipColorSpace = (int)((ptrDepthToColorSpaceMapper + idxHandTipDepthSpace)->Y + 0.5);
 
                 //start point for floodfill 
                 int idxHandDepthSpace = ((int)(pHand.Y + 0.5)) * bodyIndexSensorBufferWidth + ((int)(pHand.X + 0.5));
-                this.xHandColorSpace = (int)(ptrDepthToColorSpaceMapper[idxHandDepthSpace].X + 0.5);
-                this.yHandColorSpace = (int)(ptrDepthToColorSpaceMapper[idxHandDepthSpace].Y + 0.5);
+                this.xHandColorSpace = (int)((ptrDepthToColorSpaceMapper + idxHandDepthSpace)->X + 0.5);
+                this.yHandColorSpace = (int)((ptrDepthToColorSpaceMapper + idxHandDepthSpace)->Y + 0.5);
 
-                // write-through
-                //this.drawBody();
-                
-                //==draw a translated right hand duplicate
-                
-                //upper boundary: normal vector of wrist
-                this.vElbowToWristOrig = new Vector((xWristColorSpace - xElbowColorSpace), (yWristColorSpace - yElbowColorSpace));
-
+                //offset for hand translation
                 this.xTranslationOffset = (int)(pTouch.X - xHandTipColorSpace + 0.5);
                 this.yTranslationOffset = (int)(pTouch.Y - yHandTipColorSpace + 0.5);
 
+                //vector elbow to wrist, also normal vector of wrist
+                this.vElbowToWristOrig = new Vector((xWristColorSpace - xElbowColorSpace), (yWristColorSpace - yElbowColorSpace));
+
+                //==draw a translated right hand duplicate
+                //this.translateHand(xHandColorSpace, yHandColorSpace);
                 Thread thread = new Thread(() => translateHand(xHandColorSpace, yHandColorSpace), Constants.STACK_SIZE);
                 thread.Start();
                 thread.Join();
 
+                //==write-through
+                //this.drawBody();
                 Thread threadBody = new Thread(() => bodyFloodFill(xElbowColorSpace, yElbowColorSpace), Constants.STACK_SIZE);
                 threadBody.Start();
                 threadBody.Join();
@@ -127,7 +121,6 @@ namespace BodyExtractionAndHightlighting
                 resetEvent.WaitOne();
                 */
 
-                //this.translateHand(xHandColorSpace, yHandColorSpace);
                 //this.transform_HD(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
                 if (Constants.IsSkeletonShown)
@@ -297,12 +290,6 @@ namespace BodyExtractionAndHightlighting
             this.translateHand((xStart - 1), yStart);
             this.translateHand(xStart, (yStart + 1));
             this.translateHand(xStart, (yStart - 1));
-            /*
-            this.translateHand((xStart - 1), (yStart - 1));
-            this.translateHand((xStart - 1), (yStart + 1));
-            this.translateHand((xStart + 1), (yStart - 1));
-            this.translateHand((xStart + 1), (yStart + 1));
-             * */
         }
 
         private unsafe void bodyFloodFill(int xStart, int yStart)
@@ -358,12 +345,6 @@ namespace BodyExtractionAndHightlighting
             this.bodyFloodFill((xStart - 1), yStart);
             this.bodyFloodFill(xStart, (yStart + 1));
             this.bodyFloodFill(xStart, (yStart - 1));
-            /*
-            this.translateHand((xStart - 1), (yStart - 1));
-            this.translateHand((xStart - 1), (yStart + 1));
-            this.translateHand((xStart + 1), (yStart - 1));
-            this.translateHand((xStart + 1), (yStart + 1));
-             * */
         }
 
         private unsafe void transform_HD(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, DepthSpacePoint* ptrColorToDepthSpaceMapper, float xWrist, float yWrist, float xHandTip, float yHandTip, float xTouch, float yTouch)
