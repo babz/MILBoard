@@ -56,6 +56,7 @@ namespace BodyExtractionAndHightlighting
             this.depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
             this.colorToDepthSpaceMapper = new DepthSpacePoint[colorSensorBufferWidth * colorSensorBufferHeight];
 
+
             this.helper = Helper.getInstance();
             this.userTransparency = userTransparency;
         }

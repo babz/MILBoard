@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
 using System.Threading;
+using System.Windows.Media.Imaging;
+using System.Runtime.InteropServices;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -31,9 +33,11 @@ namespace BodyExtractionAndHightlighting
         private Vector vElbowToWristOrig;
 
         private volatile unsafe byte* ptrBodyIndexSensorBuffer;
-        private volatile unsafe uint* ptrImageBufferHDInt, ptrColorSensorBufferInt;
+        private volatile unsafe uint* /*ptrImageBufferHDInt, */ptrColorSensorBufferInt;
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
         private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
+
+        private WriteableBitmap writeableBitmap;
 
         public HandManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency) 
         {
@@ -59,8 +63,10 @@ namespace BodyExtractionAndHightlighting
             this.userTransparency = userTransparency;
         }
 
-        public unsafe void processImage(byte[] imageBufferHD)
+        public unsafe void processImage(WriteableBitmap writeableBitmap)
         {
+            this.writeableBitmap = writeableBitmap;
+
             handAlphaValue = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
 
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
@@ -68,13 +74,17 @@ namespace BodyExtractionAndHightlighting
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            fixed (byte* ptrImageBufferHD = imageBufferHD)
+            //fixed (byte* ptrImageBufferHD = imageBufferHD)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
+                writeableBitmap.Lock();
+
+                
+
                 this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
-                this.ptrImageBufferHDInt = (uint*)ptrImageBufferHD;                
+                //this.ptrImageBufferHDInt = (uint*)ptrImageBufferHD;                
 
                 this.ptrDepthToColorSpaceMapper = ptrDepthToColorSpaceMapper;
                 this.ptrColorToDepthSpaceMapper = ptrColorToDepthSpaceMapper;
@@ -128,6 +138,8 @@ namespace BodyExtractionAndHightlighting
                     this.drawWristVector();
                 }
 
+
+                writeableBitmap.Unlock();
             } //end fixed
         }
 
@@ -143,6 +155,8 @@ namespace BodyExtractionAndHightlighting
             {
                 if ((xCurrOrigArm < colorSensorBufferWidth) && (xCurrOrigArm >= 0) && (yCurrOrigArm < colorSensorBufferHeight) && (yCurrOrigArm >= 0))
                 {
+                    //TODO use Marshal.WriteInt32
+                    //https://msdn.microsoft.com/de-de/library/system.runtime.interopservices.marshal.writeint32(v=vs.110).aspx
                     uint* ptrImgBufferPixelInt = ptrImageBufferHDInt + (((int)(yCurrOrigArm + 0.5)) * colorSensorBufferWidth + ((int)(xCurrOrigArm + 0.5)));
                     *ptrImgBufferPixelInt = 0xFF00FFFF;
                     *(((byte*)ptrImgBufferPixelInt) + 3) = 255;
