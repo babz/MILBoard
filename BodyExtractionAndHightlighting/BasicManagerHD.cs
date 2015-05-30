@@ -40,18 +40,18 @@ namespace BodyExtractionAndHightlighting
             this.userTransparency = userTransparency;
         }
 
-        public unsafe void processImage(byte[] imageBufferHD)
+        public unsafe void processImage(IntPtr ptrBackbuffer)
         {
             coordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            fixed (byte* ptrImageBufferHD = imageBufferHD)
+            //fixed (byte* ptrImageBufferHD = imageBufferHD)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
                 //with the cast to int, step size is 4 bytes
                 this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
-                this.ptrImageBufferInt = (uint*)ptrImageBufferHD;
+                this.ptrImageBufferInt = (uint*)ptrBackbuffer;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
                 this.ptrColorToDepthSpaceMapper = ptrColorToDepthSpaceMapper;
 

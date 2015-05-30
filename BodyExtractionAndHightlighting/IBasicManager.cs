@@ -8,6 +8,6 @@ namespace BodyExtractionAndHightlighting
 {
     public interface IBasicManager
     {
-        unsafe void processImage(byte[] imageBuffer);
+        unsafe void processImage(IntPtr ptrBackbuffer);
     }
 }

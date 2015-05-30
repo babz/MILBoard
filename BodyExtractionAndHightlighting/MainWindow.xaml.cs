@@ -86,7 +86,7 @@ namespace BodyExtractionAndHightlighting
         enum GUIPointerType { Arm, Hand, Symbol };
         //default settings
         bool isFullHD = false;
-        GUIPointerType guiPointerType = GUIPointerType.Hand;
+        GUIPointerType guiPointerType = GUIPointerType.Arm;
         BackgroundType bgType = BackgroundType.White;
 
         IImgProcessorFactory imgProcessor = null;
@@ -271,7 +271,7 @@ namespace BodyExtractionAndHightlighting
                 * */
                 if (!hasTouchOccurred || !armTracked)
                 {
-                    imgProcessor.createBasicManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency).processImage(null);
+                    imgProcessor.createBasicManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency).processImage(writeableBitmap.BackBuffer);
                 }
                 else
                 {

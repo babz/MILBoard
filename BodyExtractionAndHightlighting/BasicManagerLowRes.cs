@@ -37,17 +37,17 @@ namespace BodyExtractionAndHightlighting
             this.userTransparency = userTransparency;
         }
 
-        public unsafe void processImage(byte[] imageBufferLowRes)
+        public unsafe void processImage(IntPtr ptrBackbuffer)
         {
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            //fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 //points to start of ptrImageBufferLowRes
-                uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
+                uint* ptrImageBufferInt = (uint*)ptrBackbuffer;
                 uint* ptrImgBufferPixelInt = null;
                 uint* ptrColorSensorBufferPixelInt = null;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
