@@ -9,6 +9,6 @@ namespace BodyExtractionAndHightlighting
 {
     public interface IHandManager
     {
-        unsafe void processImage(WriteableBitmap writeableBitmap);
+        unsafe void processImage(IntPtr ptrBackbuffer);
     }
 }

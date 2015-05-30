@@ -33,11 +33,9 @@ namespace BodyExtractionAndHightlighting
         private Vector vElbowToWristOrig;
 
         private volatile unsafe byte* ptrBodyIndexSensorBuffer;
-        private volatile unsafe uint* /*ptrImageBufferHDInt, */ptrColorSensorBufferInt;
+        private volatile unsafe uint* ptrImageBufferHDInt, ptrColorSensorBufferInt;
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
         private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
-
-        private WriteableBitmap writeableBitmap;
 
         public HandManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency) 
         {
@@ -63,9 +61,11 @@ namespace BodyExtractionAndHightlighting
             this.userTransparency = userTransparency;
         }
 
-        public unsafe void processImage(WriteableBitmap writeableBitmap)
+        public unsafe void processImage(IntPtr ptrBackbuffer)
         {
-            this.writeableBitmap = writeableBitmap;
+            //this.writeableBitmap = writeableBitmap;
+            this.ptrImageBufferHDInt = (uint*)ptrBackbuffer;
+            
 
             handAlphaValue = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
 
@@ -78,9 +78,6 @@ namespace BodyExtractionAndHightlighting
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
             {
-                writeableBitmap.Lock();
-
-                
 
                 this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
@@ -138,8 +135,6 @@ namespace BodyExtractionAndHightlighting
                     this.drawWristVector();
                 }
 
-
-                writeableBitmap.Unlock();
             } //end fixed
         }
 

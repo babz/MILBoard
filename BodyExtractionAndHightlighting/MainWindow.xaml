@@ -44,8 +44,8 @@
         <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" IsChecked="True" Checked="WhiteBG_Checked" Margin="60,0,120,7" />
         <RadioButton Name="CustomBG" Grid.Row="1" Grid.Column="2" Content="Custom" GroupName="Background" Checked="CustomBG_Checked" Margin="130,0,24,0"/>
 
-        <RadioButton Name="GUIArmPtr" Grid.Row="1" Grid.Column="3" Content="Arm Extension" GroupName="Mode" IsChecked="True" Checked="GUIArmPtr_Checked" Margin="0,0,254,0"/>
-        <RadioButton Name="GUIHandPtr" Grid.Row="1" Grid.Column="3" Content="Hand Pointer" GroupName="Mode" Checked="GUIHandPtr_Checked" Margin="105,0,166,7" />
+        <RadioButton Name="GUIArmPtr" Grid.Row="1" Grid.Column="3" Content="Arm Extension" GroupName="Mode" Checked="GUIArmPtr_Checked" Margin="0,0,254,0"/>
+        <RadioButton Name="GUIHandPtr" Grid.Row="1" Grid.Column="3" Content="Hand Pointer" GroupName="Mode" IsChecked="True" Checked="GUIHandPtr_Checked" Margin="105,0,166,7" />
         <RadioButton Name="GUISymbolPtr" Grid.Row="1" Grid.Column="3" Content="Symbol Pointer" GroupName="Mode" Checked="GUISymbolPtr_Checked" Margin="212,0,10,0" />
 
         <CheckBox x:Name="checkBoxRotateOnly" Content="Rotate only" Grid.Column="4" Margin="0,6,248,0" Unchecked="checkBoxRotateOnly_Unchecked" Checked="checkBoxRotateOnly_Checked"/>

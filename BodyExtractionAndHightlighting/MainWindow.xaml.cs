@@ -24,6 +24,10 @@ namespace BodyExtractionAndHightlighting
     /// </summary>
     public partial class MainWindow : Window
     {
+        [DllImport("msvcrt.dll", EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+        public static extern IntPtr MemSet(IntPtr dest, int valueToSet, int length);
+
+
         KinectSensor sensor = null;
 
         /// <summary>
@@ -57,7 +61,7 @@ namespace BodyExtractionAndHightlighting
         };
 
         // color
-        WriteableBitmap colorBitmap;
+        //WriteableBitmap colorBitmap;
 
         // depth
         ushort[] depthSensorBuffer;
@@ -65,11 +69,11 @@ namespace BodyExtractionAndHightlighting
         // combined color - bodyIndex
         ushort[] stencilBuffer;
         byte[] colorSensorBuffer;
-        byte[] imageBufferHD;
+        //byte[] imageBufferHD;
         WriteableBitmap writeableBitmapHD;
         
         // for low res: 512x424
-        byte[] imageBufferLowRes;
+        //byte[] imageBufferLowRes;
         WriteableBitmap writeableBitmapLowRes;
 
         //check performance in ticks
@@ -82,7 +86,7 @@ namespace BodyExtractionAndHightlighting
         enum GUIPointerType { Arm, Hand, Symbol };
         //default settings
         bool isFullHD = false;
-        GUIPointerType guiPointerType = GUIPointerType.Arm;
+        GUIPointerType guiPointerType = GUIPointerType.Hand;
         BackgroundType bgType = BackgroundType.White;
 
         IImgProcessorFactory imgProcessor = null;
@@ -101,6 +105,8 @@ namespace BodyExtractionAndHightlighting
         private double sumFps = 0;
         private int counter = 0;
 
+        
+
         public MainWindow()
         {
             InitializeComponent();
@@ -115,7 +121,7 @@ namespace BodyExtractionAndHightlighting
 
             // color
             FrameDescription fdColor = sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
-            colorBitmap = new WriteableBitmap(fdColor.Width, fdColor.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
+            //colorBitmap = new WriteableBitmap(fdColor.Width, fdColor.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
             //imageColor.Source = colorBitmap; //color img only
 
             // body-index
@@ -133,11 +139,11 @@ namespace BodyExtractionAndHightlighting
             stencilBuffer = new ushort[fdBi.LengthInPixels];
             colorSensorBuffer = new byte[fdColor.LengthInPixels * 4];
 
-            imageBufferHD = new byte[fdColor.LengthInPixels * 4];
+            //imageBufferHD = new byte[fdColor.LengthInPixels * 4];
             writeableBitmapHD = new WriteableBitmap(fdColor.Width, fdColor.Height, 96, 96, PixelFormats.Bgra32, null);
 
             //combination 512x424 (depth resolution)
-            imageBufferLowRes = new byte[fdDepth.LengthInPixels * 4];
+            //imageBufferLowRes = new byte[fdDepth.LengthInPixels * 4];
             writeableBitmapLowRes = new WriteableBitmap(fdDepth.Width, fdDepth.Height, 96, 96, PixelFormats.Bgra32, null);
 
             // get the coordinate mapper
@@ -233,19 +239,19 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 //########################## Start processing ##########################
-                byte[] imageBuffer = null;
+                //byte[] imageBuffer = null;
                 WriteableBitmap writeableBitmap = null;
                 if (isFullHD)
                 {
-                    imageBuffer = imageBufferHD;
+                    //imageBuffer = imageBufferHD;
                     writeableBitmap = writeableBitmapHD;
                 }
                 else
                 {
-                    imageBuffer = imageBufferLowRes;
+                    //imageBuffer = imageBufferLowRes;
                     writeableBitmap = writeableBitmapLowRes;
                 }
-                Array.Clear(imageBuffer, 0, imageBuffer.Length);
+                //Array.Clear(imageBuffer, 0, imageBuffer.Length);
 
                 byte userTransparency = (byte)this.userTransparency.Value;
 
@@ -255,13 +261,17 @@ namespace BodyExtractionAndHightlighting
                     * */
                 bool armTracked = this.GetArmJointPoints();
 
+                writeableBitmap.Lock();
+                //clear backbuffer
+                MemSet(writeableBitmap.BackBuffer, 0, (int)(writeableBitmap.Width) * (int)(writeableBitmap.Height));
+
                 /*
                 * Normal image writethrough
                 * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
                 * */
                 if (!hasTouchOccurred || !armTracked)
                 {
-                    imgProcessor.createBasicManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency).processImage(imageBuffer);
+                    imgProcessor.createBasicManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency).processImage(null);
                 }
                 else
                 {
@@ -282,26 +292,26 @@ namespace BodyExtractionAndHightlighting
 
                         if (armScaleOnly)
                         {
-                            armExtensionManager.processImage_scaleOnly(imageBuffer);
+                            armExtensionManager.processImage_scaleOnly(null);
                         }
                         else if (armRotateOnly)
                         {
-                            armExtensionManager.processImage_rotationOnly(imageBuffer);
+                            armExtensionManager.processImage_rotationOnly(null);
                         }
                         else
                         {
                             // normal: scale + rotation
-                            armExtensionManager.processImage(imageBuffer);
+                            armExtensionManager.processImage(null);
                         }
                     }
                     else if (guiPointerType == GUIPointerType.Hand) 
                     {
-                        imgProcessor.createHandManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPointsDepth, pTouch, userTransparency).processImage(writeableBitmap);
+                        imgProcessor.createHandManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPointsDepth, pTouch, userTransparency).processImage(writeableBitmap.BackBuffer);
                     }
                     else if (guiPointerType == GUIPointerType.Symbol)
                     {
                         pointerSymbol.Visibility = Visibility.Visible;
-                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(imageBuffer);
+                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(null);
                     }
                     else
                     {
@@ -310,13 +320,10 @@ namespace BodyExtractionAndHightlighting
                 } 
                     
                 //===========
-                writeableBitmap.Lock();
-                Marshal.Copy(imageBuffer, 0, writeableBitmap.BackBuffer, imageBuffer.Length);
-                writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)writeableBitmap.Width, (int)writeableBitmap.Height));
-
                 //TODO
                 //http://stackoverflow.com/questions/17549123/c-sharp-performance-using-unsafe-pointers-instead-of-intptr-and-marshal
-
+                //Marshal.Copy(imageBuffer, 0, writeableBitmap.BackBuffer, imageBuffer.Length);
+                writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)writeableBitmap.Width, (int)writeableBitmap.Height));
 
                 //NOTE alternative; performance unknown
                 //writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), imageBufferHD, writeableBitmapHD.PixelWidth * sizeof(int), 0);
