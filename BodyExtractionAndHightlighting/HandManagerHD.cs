@@ -63,10 +63,6 @@ namespace BodyExtractionAndHightlighting
 
         public unsafe void processImage(IntPtr ptrBackbuffer)
         {
-            //this.writeableBitmap = writeableBitmap;
-            this.ptrImageBufferHDInt = (uint*)ptrBackbuffer;
-            
-
             handAlphaValue = (byte)(this.userTransparency * Constants.HAND_TRANSLATED_ALPHAFACTOR);
 
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
@@ -81,7 +77,7 @@ namespace BodyExtractionAndHightlighting
 
                 this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
-                //this.ptrImageBufferHDInt = (uint*)ptrImageBufferHD;                
+                this.ptrImageBufferHDInt = (uint*)ptrBackbuffer;                
 
                 this.ptrDepthToColorSpaceMapper = ptrDepthToColorSpaceMapper;
                 this.ptrColorToDepthSpaceMapper = ptrColorToDepthSpaceMapper;

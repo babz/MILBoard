@@ -263,7 +263,7 @@ namespace BodyExtractionAndHightlighting
 
                 writeableBitmap.Lock();
                 //clear backbuffer
-                MemSet(writeableBitmap.BackBuffer, 0, (int)(writeableBitmap.Width) * (int)(writeableBitmap.Height));
+                MemSet(writeableBitmap.BackBuffer, 0, ((int)(writeableBitmap.Width)) * ((int)(writeableBitmap.Height)) * 4);
 
                 /*
                 * Normal image writethrough
@@ -292,16 +292,16 @@ namespace BodyExtractionAndHightlighting
 
                         if (armScaleOnly)
                         {
-                            armExtensionManager.processImage_scaleOnly(null);
+                            armExtensionManager.processImage_scaleOnly(writeableBitmap.BackBuffer);
                         }
                         else if (armRotateOnly)
                         {
-                            armExtensionManager.processImage_rotationOnly(null);
+                            armExtensionManager.processImage_rotationOnly(writeableBitmap.BackBuffer);
                         }
                         else
                         {
                             // normal: scale + rotation
-                            armExtensionManager.processImage(null);
+                            armExtensionManager.processImage(writeableBitmap.BackBuffer);
                         }
                     }
                     else if (guiPointerType == GUIPointerType.Hand) 
@@ -311,7 +311,7 @@ namespace BodyExtractionAndHightlighting
                     else if (guiPointerType == GUIPointerType.Symbol)
                     {
                         pointerSymbol.Visibility = Visibility.Visible;
-                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(null);
+                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(writeableBitmap.BackBuffer);
                     }
                     else
                     {
@@ -320,13 +320,7 @@ namespace BodyExtractionAndHightlighting
                 } 
                     
                 //===========
-                //TODO
-                //http://stackoverflow.com/questions/17549123/c-sharp-performance-using-unsafe-pointers-instead-of-intptr-and-marshal
-                //Marshal.Copy(imageBuffer, 0, writeableBitmap.BackBuffer, imageBuffer.Length);
-                writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)writeableBitmap.Width, (int)writeableBitmap.Height));
-
-                //NOTE alternative; performance unknown
-                //writeableBitmapHD.WritePixels(new Int32Rect(0, 0, this.writeableBitmapHD.PixelWidth, this.writeableBitmapHD.PixelHeight), imageBufferHD, writeableBitmapHD.PixelWidth * sizeof(int), 0);
+                writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, (int)writeableBitmap.Width-1, (int)writeableBitmap.Height-1));
                 writeableBitmap.Unlock();
 
                 //NOTE save for later when UIThread is implemented

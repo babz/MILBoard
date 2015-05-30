@@ -41,16 +41,16 @@ namespace BodyExtractionAndHightlighting
             this.pTouch = pTouch;
         }
 
-        public unsafe void processImage(byte[] imageBufferLowRes)
+        public unsafe void processImage(IntPtr ptrBackbuffer)
         {
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            //fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
-                uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
+                uint* ptrImageBufferInt = (uint*)ptrBackbuffer;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
                 this.drawBody(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper);

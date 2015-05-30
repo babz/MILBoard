@@ -8,10 +8,10 @@ namespace BodyExtractionAndHightlighting
 {
     public interface IArmExtensionManager
     {
-        unsafe void processImage(byte[] imageBuffer);
+        unsafe void processImage(IntPtr ptrBackbuffer);
 
-        unsafe void processImage_rotationOnly(byte[] imageBuffer);
+        unsafe void processImage_rotationOnly(IntPtr ptrBackbuffer);
 
-        unsafe void processImage_scaleOnly(byte[] imageBuffer);
+        unsafe void processImage_scaleOnly(IntPtr ptrBackbuffer);
     }
 }

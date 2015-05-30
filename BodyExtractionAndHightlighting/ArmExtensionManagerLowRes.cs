@@ -73,20 +73,20 @@ namespace BodyExtractionAndHightlighting
             this.userTransparency = userTransparency;
         }
 
-        public unsafe void processImage(byte[] imageBufferLowRes)
+        public unsafe void processImage(IntPtr ptrBackbuffer)
         {
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            //fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
                 this.ptrColorSensorBuffer = ptrColorSensorBuffer;
                 this.ptrDepthToColorSpaceMapper = ptrDepthToColorSpaceMapper;
 
-                this.ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
+                this.ptrImageBufferInt = (uint*)ptrBackbuffer;
                 this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
                 //start point is (xElbow + 1)
@@ -120,13 +120,13 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        public unsafe void processImage_rotationOnly(byte[] imageBufferLowRes)
+        public unsafe void processImage_rotationOnly(IntPtr ptrBackbuffer)
         {
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            //fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 float xElbowF = (float)pElbow.X;
@@ -138,7 +138,7 @@ namespace BodyExtractionAndHightlighting
                 float xTouchF = (float)pTouch.X;
                 float yTouchF = (float)pTouch.Y;
 
-                uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
+                uint* ptrImageBufferInt = (uint*)ptrBackbuffer;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
                 this.transform_LowRes_rotationOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, xElbowF, yElbowF, xWristF, yWristF, xHandTipF, yHandTipF, xTouchF, yTouchF);
@@ -146,13 +146,13 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        public unsafe void processImage_scaleOnly(byte[] imageBufferLowRes)
+        public unsafe void processImage_scaleOnly(IntPtr ptrBackbuffer)
         {
             coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
+            //fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 float xElbowF = (float)pElbow.X;
@@ -162,7 +162,7 @@ namespace BodyExtractionAndHightlighting
                 float xWristF = (float)pWrist.X;
                 float yWristF = (float)pWrist.Y;
 
-                uint* ptrImageBufferInt = (uint*)ptrImageBufferLowRes;
+                uint* ptrImageBufferInt = (uint*)ptrBackbuffer;
                 uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
                 this.transform_LowRes_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferInt, ptrDepthToColorSpaceMapper, xElbowF, yElbowF, xWristF, yWristF, xTouchF, yTouchF);
