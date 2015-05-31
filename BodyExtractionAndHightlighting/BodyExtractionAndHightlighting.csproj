@@ -77,18 +77,21 @@
     </ApplicationDefinition>
     <Compile Include="ArmExtensionManagerHD.cs" />
     <Compile Include="ArmExtensionManagerLowRes.cs" />
-    <Compile Include="BasicManagerHD.cs" />
-    <Compile Include="BasicManagerLowRes.cs" />
+    <Compile Include="BasicManager.cs" />
+    <Compile Include="StandardManagerHD.cs" />
+    <Compile Include="StandardManagerLowRes.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="HandManagerHD.cs" />
     <Compile Include="HandManagerLowRes.cs" />
+    <Compile Include="HDManager.cs" />
     <Compile Include="IArmExtensionManager.cs" />
-    <Compile Include="IBasicManager.cs" />
+    <Compile Include="IStandardManager.cs" />
     <Compile Include="IHandManager.cs" />
     <Compile Include="IImgProcessorFactory.cs" />
     <Compile Include="ImgProcessorFactoryHD.cs" />
     <Compile Include="ImgProcessorFactoryLowRes.cs" />
     <Compile Include="ISymbolManager.cs" />
+    <Compile Include="LowResManager.cs" />
     <Compile Include="SymbolManagerHD.cs" />
     <Compile Include="SymbolManagerLowRes.cs" />
     <Page Include="MainWindow.xaml">

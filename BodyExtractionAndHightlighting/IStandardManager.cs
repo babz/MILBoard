@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace BodyExtractionAndHightlighting
 {
-    public interface IBasicManager
+    public interface IStandardManager
     {
-        unsafe void processImage(IntPtr ptrBackbuffer);
+        unsafe void processImage();
     }
 }

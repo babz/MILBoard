@@ -10,9 +10,9 @@ namespace BodyExtractionAndHightlighting
 {
     public class ImgProcessorFactoryLowRes : IImgProcessorFactory
     {
-        public override IBasicManager createBasicManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, byte userTransparency)
+        public override IStandardManager createStandardManager(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
         {
-            return (IBasicManager)(new BasicManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency));
+            return (IStandardManager)(new StandardManagerLowRes(ptrBackbuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthDataSource, bodyJoints, userTransparency));
         }
 
         public override ISymbolManager createSymbolManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Point pTouch, byte userTransparency, System.Windows.Controls.Image guiPointerSymbol)

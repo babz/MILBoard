@@ -121,15 +121,12 @@ namespace BodyExtractionAndHightlighting
 
             // color
             FrameDescription fdColor = sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
-            //colorBitmap = new WriteableBitmap(fdColor.Width, fdColor.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
-            //imageColor.Source = colorBitmap; //color img only
 
             // body-index
             FrameDescription fdBi = sensor.BodyIndexFrameSource.FrameDescription;
             bodyIndexSensorBuffer = new byte[fdBi.LengthInPixels];
             biImageBuffer = new uint[fdBi.LengthInPixels];
             biBitmap = new WriteableBitmap(fdBi.Width, fdBi.Height, 96, 96, PixelFormats.Bgra32, null);
-            //imageBi.Source = biBitmap; //body index img only
 
             // depth (same resolution as body index)
             FrameDescription fdDepth = sensor.DepthFrameSource.FrameDescription;
@@ -143,7 +140,6 @@ namespace BodyExtractionAndHightlighting
             writeableBitmapHD = new WriteableBitmap(fdColor.Width, fdColor.Height, 96, 96, PixelFormats.Bgra32, null);
 
             //combination 512x424 (depth resolution)
-            //imageBufferLowRes = new byte[fdDepth.LengthInPixels * 4];
             writeableBitmapLowRes = new WriteableBitmap(fdDepth.Width, fdDepth.Height, 96, 96, PixelFormats.Bgra32, null);
 
             // get the coordinate mapper
@@ -224,11 +220,7 @@ namespace BodyExtractionAndHightlighting
                 // those body objects will be re-used.
                 bodyFrame.GetAndRefreshBodyData(this.bodies);
 
-                //TODO Draw skeleton
-                //DrawBodies();
-
                 // -- Color Frame --
-                //FrameDescription fdColor = cFrame.FrameDescription;
                 if (cFrame.RawColorImageFormat == ColorImageFormat.Bgra)
                 {
                     cFrame.CopyRawFrameDataToArray(colorSensorBuffer);
@@ -239,27 +231,22 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 //########################## Start processing ##########################
-                //byte[] imageBuffer = null;
                 WriteableBitmap writeableBitmap = null;
                 if (isFullHD)
                 {
-                    //imageBuffer = imageBufferHD;
                     writeableBitmap = writeableBitmapHD;
                 }
                 else
                 {
-                    //imageBuffer = imageBufferLowRes;
                     writeableBitmap = writeableBitmapLowRes;
                 }
-                //Array.Clear(imageBuffer, 0, imageBuffer.Length);
-
                 byte userTransparency = (byte)this.userTransparency.Value;
 
                 /*
                     * Get Right Arm Joint-Points DEPTH SPACE
                     * @return true if right elbow, right wrist AND right handTip are tracked by the sensor
                     * */
-                bool armTracked = this.GetArmJointPoints();
+                bool bodyDetected = this.GetBodyJoints();
 
                 writeableBitmap.Lock();
                 //clear backbuffer
@@ -269,9 +256,9 @@ namespace BodyExtractionAndHightlighting
                 * Normal image writethrough
                 * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
                 * */
-                if (!hasTouchOccurred || !armTracked)
+                if (!hasTouchOccurred || !bodyDetected)
                 {
-                    imgProcessor.createBasicManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, userTransparency).processImage(writeableBitmap.BackBuffer);
+                    imgProcessor.createStandardManager(writeableBitmap.BackBuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, null, userTransparency).processImage();
                 }
                 else
                 {
@@ -374,9 +361,9 @@ namespace BodyExtractionAndHightlighting
             counter++;
         }
 
-        private unsafe bool GetArmJointPoints()
+        private bool GetBodyJoints()
         {
-            bool armDetected = false;
+            bool bodyDetected = false;
 
             foreach (Body body in this.bodies)
             {
@@ -386,76 +373,9 @@ namespace BodyExtractionAndHightlighting
                 }
 
                 joints = body.Joints;
-
-                // convert the joint points to depth (display) space
-                Joint wristRight = joints[JointType.WristRight];
-                Joint elbowRight = joints[JointType.ElbowRight];
-                Joint handTipRight = joints[JointType.HandTipRight];
-                Joint handRight = joints[JointType.HandRight];
-                Joint shoulderRight = joints[JointType.ShoulderRight];
-
-                CameraSpacePoint[] camSpacePosJoints = { wristRight.Position, elbowRight.Position, handTipRight.Position, handRight.Position, shoulderRight.Position };
-                uint noOfJoints = (uint)camSpacePosJoints.Length;
-                DepthSpacePoint[] depthSpacePosJoints = new DepthSpacePoint[noOfJoints];
-                ColorSpacePoint[] colorSpacePosJoints = new ColorSpacePoint[noOfJoints];
-
-                //IntPtr ptrCameraSpacePosJoints = camSpacePosJoints;
-                //fixed (CameraSpacePoint* ptrCameraSpacePosJoints = camSpacePosJoints) 
-                //fixed (DepthSpacePoint* ptrDepthSpacePosJoints = depthSpacePosJoints)
-                //fixed (ColorSpacePoint* ptrColorSpacePosJoints = colorSpacePosJoints)
-                //{
-                //    uint* ptrCameraSpacePosJointInt = (uint*)ptrCameraSpacePosJoints;
-                //    uint* ptrColorSpacePosJointsInt = (uint*)ptrColorSpacePosJoints;
-
-                //    Constants.GetCoordinateMapper().MapCameraPointsToColorSpaceUsingIntPtr(ptrCameraSpacePosJointInt, noOfJoints, ptrColorSpacePosJointsInt, noOfJoints);
-                //}
-                
-                //wristRight
-                if (camSpacePosJoints[0].Z < 0)
-                    camSpacePosJoints[0].Z = InferredZPositionClamp;
-                //elbowRight
-                if (camSpacePosJoints[1].Z < 0)
-                    camSpacePosJoints[1].Z = InferredZPositionClamp;
-                //handTipRight
-                if (camSpacePosJoints[2].Z < 0)
-                    camSpacePosJoints[2].Z = InferredZPositionClamp;
-                //handRight
-                if (camSpacePosJoints[3].Z < 0)
-                    camSpacePosJoints[3].Z = InferredZPositionClamp;
-                //shoulderRight
-                if (camSpacePosJoints[4].Z < 0)
-                    camSpacePosJoints[4].Z = InferredZPositionClamp;
-
-                if ((wristRight.TrackingState == TrackingState.Tracked) && (elbowRight.TrackingState == TrackingState.Tracked) && (handTipRight.TrackingState == TrackingState.Tracked) && (handRight.TrackingState == TrackingState.Tracked) && (shoulderRight.TrackingState == TrackingState.Tracked))
-                {
-                    //==joints for depth space
-                    //DepthSpacePoint[] depthSpacePosJoints = new DepthSpacePoint[5];
-                    //TODO
-                    //Constants.GetCoordinateMapper().MapCameraPointsToDepthSpace(camSpacePosJoints, depthSpacePosJoints);
-
-                    DepthSpacePoint d_wrist = depthSpacePosJoints[0];
-                    DepthSpacePoint d_elbow = depthSpacePosJoints[1];
-                    DepthSpacePoint d_handTip = depthSpacePosJoints[2];
-                    DepthSpacePoint d_hand = depthSpacePosJoints[3];
-                    DepthSpacePoint d_shoulder = depthSpacePosJoints[4];
-
-                    this.armJointPointsDepth[JointType.WristRight] = new Point(d_wrist.X, d_wrist.Y);
-                    this.armJointPointsDepth[JointType.ElbowRight] = new Point(d_elbow.X, d_elbow.Y);
-                    this.armJointPointsDepth[JointType.HandTipRight] = new Point(d_handTip.X, d_handTip.Y);
-                    this.armJointPointsDepth[JointType.HandRight] = new Point(d_hand.X, d_hand.Y);
-                    this.armJointPointsDepth[JointType.ShoulderRight] = new Point(d_shoulder.X, d_shoulder.Y);
-
-                    //==joints for color space
-                    //TODO do for color
-                    //ColorSpacePoint[] colorSpacePosJoints = new ColorSpacePoint[5];
-                    //Constants.GetCoordinateMapper().MapCameraPointsToColorSpaceUsingIntPtr
-
-                    armDetected = true;
-                    //Console.Out.WriteLine("============Arm detected! Body: " + body.TrackingId);
-                }
+                bodyDetected = true;
             }
-
-            return armDetected;
+            return bodyDetected;
         }
 
         #endregion

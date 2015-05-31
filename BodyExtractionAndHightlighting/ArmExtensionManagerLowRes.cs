@@ -10,7 +10,7 @@ using System.Windows.Shapes;
 
 namespace BodyExtractionAndHightlighting
 {
-    public class ArmExtensionManagerLowRes : IArmExtensionManager
+    public class ArmExtensionManagerLowRes : LowResManager, IArmExtensionManager
     {
         private int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
@@ -29,11 +29,12 @@ namespace BodyExtractionAndHightlighting
         private Helper helper;
         private byte userTransparency;
 
-        private volatile unsafe byte* ptrBodyIndexSensorBuffer, ptrColorSensorBuffer;
+        private volatile unsafe byte* ptrBodyIndexSensorBuffer//, ptrColorSensorBuffer;
         private volatile unsafe uint* ptrImageBufferInt, ptrColorSensorBufferInt;
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
 
         public ArmExtensionManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)
+            : base(armJointPoints)
         {
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
             this.bodyIndexSensorBufferHeight = Constants.GetBodyIndexSensorBufferHeight();
@@ -83,7 +84,7 @@ namespace BodyExtractionAndHightlighting
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
-                this.ptrColorSensorBuffer = ptrColorSensorBuffer;
+                //this.ptrColorSensorBuffer = ptrColorSensorBuffer;
                 this.ptrDepthToColorSpaceMapper = ptrDepthToColorSpaceMapper;
 
                 this.ptrImageBufferInt = (uint*)ptrBackbuffer;

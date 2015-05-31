@@ -8,7 +8,7 @@ using System.Windows;
 
 namespace BodyExtractionAndHightlighting
 {
-    public class SymbolManagerLowRes : ISymbolManager
+    public class SymbolManagerLowRes : LowResManager, ISymbolManager
     {
         private int bodyIndexSensorBufferWidth, colorSensorBufferWidth, colorSensorBufferHeight;
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
@@ -22,7 +22,7 @@ namespace BodyExtractionAndHightlighting
         private unsafe Point pTouch;
         private System.Windows.Controls.Image guiSymbol;
 
-        public SymbolManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Point pTouch, byte userTransparency, System.Windows.Controls.Image guiPointerSymbol)
+        public SymbolManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Point pTouch, byte userTransparency, System.Windows.Controls.Image guiPointerSymbol) : base(armJointPoints)
         {
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
             this.colorSensorBufferWidth = Constants.GetColorSensorBufferWidth();

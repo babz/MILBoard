@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 
 namespace BodyExtractionAndHightlighting
 {
-    public class HandManagerHD : IHandManager
+    public class HandManagerHD : HDManager, IHandManager
     {
         private byte handAlphaValue;
 
@@ -37,7 +37,8 @@ namespace BodyExtractionAndHightlighting
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
         private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
 
-        public HandManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency) 
+        public HandManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)
+            : base(armJointPoints)
         {
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
             this.colorSensorBufferWidth = Constants.GetColorSensorBufferWidth();

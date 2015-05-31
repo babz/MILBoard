@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace BodyExtractionAndHightlighting
 {
-    public class ArmExtensionManagerHD : IArmExtensionManager
+    public class ArmExtensionManagerHD : HDManager, IArmExtensionManager
     {
         private int bodyIndexSensorBufferWidth, colorSensorBufferWidth, colorSensorBufferHeight;
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
@@ -34,7 +34,7 @@ namespace BodyExtractionAndHightlighting
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
         private volatile unsafe DepthSpacePoint* ptrColorToDepthSpaceMapper;
 
-        public ArmExtensionManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)
+        public ArmExtensionManagerHD(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency) : base(armJointPoints)
         {
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
             this.colorSensorBufferWidth = Constants.GetColorSensorBufferWidth();

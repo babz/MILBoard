@@ -8,7 +8,7 @@ using System.Windows;
 
 namespace BodyExtractionAndHightlighting
 {
-    public class HandManagerLowRes : IHandManager
+    public class HandManagerLowRes : LowResManager, IHandManager
     {
         private int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
@@ -24,14 +24,14 @@ namespace BodyExtractionAndHightlighting
         unsafe protected ColorSpacePoint[] depthToColorSpaceMapper = null;
         unsafe protected DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
-        private Helper helper;
         private byte userTransparency;
 
         private volatile unsafe byte* ptrBodyIndexSensorBuffer, ptrColorSensorBuffer;
         private volatile unsafe uint* ptrImageBufferInt, ptrColorSensorBufferInt;
         private volatile unsafe ColorSpacePoint* ptrDepthToColorSpaceMapper;
 
-        public HandManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency) 
+        public HandManagerLowRes(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)
+            : base(armJointPoints)
         {
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
             this.bodyIndexSensorBufferHeight = Constants.GetBodyIndexSensorBufferHeight();
@@ -55,10 +55,9 @@ namespace BodyExtractionAndHightlighting
             this.xHand = (int)(pHand.X + 0.5);
             this.yHand = (int)(pHand.Y + 0.5);
 
-            this.depthToColorSpaceMapper = new ColorSpacePoint[depthDataSource.Length];
-            this.colorToDepthSpaceMapper = new DepthSpacePoint[colorSensorBufferWidth * colorSensorBufferHeight];
+            this.depthToColorSpaceMapper = new ColorSpacePoint[base.bodyIndexImageLength];
+            this.colorToDepthSpaceMapper = new DepthSpacePoint[base.colorImageLength];
 
-            this.helper = Helper.getInstance();
             this.userTransparency = userTransparency;
         }
 
@@ -68,7 +67,6 @@ namespace BodyExtractionAndHightlighting
 
             fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
             fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-            //fixed (byte* ptrImageBufferLowRes = imageBufferLowRes)
             fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
             {
                 this.ptrBodyIndexSensorBuffer = ptrBodyIndexSensorBuffer;
