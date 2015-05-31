@@ -8,9 +8,9 @@ using System.Windows;
 
 namespace BodyExtractionAndHightlighting
 {
-    public abstract class HDManager : BasicManager
+    public abstract class HDManager : BasicManager<ColorSpacePoint>
     {
-        private unsafe volatile DepthSpacePoint* ptrColorToDepthSpaceMapper;
+        protected unsafe volatile DepthSpacePoint* ptrColorToDepthSpaceMapper;
 
         public HDManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
             : base(ptrBackbuffer, bodyJoints, userTransparency)
@@ -26,7 +26,7 @@ namespace BodyExtractionAndHightlighting
         /*
          * Example: call convertBodyJoints(base.GetRightArmJoints())
          * */
-        protected Dictionary<JointType, ColorSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
+        protected override Dictionary<JointType, ColorSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
         {
             Dictionary<JointType, ColorSpacePoint> bodyJointsColorSpace = null;
 
@@ -50,7 +50,7 @@ namespace BodyExtractionAndHightlighting
             this.ptrColorToDepthSpaceMapper = ptrColorToDepthSpaceMapper;
         }
 
-        protected void drawFullBody()
+        protected override void drawFullBody()
         {
             if (base.IsAnyJointTracked())
             {

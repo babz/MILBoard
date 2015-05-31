@@ -92,7 +92,7 @@ namespace BodyExtractionAndHightlighting
         IImgProcessorFactory imgProcessor = null;
 
         // right lower arm detection for scaling
-        IReadOnlyDictionary<JointType, Joint> joints;
+        IReadOnlyDictionary<JointType, Joint> bodyJoints;
         Dictionary<JointType, Point> armJointPointsDepth = new Dictionary<JointType, Point>();
 
         //checkbox values
@@ -275,30 +275,30 @@ namespace BodyExtractionAndHightlighting
                     //arm operation
                     if (guiPointerType == GUIPointerType.Arm)
                     {
-                        IArmExtensionManager armExtensionManager = imgProcessor.createArmExtensionManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPointsDepth, pTouch, userTransparency);
+                        IArmExtensionManager armExtensionManager = imgProcessor.createArmExtensionManager(writeableBitmap.BackBuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, bodyJoints, userTransparency, pTouch);
 
                         if (armScaleOnly)
                         {
-                            armExtensionManager.processImage_scaleOnly(writeableBitmap.BackBuffer);
+                            //armExtensionManager.processImage_scaleOnly(writeableBitmap.BackBuffer);
                         }
                         else if (armRotateOnly)
                         {
-                            armExtensionManager.processImage_rotationOnly(writeableBitmap.BackBuffer);
+                            //armExtensionManager.processImage_rotationOnly(writeableBitmap.BackBuffer);
                         }
                         else
                         {
                             // normal: scale + rotation
-                            armExtensionManager.processImage(writeableBitmap.BackBuffer);
+                            armExtensionManager.processImage();
                         }
                     }
                     else if (guiPointerType == GUIPointerType.Hand) 
                     {
-                        imgProcessor.createHandManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPointsDepth, pTouch, userTransparency).processImage(writeableBitmap.BackBuffer);
+                        imgProcessor.createHandManager(writeableBitmap.BackBuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, bodyJoints, userTransparency, pTouch).processImage();
                     }
                     else if (guiPointerType == GUIPointerType.Symbol)
                     {
                         pointerSymbol.Visibility = Visibility.Visible;
-                        imgProcessor.createSymbolManager(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, pointerSymbol).processImage(writeableBitmap.BackBuffer);
+                        imgProcessor.createSymbolManager(writeableBitmap.BackBuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, bodyJoints, userTransparency, pTouch, pointerSymbol).processImage();
                     }
                     else
                     {
@@ -372,7 +372,7 @@ namespace BodyExtractionAndHightlighting
                     continue;
                 }
 
-                joints = body.Joints;
+                bodyJoints = body.Joints;
                 bodyDetected = true;
             }
             return bodyDetected;

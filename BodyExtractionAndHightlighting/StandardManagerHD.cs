@@ -11,7 +11,7 @@ namespace BodyExtractionAndHightlighting
     {
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
         private ushort[] depthDataSource;
-        private unsafe DepthSpacePoint[] colorToDepthSpaceMapper = null;
+        private DepthSpacePoint[] colorToDepthSpaceMapper = null;
 
         public StandardManagerHD(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
             : base(ptrBackbuffer, bodyJoints, userTransparency)

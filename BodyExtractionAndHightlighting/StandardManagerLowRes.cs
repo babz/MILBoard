@@ -12,7 +12,7 @@ namespace BodyExtractionAndHightlighting
     {
         private byte[] bodyIndexSensorBuffer, colorSensorBuffer;
         private ushort[] depthDataSource;
-        private unsafe ColorSpacePoint[] depthToColorSpaceMapper = null;
+        private ColorSpacePoint[] depthToColorSpaceMapper = null;
 
         public StandardManagerLowRes(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
             : base(ptrBackbuffer, bodyJoints, userTransparency)
@@ -39,5 +39,6 @@ namespace BodyExtractionAndHightlighting
                 base.drawFullBody();
             }
         }
+
     }
 }

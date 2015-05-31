@@ -5,12 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Threading;
 
 namespace BodyExtractionAndHightlighting
 {
-    public abstract class LowResManager : BasicManager
+    public abstract class LowResManager : BasicManager<DepthSpacePoint>
     {
-        private unsafe volatile ColorSpacePoint* ptrDepthToColorSpaceMapper;
+        protected unsafe volatile ColorSpacePoint* ptrDepthToColorSpaceMapper;
 
         public LowResManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
             : base(ptrBackbuffer, bodyJoints, userTransparency)
@@ -26,7 +27,7 @@ namespace BodyExtractionAndHightlighting
         /*
          * Example: call convertBodyJoints(base.GetRightArmJoints())
          * */
-        protected Dictionary<JointType, DepthSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
+        protected override Dictionary<JointType, DepthSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
         {
             Dictionary<JointType, DepthSpacePoint> bodyJointsDepthSpace = null;
 
@@ -50,17 +51,20 @@ namespace BodyExtractionAndHightlighting
             this.ptrDepthToColorSpaceMapper = ptrDepthToColorSpaceMapper;
         }
 
-        protected void drawFullBody()
+        protected override void drawFullBody()
         {
+            Thread thread;
             if (base.IsAnyJointTracked())
             {
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
-                floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE);
             }
             else
             {
-                sequentialFillBody();
+                thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE);
             }
+            thread.Start();
+            thread.Join();
         }
 
         private unsafe void floodfillBody(int xStart, int yStart)

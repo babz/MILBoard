@@ -8,7 +8,7 @@ using System.Windows;
 
 namespace BodyExtractionAndHightlighting
 {
-    public abstract class BasicManager
+    public abstract class BasicManager<T>
     {
         protected float InferredZPositionClamp = 0.1f;
 
@@ -42,7 +42,7 @@ namespace BodyExtractionAndHightlighting
             this.rightArmJoints = null;
         }
 
-        protected abstract Dictionary<JointType, object> convertBodyJoints(Dictionary<JointType, object> bodyJoints);
+        protected abstract Dictionary<JointType, T> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints);
 
         protected abstract void drawFullBody();
 

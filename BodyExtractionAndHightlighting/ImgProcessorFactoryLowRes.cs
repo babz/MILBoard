@@ -15,19 +15,19 @@ namespace BodyExtractionAndHightlighting
             return (IStandardManager)(new StandardManagerLowRes(ptrBackbuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthDataSource, bodyJoints, userTransparency));
         }
 
-        public override ISymbolManager createSymbolManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Point pTouch, byte userTransparency, System.Windows.Controls.Image guiPointerSymbol)
+        public override ISymbolManager createSymbolManager(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, Point pTouch, System.Windows.Controls.Image guiPointerSymbol)
         {
-            return (ISymbolManager)(new SymbolManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, pTouch, userTransparency, guiPointerSymbol));
+            return (ISymbolManager)(new SymbolManagerLowRes(ptrBackbuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthDataSource, bodyJoints, userTransparency, pTouch, guiPointerSymbol));
         }
 
-        public override IHandManager createHandManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)
+        public override IHandManager createHandManager(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, Point pTouch)
         {
-            return (IHandManager)(new HandManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPoints, pTouch, userTransparency));
+            return (IHandManager)(new HandManagerLowRes(ptrBackbuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthDataSource, bodyJoints, userTransparency, pTouch));
         }
 
-        public override IArmExtensionManager createArmExtensionManager(byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthSensorBuffer, Dictionary<JointType, Point> armJointPoints, Point pTouch, byte userTransparency)
+        public override IArmExtensionManager createArmExtensionManager(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, Point pTouch)
         {
-            return (IArmExtensionManager)(new ArmExtensionManagerLowRes(bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, armJointPoints, pTouch, userTransparency));
+            return (IArmExtensionManager)(new ArmExtensionManagerLowRes(ptrBackbuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthDataSource, bodyJoints, userTransparency, pTouch));
         }
     }
 }

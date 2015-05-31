@@ -8,6 +8,6 @@ namespace BodyExtractionAndHightlighting
 {
     public interface ISymbolManager
     {
-        unsafe void processImage(IntPtr ptrBackbuffer);
+        unsafe void processImage();
     }
 }
