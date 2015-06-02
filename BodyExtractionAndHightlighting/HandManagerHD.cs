@@ -69,7 +69,7 @@ namespace BodyExtractionAndHightlighting
                     this.vElbowToWristOrig = new Vector((xWrist - xElbow), (yWrist - yElbow));
 
                     //==draw a translated right hand duplicate
-                    Thread threadTranslateHand = new Thread(() => translateHand(xHand, yHand), Constants.STACK_SIZE);
+                    Thread threadTranslateHand = new Thread(() => translateHand(xHand, yHand), Constants.STACK_SIZE_HD);
                     threadTranslateHand.Start();
 
                     //==write-through

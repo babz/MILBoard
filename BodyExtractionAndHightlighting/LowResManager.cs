@@ -25,11 +25,11 @@ namespace BodyExtractionAndHightlighting
         }
 
         /*
-         * Example: call convertBodyJoints(base.GetRightArmJoints())
+         * Example usage: call convertBodyJoints(base.GetRightArmJoints())
          * */
         protected override Dictionary<JointType, DepthSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
         {
-            Dictionary<JointType, DepthSpacePoint> bodyJointsDepthSpace = null;
+            Dictionary<JointType, DepthSpacePoint> bodyJointsDepthSpace = new Dictionary<JointType,DepthSpacePoint>();
 
             foreach (KeyValuePair<JointType, CameraSpacePoint> entry in bodyJoints)
             {

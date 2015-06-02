@@ -85,11 +85,11 @@ namespace BodyExtractionAndHightlighting
                     this.drawStretchedRightLowerArm();
 
                     //==draw a translated right hand duplicate
-                    Thread threadTranslateHand = new Thread(() => drawTranslatedRightHand(xHand, yHand), Constants.STACK_SIZE);
+                    Thread threadTranslateHand = new Thread(() => drawTranslatedRightHand(xHand, yHand), Constants.STACK_SIZE_HD);
                     //thread.Priority = ThreadPriority.AboveNormal;
                     threadTranslateHand.Start();
 
-                    Thread threadBody = new Thread(() => bodyFloodFill(xElbow, yElbow), Constants.STACK_SIZE);
+                    Thread threadBody = new Thread(() => bodyFloodFill(xElbow, yElbow), Constants.STACK_SIZE_HD);
                     threadBody.Start();
                     threadBody.Join();
                     //sequential approach

@@ -29,7 +29,7 @@ namespace BodyExtractionAndHightlighting
          * */
         protected override Dictionary<JointType, ColorSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
         {
-            Dictionary<JointType, ColorSpacePoint> bodyJointsColorSpace = null;
+            Dictionary<JointType, ColorSpacePoint> bodyJointsColorSpace = new Dictionary<JointType,ColorSpacePoint>();
 
             foreach (KeyValuePair<JointType, CameraSpacePoint> entry in bodyJoints)
             {
