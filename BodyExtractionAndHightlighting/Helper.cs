@@ -29,13 +29,6 @@ namespace BodyExtractionAndHightlighting
         {
             double newAngleDeg = this.CalculateDotProduct(v1_StartX, v1_StartY, v1_EndX, v1_EndY, v2_EndX, v2_EndY);
 
-            //TODO consider other cases
-            //if (yTouch < yHandTip)
-            //{
-            //    newAngleDeg = 360 - newAngleDeg;
-            //}
-            //Console.Out.WriteLine("touchPoint " + this.touchPosition.X + ", " + this.touchPosition.Y + ", newAngle in deg: " + newAngleDeg);
-
             double newAngleRad = newAngleDeg * Math.PI / 180.0; // conversion into rad
 
             return newAngleRad;

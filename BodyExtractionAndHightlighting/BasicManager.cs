@@ -76,6 +76,7 @@ namespace BodyExtractionAndHightlighting
             bool isHandTracked = false;
             bool isHandTipTracked = false;
 
+            rightArmJoints = new Dictionary<JointType, CameraSpacePoint>();
             foreach (KeyValuePair<JointType, Joint> entry in bodyJoints)
             {
                 if (entry.Value.TrackingState != TrackingState.Tracked)

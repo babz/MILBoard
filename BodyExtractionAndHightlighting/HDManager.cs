@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Threading;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -52,15 +53,18 @@ namespace BodyExtractionAndHightlighting
 
         protected override void drawFullBody()
         {
+            Thread thread;
             if (base.IsAnyJointTracked())
             {
                 ColorSpacePoint bodyPoint = coordinateMapper.MapCameraPointToColorSpace(base.GetAnyBodyPoint());
-                floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
             }
             else
             {
-                sequentialFillBody();
+                thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE_LOWRES);
             }
+            thread.Start();
+            thread.Join();
         }
 
         private unsafe void floodfillBody(int xStart, int yStart)

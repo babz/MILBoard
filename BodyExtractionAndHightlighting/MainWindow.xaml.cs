@@ -243,10 +243,10 @@ namespace BodyExtractionAndHightlighting
                 byte userTransparency = (byte)this.userTransparency.Value;
 
                 /*
-                    * Get Right Arm Joint-Points DEPTH SPACE
+                    * 
                     * @return true if right elbow, right wrist AND right handTip are tracked by the sensor
                     * */
-                bool bodyDetected = this.GetBodyJoints();
+                bool bodyDetected = this.CreateBodyJoints();
 
                 writeableBitmap.Lock();
                 //clear backbuffer
@@ -256,9 +256,13 @@ namespace BodyExtractionAndHightlighting
                 * Normal image writethrough
                 * @hasTouchOccurred is true if GUIPointerType == (Hand || Symbol) OR Mode == (rotate only || scale only) || right mouse button pressed
                 * */
-                if (!hasTouchOccurred || !bodyDetected)
+                if (!bodyDetected)
                 {
                     imgProcessor.createStandardManager(writeableBitmap.BackBuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, null, userTransparency).processImage();
+                } 
+                else if (!hasTouchOccurred)
+                {
+                    imgProcessor.createStandardManager(writeableBitmap.BackBuffer, bodyIndexSensorBuffer, colorSensorBuffer, depthSensorBuffer, bodyJoints, userTransparency).processImage();
                 }
                 else
                 {
@@ -361,7 +365,7 @@ namespace BodyExtractionAndHightlighting
             counter++;
         }
 
-        private bool GetBodyJoints()
+        private bool CreateBodyJoints()
         {
             bool bodyDetected = false;
 
@@ -374,6 +378,7 @@ namespace BodyExtractionAndHightlighting
 
                 bodyJoints = body.Joints;
                 bodyDetected = true;
+                Console.Out.WriteLine("================== Body DETECTED!=====================");
             }
             return bodyDetected;
         }

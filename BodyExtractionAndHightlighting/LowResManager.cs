@@ -57,11 +57,11 @@ namespace BodyExtractionAndHightlighting
             if (base.IsAnyJointTracked())
             {
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
-                thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE);
+                thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
             }
             else
             {
-                thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE);
+                thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE_LOWRES);
             }
             thread.Start();
             thread.Join();
