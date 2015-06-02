@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Threading;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -52,11 +53,12 @@ namespace BodyExtractionAndHightlighting
                     this.yElbow = (int)(rightArmJoints[JointType.ElbowRight].Y + 0.5);
                     this.xWrist = (int)(rightArmJoints[JointType.WristRight].X + 0.5);
                     this.yWrist = (int)(rightArmJoints[JointType.WristRight].Y + 0.5);
+                    int xHandTip = (int)(rightArmJoints[JointType.HandTipRight].X + 0.5);
+                    int yHandTip = (int)(rightArmJoints[JointType.HandTipRight].Y + 0.5);
                     //start point for floodfill 
                     this.xHand = (int)(rightArmJoints[JointType.HandRight].X + 0.5);
                     this.yHand = (int)(rightArmJoints[JointType.HandRight].Y + 0.5);
-                    int xHandTip = (int)(rightArmJoints[JointType.HandTipRight].X + 0.5);
-                    int yHandTip = (int)(rightArmJoints[JointType.HandTipRight].Y + 0.5);
+
                     //offset for hand translation
                     this.xTranslationOffset = (int)(pTouch.X - xHandTip + 0.5);
                     this.yTranslationOffset = (int)(pTouch.Y - yHandTip + 0.5);
@@ -64,11 +66,21 @@ namespace BodyExtractionAndHightlighting
                     //vector elbow to wrist, also normal vector of wrist
                     this.vElbowToWristOrig = new Vector((xWrist - xElbow), (yWrist - yElbow));
 
+                    
+
                     //==draw a translated right hand duplicate
-                    this.translateHand(xHand, yHand);
+                    Thread threadTranslateHand = new Thread(() => translateHand(xHand, yHand), Constants.STACK_SIZE_LOWRES);
+                    threadTranslateHand.Start();
+                    threadTranslateHand.Join();
+
+                    //==write-through
+                    base.drawFullBody();
                 }
-                //==write-through
-                base.drawFullBody();
+                else
+                {
+                    //==write-through
+                    base.drawFullBody();
+                }
 
                 if (Constants.IsSkeletonShown)
                 {
@@ -85,13 +97,13 @@ namespace BodyExtractionAndHightlighting
 
             float xCurrOrigArm = xWrist;
             float yCurrOrigArm = yWrist;
-            int stepsOnVector = 50;
+            int stepsOnVector = 200;
             for (int i = 0; i < stepsOnVector; i++)
             {
                 if ((xCurrOrigArm < bodyIndexSensorBufferWidth) && (xCurrOrigArm >= 0) && (yCurrOrigArm < bodyIndexSensorBufferHeight) && (yCurrOrigArm >= 0))
                 {
                     uint* ptrImgBufferPixelInt = ptrBackbuffer + (((int)(yCurrOrigArm + 0.5)) * bodyIndexSensorBufferWidth + ((int)(xCurrOrigArm + 0.5)));
-                    *ptrImgBufferPixelInt = 0xFF00FFFF;
+                    *ptrImgBufferPixelInt = 0xFF00FFFF; //TODO access violation when hand overlaps body
                     *(((byte*)ptrImgBufferPixelInt) + 3) = 255;
                 }
 

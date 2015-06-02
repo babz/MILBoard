@@ -97,7 +97,7 @@ namespace BodyExtractionAndHightlighting
 
             float xCurrOrigArm = xWrist;
             float yCurrOrigArm = yWrist;
-            int stepsOnVector = 50;
+            int stepsOnVector = 300;
             for (int i = 0; i < stepsOnVector; i++)
             {
                 if ((xCurrOrigArm < colorSensorBufferWidth) && (xCurrOrigArm >= 0) && (yCurrOrigArm < colorSensorBufferHeight) && (yCurrOrigArm >= 0))
@@ -119,7 +119,7 @@ namespace BodyExtractionAndHightlighting
             //start at 50 pixel right on wrist vector
             float vWrist_posX = (float)(xWrist - vWristRight.X * 50);
             float vWrist_posY = (float)(yWrist - vWristRight.Y * 50);
-            stepsOnVector = 100;
+            stepsOnVector = 200;
             for (int i = 0; i < stepsOnVector; i++)
             {
                 if ((vWrist_posX < colorSensorBufferWidth) && (vWrist_posX >= 0) && (vWrist_posY < colorSensorBufferHeight) && (vWrist_posY >= 0))

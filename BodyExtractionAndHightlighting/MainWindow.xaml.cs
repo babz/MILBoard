@@ -171,12 +171,11 @@ namespace BodyExtractionAndHightlighting
         void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs args)
         {
             //ISSUES
-            //hd mode only works if first switched to low res, then back to hd
-            //hand manager low res does not work, hd only flickering
-            //arm extension manager: hd does not work
-            //                       low res works if hand is above button
-            //                       infinite loop in Z 226 when checked if there is a body along the right normal vector (check direction of increment)
             //read wouterverweirder
+            //re-integrate rotate only, scale only
+            //adapt transparency
+            //update touch with writing (mouse drag)
+            //handle exc when hand overlaps body
 
             MultiSourceFrame reference = args.FrameReference.AcquireFrame();
 

@@ -123,6 +123,7 @@ namespace BodyExtractionAndHightlighting
         }
 
         /* check isRightArmTracked first!
+         * https://msdn.microsoft.com/en-us/library/windowspreview.kinect.cameraspacepoint.aspx
          * @return null if not tracked
          * */
         protected Dictionary<JointType, CameraSpacePoint> GetRightArmCameraSpace()
