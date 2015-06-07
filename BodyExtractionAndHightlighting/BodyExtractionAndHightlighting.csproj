@@ -58,6 +58,7 @@
     <Reference Include="Microsoft.Kinect, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -78,6 +79,7 @@
     <Compile Include="ArmExtensionManagerHD.cs" />
     <Compile Include="ArmExtensionManagerLowRes.cs" />
     <Compile Include="BasicManager.cs" />
+    <Compile Include="FloodFillRangeQueue.cs" />
     <Compile Include="StandardManagerHD.cs" />
     <Compile Include="StandardManagerLowRes.cs" />
     <Compile Include="Constants.cs" />

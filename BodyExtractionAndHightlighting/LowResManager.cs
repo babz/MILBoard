@@ -139,6 +139,10 @@ namespace BodyExtractionAndHightlighting
             int idxDepthSpaceLeft = idxDepthSpace;
             for (int xLeft = xStart; xLeft >= 0; --xLeft)
             {
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceLeft) == 0xff)
+                {
+                    break;
+                }
                 *(ptrBodyIndexSensorBuffer + idxDepthSpaceLeft) = 0xff; //do not visit same pixel twice
                 int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceLeft)->X + 0.5);
                 int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceLeft)->Y + 0.5);
@@ -160,11 +164,16 @@ namespace BodyExtractionAndHightlighting
                     // overwrite the alpha value (last byte)
                     *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
                 }
+                isColorPixelInValidRange = false;
                 idxDepthSpaceLeft--;
             }
-            int idxDepthSpaceRight = idxDepthSpace;
-            for (int xRight = xStart; xRight >= 0; ++xRight)
+            int idxDepthSpaceRight = idxDepthSpace + 1;
+            for (int xRight = xStart+1; xRight < bodyIndexSensorBufferWidth; ++xRight)
             {
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) == 0xff)
+                {
+                    break;
+                }
                 *(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) = 0xff; //do not visit same pixel twice
                 int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->X + 0.5);
                 int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->Y + 0.5);
@@ -186,9 +195,9 @@ namespace BodyExtractionAndHightlighting
                     // overwrite the alpha value (last byte)
                     *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
                 }
+                isColorPixelInValidRange = false;
                 idxDepthSpaceRight++;
             }
-
 
             this.linefillBody(xStart, (yStart + 1));
             this.linefillBody(xStart, (yStart - 1));

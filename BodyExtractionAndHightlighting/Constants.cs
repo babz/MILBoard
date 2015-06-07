@@ -12,7 +12,7 @@ namespace BodyExtractionAndHightlighting
         public const int STACK_SIZE_LOWRES = 1024 * 1024 * 5;
         public const int STACK_SIZE_HD = 1024 * 1024 * 30;
         public const int LINEFILL_LOWRES = 1024 * 1024 * 2;
-        public const int LINEFILL_HD = 1024 * 1024 * 10;
+        public const int LINEFILL_HD = 1024 * 1024 * 5;
         public const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
         private static int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;

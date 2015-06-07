@@ -38,7 +38,7 @@
         <RadioButton Name="fullHD" Grid.Column="0" Content="1080p" GroupName="Resolution" Checked="fullHD_Checked" Margin="10,23,59,5" Grid.RowSpan="2" />
         <RadioButton Name="nonFullHD" Grid.Row="1" Grid.Column="0" Content="512x424" GroupName="Resolution" IsChecked="True" Checked="nonFullHD_Checked" Margin="10,0,59,2" Height="17" VerticalAlignment="Bottom" />
 
-        <Slider Grid.Column="1" Value="200" Maximum="255" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" Margin="5,27,40,3" Grid.RowSpan="2" />
+        <Slider Grid.Column="1" Value="200" Maximum="254" TickFrequency="20" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Name="userTransparency" Margin="5,27,40,3" Grid.RowSpan="2" />
 
         <RadioButton Name="BlackBG" Grid.Row="1" Grid.Column="2" Content="Black" GroupName="Background" Checked="BlackBG_Checked"/>
         <RadioButton Name="WhiteBG" Grid.Row="1" Grid.Column="2" Content="White" GroupName="Background" IsChecked="True" Checked="WhiteBG_Checked" Margin="60,0,120,7" />
