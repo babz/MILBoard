@@ -114,7 +114,7 @@ namespace BodyExtractionAndHightlighting
             this.Closing += MainWindow_Closing;
         }
 
-        void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             sensor = KinectSensor.GetDefault();
             bodies = new Body[6];

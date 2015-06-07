@@ -46,6 +46,15 @@ namespace BodyExtractionAndHightlighting
 
         protected abstract void drawFullBody();
 
+        /*
+         * Source: http://www.codeproject.com/Articles/6017/QuickFill-An-efficient-flood-fill-algorithm
+         * http://www.crbond.com/papers/fldfill_v2.pdf
+         * */
+        protected void quickFillBody()
+        {
+
+        }
+
         protected bool IsAnyJointTracked()
         {
             if (bodyJoints == null)
@@ -149,5 +158,6 @@ namespace BodyExtractionAndHightlighting
         {
             this.ptrBackbuffer = (uint*)ptrBackbufferManaged;
         }
+
     }
 }

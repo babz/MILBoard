@@ -57,7 +57,8 @@ namespace BodyExtractionAndHightlighting
             if (base.IsAnyJointTracked())
             {
                 ColorSpacePoint bodyPoint = coordinateMapper.MapCameraPointToColorSpace(base.GetAnyBodyPoint());
-                thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
+                thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_HD);
+                //thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
             }
             else
             {
@@ -113,6 +114,84 @@ namespace BodyExtractionAndHightlighting
             this.floodfillBody((xStart - 1), yStart);
             this.floodfillBody(xStart, (yStart + 1));
             this.floodfillBody(xStart, (yStart - 1));
+        }
+
+        private unsafe void linefillBody(int xStart, int yStart)
+        {
+            if ((xStart >= colorSensorBufferWidth) || (xStart < 0) || (yStart >= colorSensorBufferHeight) || (yStart < 0))
+            {
+                return;
+            }
+
+            int idxCurrColorPixel = yStart * colorSensorBufferWidth + xStart;
+            if (idxCurrColorPixel >= colorImageLength)
+            {
+                return;
+            }
+
+            //pixel already visited
+            uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
+            if ((*ptrColorSensorBufferPixelInt) == 0xFF000000)
+            {
+                return;
+            }
+
+            int idxCurrColorPixelLeft = idxCurrColorPixel;
+            float xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixelLeft)->X;
+            float yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixelLeft)->Y;
+            int idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
+            for (int xLeft = xStart; xLeft >= 0; --xLeft) {
+                if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (*(ptrBodyIndexSensorBuffer + idxDepthPixel) == 0xff))
+                {
+                    break;
+                }
+                else
+                {
+                    // point to current pixel in image buffer
+                    uint* ptrImgBufferPixelInt = ptrBackbuffer + (yStart * colorSensorBufferWidth + xStart);
+
+                    // assign color value (4 bytes)
+                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                    // overwrite the alpha value (last byte)
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
+
+                    //do not visit same pixel twice
+                    *ptrColorSensorBufferPixelInt = 0xFF000000;
+                }
+                idxCurrColorPixelLeft--;
+                xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixelLeft)->X;
+                yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixelLeft)->Y;
+                idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
+            }
+
+            int idxCurrColorPixelRight = idxCurrColorPixel;
+            for (int xRight = xStart; xRight >= 0; ++xRight)
+            {
+                if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (*(ptrBodyIndexSensorBuffer + idxDepthPixel) == 0xff))
+                {
+                    break;
+                }
+                else
+                {
+                    // point to current pixel in image buffer
+                    uint* ptrImgBufferPixelInt = ptrBackbuffer + (yStart * colorSensorBufferWidth + xStart);
+
+                    // assign color value (4 bytes)
+                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                    // overwrite the alpha value (last byte)
+                    *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
+
+                    //do not visit same pixel twice
+                    *ptrColorSensorBufferPixelInt = 0xFF000000;
+                }
+                idxCurrColorPixelRight++;
+                xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixelRight)->X;
+                yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixelRight)->Y;
+                idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
+            }
+
+            this.linefillBody(xStart, (yStart + 1));
+            this.linefillBody(xStart, (yStart - 1));
         }
 
         private unsafe void sequentialFillBody()
