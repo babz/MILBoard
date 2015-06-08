@@ -57,15 +57,19 @@ namespace BodyExtractionAndHightlighting
             if (base.IsAnyJointTracked())
             {
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
-                thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
+                //thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
+                this.linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 //thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
+                //thread.Start();
+                //thread.Join();
             }
             else
             {
                 thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE_LOWRES);
+                thread.Start();
+                thread.Join();
             }
-            thread.Start();
-            thread.Join();
+            
         }
 
         private unsafe void floodfillBody(int xStart, int yStart)
@@ -118,9 +122,9 @@ namespace BodyExtractionAndHightlighting
             this.floodfillBody(xStart, (yStart - 1));
         }
 
-        private unsafe void linefillBody(int xStart, int yStart)
+        private unsafe void linefillBody(int xStartLeft, int xStartRight, int yStart)
         {
-            if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
+            if ((xStartLeft >= bodyIndexSensorBufferWidth) || (xStartLeft < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
             {
                 return;
             }
@@ -129,15 +133,17 @@ namespace BodyExtractionAndHightlighting
             uint* ptrBackbufferPixelInt = null;
             uint* ptrColorSensorBufferPixelInt = null;
             bool isColorPixelInValidRange = false;
+            int xLeft, xRight;
 
             //pixel already visited
-            int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
+            int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStartLeft;
             if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff)
             {
                 return;
             }
+            // ===scan left side
             int idxDepthSpaceLeft = idxDepthSpace;
-            for (int xLeft = xStart; xLeft >= 0; --xLeft)
+            for (xLeft = xStartLeft; xLeft >= 0; --xLeft)
             {
                 if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceLeft) == 0xff)
                 {
@@ -167,8 +173,15 @@ namespace BodyExtractionAndHightlighting
                 isColorPixelInValidRange = false;
                 idxDepthSpaceLeft--;
             }
+            if (xLeft < xStartLeft)
+            {
+                this.linefillBody(xLeft, xStartLeft, (yStart + 1));
+                this.linefillBody(xLeft, xStartLeft, (yStart - 1));
+            }
+
+            // ===scan right side
             int idxDepthSpaceRight = idxDepthSpace + 1;
-            for (int xRight = xStart+1; xRight < bodyIndexSensorBufferWidth; ++xRight)
+            for (xRight = xStartRight; xRight < bodyIndexSensorBufferWidth; ++xRight)
             {
                 if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) == 0xff)
                 {
@@ -198,9 +211,58 @@ namespace BodyExtractionAndHightlighting
                 isColorPixelInValidRange = false;
                 idxDepthSpaceRight++;
             }
+            if (xRight > xStartRight)
+            {
+                this.linefillBody(xStartRight, xRight, (yStart + 1));
+                this.linefillBody(xStartRight, xRight, (yStart - 1));
+            }
 
-            this.linefillBody(xStart, (yStart + 1));
-            this.linefillBody(xStart, (yStart - 1));
+            //scan betweens
+            for (xRight = xStartLeft; xRight <= xStartRight && xRight <= bodyIndexSensorBufferWidth; ++xRight)
+            {
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) != 0xff)
+                {
+                    *(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) = 0xff; //do not visit same pixel twice
+                    int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->X + 0.5);
+                    int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->Y + 0.5);
+
+                    if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+                            (colorPointY >= 0) && (colorPointX >= 0))
+                    {
+                        isColorPixelInValidRange = true;
+                    }
+
+                    if (isColorPixelInValidRange)
+                    {
+                        // point to current pixel in image buffer
+                        ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceRight;
+
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+                        // assign color value (4 bytes)
+                        *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
+                    }
+                    isColorPixelInValidRange = false;
+                    idxDepthSpaceRight++;
+                }
+                else
+                {
+                    if (xStartLeft < xRight)
+                    {
+                        this.linefillBody(xStartLeft, xRight - 1, yStart - 1);
+                        this.linefillBody(xStartLeft, xRight - 1, yStart + 1);
+                    }
+                    
+                }
+            }
+           
+        }
+
+        //http://lodev.org/cgtutor/floodfill.html#Scanline_Floodfill_Algorithm_With_Stack
+        //http://www.cs.tufts.edu/~sarasu/courses/comp175-2009fa/pdf/comp175-04-region-filling.pdf
+        private unsafe void linefillBody_Stack() {
+
         }
 
         private unsafe void sequentialFillBody()

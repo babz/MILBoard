@@ -63,6 +63,8 @@ namespace BodyExtractionAndHightlighting
                 ColorSpacePoint bodyPoint = coordinateMapper.MapCameraPointToColorSpace(base.GetAnyBodyPoint());
                 //thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_HD);
                 //thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
+                //thread.Start();
+                //thread.Join();
                 linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
             }
             else
