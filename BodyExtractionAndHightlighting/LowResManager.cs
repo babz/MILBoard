@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
 using System.Threading;
+using System.Collections;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -50,18 +51,18 @@ namespace BodyExtractionAndHightlighting
         {
             this.ptrDepthToColorSpaceMapper = ptrDepthToColorSpaceMapper;
         }
-
+        
         protected override void drawFullBody()
         {
             Thread thread;
             if (base.IsAnyJointTracked())
             {
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
-                //thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
-                this.linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
+                //this.linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 //thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
-                //thread.Start();
-                //thread.Join();
+                thread.Start();
+                thread.Join();
             }
             else
             {
@@ -122,6 +123,8 @@ namespace BodyExtractionAndHightlighting
             this.floodfillBody(xStart, (yStart - 1));
         }
 
+        //python floodfill
+        //unsafe floodfill: http://www.codeproject.com/Articles/5133/Flood-Fill-Algorithms-in-C-and-GDI
         private unsafe void linefillBody(int xStartLeft, int xStartRight, int yStart)
         {
             if ((xStartLeft >= bodyIndexSensorBufferWidth) || (xStartLeft < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
@@ -218,52 +221,157 @@ namespace BodyExtractionAndHightlighting
             }
 
             //scan betweens
-            for (xRight = xStartLeft; xRight <= xStartRight && xRight <= bodyIndexSensorBufferWidth; ++xRight)
-            {
-                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) != 0xff)
-                {
-                    *(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) = 0xff; //do not visit same pixel twice
-                    int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->X + 0.5);
-                    int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->Y + 0.5);
+            //for (xRight = xStartLeft; xRight <= xStartRight && xRight <= bodyIndexSensorBufferWidth; ++xRight)
+            //{
+            //    if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) != 0xff)
+            //    {
+            //        *(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) = 0xff; //do not visit same pixel twice
+            //        int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->X + 0.5);
+            //        int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->Y + 0.5);
 
-                    if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-                            (colorPointY >= 0) && (colorPointX >= 0))
-                    {
-                        isColorPixelInValidRange = true;
-                    }
+            //        if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+            //                (colorPointY >= 0) && (colorPointX >= 0))
+            //        {
+            //            isColorPixelInValidRange = true;
+            //        }
 
-                    if (isColorPixelInValidRange)
-                    {
-                        // point to current pixel in image buffer
-                        ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceRight;
+            //        if (isColorPixelInValidRange)
+            //        {
+            //            // point to current pixel in image buffer
+            //            ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceRight;
 
-                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                        // assign color value (4 bytes)
-                        *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
-                        // overwrite the alpha value (last byte)
-                        *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
-                    }
-                    isColorPixelInValidRange = false;
-                    idxDepthSpaceRight++;
-                }
-                else
-                {
-                    if (xStartLeft < xRight)
-                    {
-                        this.linefillBody(xStartLeft, xRight - 1, yStart - 1);
-                        this.linefillBody(xStartLeft, xRight - 1, yStart + 1);
-                    }
+            //            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+            //            // assign color value (4 bytes)
+            //            *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
+            //            // overwrite the alpha value (last byte)
+            //            *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
+            //        }
+            //        isColorPixelInValidRange = false;
+            //        idxDepthSpaceRight++;
+            //    }
+            //    else
+            //    {
+            //        if (xStartLeft < xRight)
+            //        {
+            //            this.linefillBody(xStartLeft, xRight - 1, yStart - 1);
+            //            this.linefillBody(xStartLeft, xRight - 1, yStart + 1);
+            //        }
                     
-                }
-            }
-           
+            //    }
+            //}
         }
 
+        //the stack
+        int stackSize = 16777216;
+        int[] stack = new int[16777216];
+        int stackPointer;
         //http://lodev.org/cgtutor/floodfill.html#Scanline_Floodfill_Algorithm_With_Stack
         //http://www.cs.tufts.edu/~sarasu/courses/comp175-2009fa/pdf/comp175-04-region-filling.pdf
-        private unsafe void linefillBody_Stack() {
+        //private unsafe void linefillBody_Stack(int xStart, int yStart)
+        //{
+        //    Stack stack = new Stack();
 
-        }
+        //    if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
+        //    {
+        //        return;
+        //    }
+
+        //    //pixel target
+        //    uint* ptrBackbufferPixelInt = null;
+        //    uint* ptrColorSensorBufferPixelInt = null;
+        //    bool isColorPixelInValidRange = false;
+        //    int xLeft, xRight;
+
+        //    //pixel already visited
+        //    int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
+        //    if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff)
+        //    {
+        //        return;
+        //    }
+
+        //    emptyStack(stack);
+
+        //    int y1;
+        //    bool spanLeft, spanRight;
+
+        //    if (!push(x, y)) { 
+        //        return; 
+        //    }
+
+        //    while (pop(x, y))
+        //    {
+        //        y1 = y;
+        //        while (y1 >= 0 && screenBuffer[x][y1] == oldColor) y1--;
+        //        y1++;
+        //        spanLeft = spanRight = 0;
+        //        while (y1 < h && screenBuffer[x][y1] == oldColor)
+        //        {
+        //            screenBuffer[x][y1] = newColor;
+        //            if (!spanLeft && x > 0 && screenBuffer[x - 1][y1] == oldColor)
+        //            {
+        //                if (!push(x - 1, y1)) return;
+        //                spanLeft = 1;
+        //            }
+        //            else if (spanLeft && x > 0 && screenBuffer[x - 1][y1] != oldColor)
+        //            {
+        //                spanLeft = 0;
+        //            }
+        //            if (!spanRight && x < w - 1 && screenBuffer[x + 1][y1] == oldColor)
+        //            {
+        //                if (!push(x + 1, y1)) return;
+        //                spanRight = 1;
+        //            }
+        //            else if (spanRight && x < w - 1 && screenBuffer[x + 1][y1] != oldColor)
+        //            {
+        //                spanRight = 0;
+        //            }
+        //            y1++;
+        //        }
+        //    }
+        //}
+
+        //bool pop(int x, int y)
+        //{
+        //    if(stackPointer > 0)
+        //    {
+        //        int p = stack[stackPointer];
+        //        x = p / h;
+        //        y = p % h;
+        //        stackPointer--;
+        //        return true;
+        //    }    
+        //    else
+        //    {
+        //        return false;
+        //    }   
+        //}   
+ 
+        //bool push(int x, int y)
+        //{
+        //    if(stackPointer < stackSize - 1)
+        //    {
+        //        stackPointer++;
+        //        stack[stackPointer] = h * x + y;
+        //        return true;
+        //    }    
+        //    else
+        //    {
+        //        return false;
+        //    }   
+        //}    
+
+        //void emptyStack()
+        //{
+        //    int x, y;
+        //    while(pop(x, y));
+        //}
+
+        //private void emptyStack(Stack stack)
+        //{
+        //    while (stack.Count != 0) {
+        //        stack.Pop() ;
+        //    }
+        //}
 
         private unsafe void sequentialFillBody()
         {
