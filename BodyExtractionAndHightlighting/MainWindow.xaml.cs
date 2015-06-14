@@ -377,7 +377,7 @@ namespace BodyExtractionAndHightlighting
 
                 bodyJoints = body.Joints;
                 bodyDetected = true;
-                Console.Out.WriteLine("================== Body DETECTED!=====================");
+                //Console.Out.WriteLine("================== Body DETECTED!=====================");
             }
             return bodyDetected;
         }

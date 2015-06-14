@@ -180,6 +180,7 @@ namespace BodyExtractionAndHightlighting
             {
                 this.linefillBody(xLeft, xStartLeft, (yStart + 1));
                 this.linefillBody(xLeft, xStartLeft, (yStart - 1));
+                ++xStartLeft;
             }
 
             // ===scan right side
@@ -218,6 +219,60 @@ namespace BodyExtractionAndHightlighting
             {
                 this.linefillBody(xStartRight, xRight, (yStart + 1));
                 this.linefillBody(xStartRight, xRight, (yStart - 1));
+                --xStartRight;
+            }
+
+            //xR ... xRight
+            //x2 ... xStartRight
+            //xL ... xLeft
+            //x1 ... xStartLeft
+            int idxDepthSpaceBetween = idxDepthSpace;
+            for (xRight = xStartLeft; xRight <= xStartRight && xRight < bodyIndexSensorBufferWidth; ++xRight)
+            {
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) != 0xff)
+                {
+                    *(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) = 0xff; //do not visit same pixel twice
+                    int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceBetween)->X + 0.5);
+                    int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceBetween)->Y + 0.5);
+
+                    if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+                            (colorPointY >= 0) && (colorPointX >= 0))
+                    {
+                        isColorPixelInValidRange = true;
+                    }
+
+                    if (isColorPixelInValidRange)
+                    {
+                        // point to current pixel in image buffer
+                        ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceBetween;
+
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+                        // assign color value (4 bytes)
+                        *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
+                        // overwrite the alpha value (last byte)
+                        *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
+                    }
+                    isColorPixelInValidRange = false;
+                    idxDepthSpaceRight++;
+                }
+                else
+                {
+                    if (xStartLeft < xRight)
+                    {
+                        this.linefillBody(xStartLeft, xRight-1, (yStart + 1));
+                        this.linefillBody(xStartLeft, xRight-1, (yStart - 1));
+                        xStartLeft = xRight;
+                    }
+
+                    for (; xRight <= xStartRight && xRight < bodyIndexSensorBufferWidth; ++xRight)
+                    {
+                        if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) != 0xff)
+                        {
+                            xStartLeft = xRight--;
+                            break;
+                        }
+                    }
+                }
             }
 
             //scan betweens
