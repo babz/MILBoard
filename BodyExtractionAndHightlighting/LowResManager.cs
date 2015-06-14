@@ -54,15 +54,35 @@ namespace BodyExtractionAndHightlighting
         
         protected override void drawFullBody()
         {
+            bool BFS = false;
+            bool DFS = false;
+            bool linefill = true;
+            bool floodfill = false;
             Thread thread;
             if (base.IsAnyJointTracked())
             {
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
-                thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
-                //this.linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
-                //thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
-                thread.Start();
-                thread.Join();
+                if (BFS)
+                {
+                    floodfill_BreathFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                }
+                else if (DFS)
+                {
+                    floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                }
+                else if (linefill)
+                {
+                    //this.linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
+                    thread.Start();
+                    thread.Join();
+                }
+                else if (floodfill)
+                {
+                    thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
+                    thread.Start();
+                    thread.Join();
+                }
             }
             else
             {
@@ -240,8 +260,6 @@ namespace BodyExtractionAndHightlighting
 
         private unsafe void floodfill_BreathFirst(int xStart, int yStart)
         {
-            //Queue queue = new Queue();
-            //queue.Enqueue(new Point(xStart, yStart));
             LinkedList<Point> queue = new LinkedList<Point>();
             queue.AddFirst(new Point(xStart, yStart));
             int maxQueueSize = 0;
