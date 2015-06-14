@@ -54,9 +54,9 @@ namespace BodyExtractionAndHightlighting
         
         protected override void drawFullBody()
         {
-            bool BFS = false;
+            bool BFS = true;
             bool DFS = false;
-            bool linefill = true;
+            bool linefill = false;
             bool floodfill = false;
             Thread thread;
             if (base.IsAnyJointTracked())
@@ -100,11 +100,6 @@ namespace BodyExtractionAndHightlighting
                 return;
             }
 
-            //pixel target
-            uint* ptrBackbufferPixelInt = null;
-            uint* ptrColorSensorBufferPixelInt = null;
-            bool isColorPixelInValidRange = false;
-
             //pixel already visited
             int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
             if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff)
@@ -114,26 +109,7 @@ namespace BodyExtractionAndHightlighting
             else
             {
                 *(ptrBodyIndexSensorBuffer + idxDepthSpace) = 0xff; //do not visit same pixel twice
-                int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
-                int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
-
-                if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-                        (colorPointY >= 0) && (colorPointX >= 0))
-                {
-                    isColorPixelInValidRange = true;
-                }
-
-                if (isColorPixelInValidRange)
-                {
-                    // point to current pixel in image buffer
-                    ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpace;
-
-                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                    // assign color value (4 bytes)
-                    *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value (last byte)
-                    *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
-                }
+                this.drawColorPixel(idxDepthSpace);
             }
 
             //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
@@ -238,6 +214,7 @@ namespace BodyExtractionAndHightlighting
         }
         
         private unsafe void drawColorPixel(int idxDepthSpace)  {
+            //pixel target
             uint* ptrBackbufferPixelInt = null;
             uint* ptrColorSensorBufferPixelInt = null;
 
@@ -264,19 +241,24 @@ namespace BodyExtractionAndHightlighting
             queue.AddFirst(new Point(xStart, yStart));
             int maxQueueSize = 0;
 
-            int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
+            int idxDepthSpace;
             while (queue.Count != 0)
             {
                 Point p = queue.Last();
-                if ((p.X >= 0) && (p.X < bodyIndexSensorBufferWidth) && (p.Y >= 0) && (p.Y < bodyIndexSensorBufferHeight) && (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff))
-                {
-                    this.drawColorPixel(idxDepthSpace);
-                    queue.AddFirst(new Point(p.X + 1, p.Y));
-                    queue.AddFirst(new Point(p.X - 1, p.Y));
-                    queue.AddFirst(new Point(p.X, p.Y + 1)); 
-                    queue.AddFirst(new Point(p.X, p.Y - 1));
-                }
                 queue.RemoveLast();
+                if ((p.X >= 0) && (p.X < bodyIndexSensorBufferWidth) && (p.Y >= 0) && (p.Y < bodyIndexSensorBufferHeight))
+                {
+                    idxDepthSpace = (int)(p.Y * bodyIndexSensorBufferWidth + p.X);
+                    if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
+                    {
+                        this.drawColorPixel(idxDepthSpace);
+                        *(ptrBodyIndexSensorBuffer + idxDepthSpace) = 0xff; //do not visit same pixel twice
+                        queue.AddFirst(new Point(p.X + 1, p.Y));
+                        queue.AddFirst(new Point(p.X - 1, p.Y));
+                        queue.AddFirst(new Point(p.X, p.Y + 1));
+                        queue.AddFirst(new Point(p.X, p.Y - 1));
+                    }
+                }
 
                 if (queue.Count > maxQueueSize)
                 {
@@ -292,17 +274,22 @@ namespace BodyExtractionAndHightlighting
             stack.Push(new Point(x, y));
             int maxStackSize = 0;
 
-            int idxDepthSpace = y * bodyIndexSensorBufferWidth + x;
+            int idxDepthSpace;
             while (stack.Count != 0)
             {
                 Point p = stack.Pop();
-                if ((p.X >= 0) && (p.X < bodyIndexSensorBufferWidth) && (p.Y >= 0) && (p.Y < bodyIndexSensorBufferHeight) && (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff))
+                if ((p.X >= 0) && (p.X < bodyIndexSensorBufferWidth) && (p.Y >= 0) && (p.Y < bodyIndexSensorBufferHeight))
                 {
-                    this.drawColorPixel(idxDepthSpace);
-                    stack.Push(new Point(p.X + 1, p.Y));
-                    stack.Push(new Point(p.X - 1, p.Y));
-                    stack.Push(new Point(p.X, p.Y + 1));
-                    stack.Push(new Point(p.X, p.Y - 1));
+                    idxDepthSpace = (int)(p.Y * bodyIndexSensorBufferWidth + p.X);
+                    if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
+                    {
+                        this.drawColorPixel(idxDepthSpace);
+                        *(ptrBodyIndexSensorBuffer + idxDepthSpace) = 0xff; //do not visit same pixel twice
+                        stack.Push(new Point(p.X + 1, p.Y));
+                        stack.Push(new Point(p.X - 1, p.Y));
+                        stack.Push(new Point(p.X, p.Y + 1));
+                        stack.Push(new Point(p.X, p.Y - 1));
+                    }
                 }
                 if (stack.Count > maxStackSize)
                 {
