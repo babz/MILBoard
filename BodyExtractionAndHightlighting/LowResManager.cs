@@ -238,118 +238,61 @@ namespace BodyExtractionAndHightlighting
             }
         }
 
+        private unsafe void floodfill_BreathFirst(int xStart, int yStart)
+        {
+            //Queue queue = new Queue();
+            //queue.Enqueue(new Point(xStart, yStart));
+            LinkedList<Point> queue = new LinkedList<Point>();
+            queue.AddFirst(new Point(xStart, yStart));
+            int maxQueueSize = 0;
 
-        //the stack
-        int stackSize = 16777216;
-        int[] stack = new int[16777216];
-        int stackPointer;
-        //http://lodev.org/cgtutor/floodfill.html#Scanline_Floodfill_Algorithm_With_Stack
-        //http://www.cs.tufts.edu/~sarasu/courses/comp175-2009fa/pdf/comp175-04-region-filling.pdf
-        //private unsafe void linefillBody_Stack(int xStart, int yStart)
-        //{
-        //    Stack stack = new Stack();
+            int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
+            while (queue.Count != 0)
+            {
+                Point p = queue.Last();
+                if ((p.X >= 0) && (p.X < bodyIndexSensorBufferWidth) && (p.Y >= 0) && (p.Y < bodyIndexSensorBufferHeight) && (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff))
+                {
+                    this.drawColorPixel(idxDepthSpace);
+                    queue.AddFirst(new Point(p.X + 1, p.Y));
+                    queue.AddFirst(new Point(p.X - 1, p.Y));
+                    queue.AddFirst(new Point(p.X, p.Y + 1)); 
+                    queue.AddFirst(new Point(p.X, p.Y - 1));
+                }
+                queue.RemoveLast();
 
-        //    if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
-        //    {
-        //        return;
-        //    }
+                if (queue.Count > maxQueueSize)
+                {
+                    maxQueueSize = queue.Count();
+                }
+            }
+            Console.Out.Write("Breath first queue size:" + maxQueueSize);
+        }
 
-        //    //pixel target
-        //    uint* ptrBackbufferPixelInt = null;
-        //    uint* ptrColorSensorBufferPixelInt = null;
-        //    bool isColorPixelInValidRange = false;
-        //    int xLeft, xRight;
+        private unsafe void floodfill_DepthFirst(int x, int y)
+        {
+            Stack<Point> stack = new Stack<Point>();
+            stack.Push(new Point(x, y));
+            int maxStackSize = 0;
 
-        //    //pixel already visited
-        //    int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
-        //    if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff)
-        //    {
-        //        return;
-        //    }
-
-        //    emptyStack(stack);
-
-        //    int y1;
-        //    bool spanLeft, spanRight;
-
-        //    if (!push(x, y)) { 
-        //        return; 
-        //    }
-
-        //    while (pop(x, y))
-        //    {
-        //        y1 = y;
-        //        while (y1 >= 0 && screenBuffer[x][y1] == oldColor) y1--;
-        //        y1++;
-        //        spanLeft = spanRight = 0;
-        //        while (y1 < h && screenBuffer[x][y1] == oldColor)
-        //        {
-        //            screenBuffer[x][y1] = newColor;
-        //            if (!spanLeft && x > 0 && screenBuffer[x - 1][y1] == oldColor)
-        //            {
-        //                if (!push(x - 1, y1)) return;
-        //                spanLeft = 1;
-        //            }
-        //            else if (spanLeft && x > 0 && screenBuffer[x - 1][y1] != oldColor)
-        //            {
-        //                spanLeft = 0;
-        //            }
-        //            if (!spanRight && x < w - 1 && screenBuffer[x + 1][y1] == oldColor)
-        //            {
-        //                if (!push(x + 1, y1)) return;
-        //                spanRight = 1;
-        //            }
-        //            else if (spanRight && x < w - 1 && screenBuffer[x + 1][y1] != oldColor)
-        //            {
-        //                spanRight = 0;
-        //            }
-        //            y1++;
-        //        }
-        //    }
-        //}
-
-        //bool pop(int x, int y)
-        //{
-        //    if(stackPointer > 0)
-        //    {
-        //        int p = stack[stackPointer];
-        //        x = p / h;
-        //        y = p % h;
-        //        stackPointer--;
-        //        return true;
-        //    }    
-        //    else
-        //    {
-        //        return false;
-        //    }   
-        //}   
- 
-        //bool push(int x, int y)
-        //{
-        //    if(stackPointer < stackSize - 1)
-        //    {
-        //        stackPointer++;
-        //        stack[stackPointer] = h * x + y;
-        //        return true;
-        //    }    
-        //    else
-        //    {
-        //        return false;
-        //    }   
-        //}    
-
-        //void emptyStack()
-        //{
-        //    int x, y;
-        //    while(pop(x, y));
-        //}
-
-        //private void emptyStack(Stack stack)
-        //{
-        //    while (stack.Count != 0) {
-        //        stack.Pop() ;
-        //    }
-        //}
+            int idxDepthSpace = y * bodyIndexSensorBufferWidth + x;
+            while (stack.Count != 0)
+            {
+                Point p = stack.Pop();
+                if ((p.X >= 0) && (p.X < bodyIndexSensorBufferWidth) && (p.Y >= 0) && (p.Y < bodyIndexSensorBufferHeight) && (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff))
+                {
+                    this.drawColorPixel(idxDepthSpace);
+                    stack.Push(new Point(p.X + 1, p.Y));
+                    stack.Push(new Point(p.X - 1, p.Y));
+                    stack.Push(new Point(p.X, p.Y + 1));
+                    stack.Push(new Point(p.X, p.Y - 1));
+                }
+                if (stack.Count > maxStackSize)
+                {
+                    maxStackSize = stack.Count;
+                }
+            }
+            Console.Out.Write("Depth first stack size:" + maxStackSize);
+        }
 
         private unsafe void sequentialFillBody()
         {
