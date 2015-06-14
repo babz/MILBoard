@@ -127,16 +127,10 @@ namespace BodyExtractionAndHightlighting
         //unsafe floodfill: http://www.codeproject.com/Articles/5133/Flood-Fill-Algorithms-in-C-and-GDI
         private unsafe void linefillBody(int xStartLeft, int xStartRight, int yStart)
         {
-            if ((xStartLeft >= bodyIndexSensorBufferWidth) || (xStartLeft < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
+            if ((xStartLeft >= bodyIndexSensorBufferWidth) || (xStartLeft < 0) || (xStartRight >= bodyIndexSensorBufferWidth) || (xStartRight < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
             {
                 return;
             }
-
-            //pixel target
-            uint* ptrBackbufferPixelInt = null;
-            uint* ptrColorSensorBufferPixelInt = null;
-            bool isColorPixelInValidRange = false;
-            int xLeft, xRight;
 
             //pixel already visited
             int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStartLeft;
@@ -144,6 +138,9 @@ namespace BodyExtractionAndHightlighting
             {
                 return;
             }
+
+            int xLeft, xRight;
+
             // ===scan left side
             int idxDepthSpaceLeft = idxDepthSpace;
             for (xLeft = xStartLeft; xLeft >= 0; --xLeft)
@@ -152,30 +149,13 @@ namespace BodyExtractionAndHightlighting
                 {
                     break;
                 }
+
                 *(ptrBodyIndexSensorBuffer + idxDepthSpaceLeft) = 0xff; //do not visit same pixel twice
-                int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceLeft)->X + 0.5);
-                int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceLeft)->Y + 0.5);
-
-                if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-                        (colorPointY >= 0) && (colorPointX >= 0))
-                {
-                    isColorPixelInValidRange = true;
-                }
-
-                if (isColorPixelInValidRange)
-                {
-                    // point to current pixel in image buffer
-                    ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceLeft;
-
-                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                    // assign color value (4 bytes)
-                    *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value (last byte)
-                    *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
-                }
-                isColorPixelInValidRange = false;
+                this.drawColorPixel(idxDepthSpaceLeft);
+                
                 idxDepthSpaceLeft--;
             }
+            //fill children
             if (xLeft < xStartLeft)
             {
                 this.linefillBody(xLeft, xStartLeft, (yStart + 1));
@@ -191,30 +171,13 @@ namespace BodyExtractionAndHightlighting
                 {
                     break;
                 }
+
                 *(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) = 0xff; //do not visit same pixel twice
-                int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->X + 0.5);
-                int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->Y + 0.5);
+                this.drawColorPixel(idxDepthSpaceRight);
 
-                if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-                        (colorPointY >= 0) && (colorPointX >= 0))
-                {
-                    isColorPixelInValidRange = true;
-                }
-
-                if (isColorPixelInValidRange)
-                {
-                    // point to current pixel in image buffer
-                    ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceRight;
-
-                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                    // assign color value (4 bytes)
-                    *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value (last byte)
-                    *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
-                }
-                isColorPixelInValidRange = false;
                 idxDepthSpaceRight++;
             }
+            //fill children
             if (xRight > xStartRight)
             {
                 this.linefillBody(xStartRight, xRight, (yStart + 1));
@@ -222,41 +185,19 @@ namespace BodyExtractionAndHightlighting
                 --xStartRight;
             }
 
-            //xR ... xRight
-            //x2 ... xStartRight
-            //xL ... xLeft
-            //x1 ... xStartLeft
+            // ===scan betweens
             int idxDepthSpaceBetween = idxDepthSpace;
             for (xRight = xStartLeft; xRight <= xStartRight && xRight < bodyIndexSensorBufferWidth; ++xRight)
             {
                 if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) != 0xff)
                 {
                     *(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) = 0xff; //do not visit same pixel twice
-                    int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceBetween)->X + 0.5);
-                    int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceBetween)->Y + 0.5);
-
-                    if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-                            (colorPointY >= 0) && (colorPointX >= 0))
-                    {
-                        isColorPixelInValidRange = true;
-                    }
-
-                    if (isColorPixelInValidRange)
-                    {
-                        // point to current pixel in image buffer
-                        ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceBetween;
-
-                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                        // assign color value (4 bytes)
-                        *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
-                        // overwrite the alpha value (last byte)
-                        *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
-                    }
-                    isColorPixelInValidRange = false;
-                    idxDepthSpaceRight++;
+                    this.drawColorPixel(idxDepthSpaceBetween);
+                    idxDepthSpaceBetween++;
                 }
                 else
                 {
+                    //fill children
                     if (xStartLeft < xRight)
                     {
                         this.linefillBody(xStartLeft, xRight-1, (yStart + 1));
@@ -274,47 +215,29 @@ namespace BodyExtractionAndHightlighting
                     }
                 }
             }
-
-            //scan betweens
-            //for (xRight = xStartLeft; xRight <= xStartRight && xRight <= bodyIndexSensorBufferWidth; ++xRight)
-            //{
-            //    if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) != 0xff)
-            //    {
-            //        *(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) = 0xff; //do not visit same pixel twice
-            //        int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->X + 0.5);
-            //        int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpaceRight)->Y + 0.5);
-
-            //        if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-            //                (colorPointY >= 0) && (colorPointX >= 0))
-            //        {
-            //            isColorPixelInValidRange = true;
-            //        }
-
-            //        if (isColorPixelInValidRange)
-            //        {
-            //            // point to current pixel in image buffer
-            //            ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpaceRight;
-
-            //            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-            //            // assign color value (4 bytes)
-            //            *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
-            //            // overwrite the alpha value (last byte)
-            //            *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
-            //        }
-            //        isColorPixelInValidRange = false;
-            //        idxDepthSpaceRight++;
-            //    }
-            //    else
-            //    {
-            //        if (xStartLeft < xRight)
-            //        {
-            //            this.linefillBody(xStartLeft, xRight - 1, yStart - 1);
-            //            this.linefillBody(xStartLeft, xRight - 1, yStart + 1);
-            //        }
-                    
-            //    }
-            //}
         }
+        
+        private unsafe void drawColorPixel(int idxDepthSpace)  {
+            uint* ptrBackbufferPixelInt = null;
+            uint* ptrColorSensorBufferPixelInt = null;
+
+            int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
+            int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
+
+            if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
+                    (colorPointY >= 0) && (colorPointX >= 0))
+            {
+                // point to current pixel in image buffer
+                ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpace;
+
+                ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
+                // assign color value (4 bytes)
+                *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
+                // overwrite the alpha value (last byte)
+                *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
+            }
+        }
+
 
         //the stack
         int stackSize = 16777216;
