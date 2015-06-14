@@ -11,6 +11,8 @@ import javax.swing.JComponent;
 public class FloodfillCanvas extends JComponent{
 	private static final long serialVersionUID = 1L;
 
+	private int sleepDuration = 10;
+	
 	private int columns;
 	private int rows;
 	private int dotW;
@@ -240,7 +242,7 @@ public class FloodfillCanvas extends JComponent{
 		fillPoints.add(p);
 		dots[p.x][p.y] = true;
 		try {
-			Thread.sleep(50);
+			Thread.sleep(sleepDuration);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -291,7 +293,15 @@ public class FloodfillCanvas extends JComponent{
 		System.out.println("\n MAX STACK SIZE (depth first): " + maxStackSize);
 	}
 
+	static int stackCounterFloodfill = 0;
+	static int maxStackCounterFloodfill = 0;
+	
 	void floodfill(int x, int y) {
+		stackCounterFloodfill++;
+		if (stackCounterFloodfill > maxStackCounterFloodfill) {
+			maxStackCounterFloodfill = stackCounterFloodfill;
+		}
+		
 		if (x >= 0 && y >= 0 && x < columns && y < rows) {
 			if (dots[x][y] == true) {
 				return;
@@ -299,7 +309,7 @@ public class FloodfillCanvas extends JComponent{
 			addFillPoint(new Point(x, y));
 			repaint();
 			try {
-				Thread.sleep(150);
+				Thread.sleep(sleepDuration);
 			} catch (InterruptedException ex) {
 				ex.printStackTrace();
 			}
@@ -307,21 +317,23 @@ public class FloodfillCanvas extends JComponent{
 			floodfill(x, y + 1);
 			floodfill(x - 1, y);
 			floodfill(x, y - 1);
+			
+			stackCounterFloodfill--;
 		}
 	}
 	
-	static int stackCounter = 0;
-	static int maxStackCounter = 0;
+	static int stackCounterLinefill = 0;
+	static int maxStackCounterLinefill = 0;
 	
 	void linefill_codeProj(int x1, int x2, int y)
 	{
-		stackCounter++;
-		if (stackCounter > maxStackCounter) {
-			maxStackCounter = stackCounter;
+		stackCounterLinefill++;
+		if (stackCounterLinefill > maxStackCounterLinefill) {
+			maxStackCounterLinefill = stackCounterLinefill;
 		}
 		
 		int xL, xR;
-		if (y < 0 || y >= rows) {
+		if (y < 0 || y >= rows || x1 < 0 || x1 >= columns || x2 < 0 || x2 >= columns) {
 			return;
 		}
 		//scan left
@@ -380,7 +392,7 @@ public class FloodfillCanvas extends JComponent{
 				}
 			}
 		}
-		stackCounter--;
+		stackCounterLinefill--;
 	}
 	
 	
