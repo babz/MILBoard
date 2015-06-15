@@ -1,0 +1,2 @@
+brown improving the efficiency of scanline algorithms full text
+burtsev an efficient flood-filling algorithm
