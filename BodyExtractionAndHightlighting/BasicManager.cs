@@ -42,7 +42,7 @@ namespace BodyExtractionAndHightlighting
             this.rightArmJoints = null;
         }
 
-        protected abstract Dictionary<JointType, T> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints);
+        protected abstract Dictionary<JointType, T> convertBodyJointsToImageSpace(Dictionary<JointType, CameraSpacePoint> bodyJoints);
 
         protected abstract void drawFullBody();
 

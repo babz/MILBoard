@@ -22,13 +22,13 @@ namespace BodyExtractionAndHightlighting
 
         protected Dictionary<JointType, DepthSpacePoint> GetRightArmJointsDepthSpace()
         {
-            return this.convertBodyJoints(base.GetRightArmCameraSpace());
+            return this.convertBodyJointsToImageSpace(base.GetRightArmCameraSpace());
         }
 
         /*
          * Example usage: call convertBodyJoints(base.GetRightArmJoints())
          * */
-        protected override Dictionary<JointType, DepthSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
+        protected override Dictionary<JointType, DepthSpacePoint> convertBodyJointsToImageSpace(Dictionary<JointType, CameraSpacePoint> bodyJoints)
         {
             Dictionary<JointType, DepthSpacePoint> bodyJointsDepthSpace = new Dictionary<JointType,DepthSpacePoint>();
 

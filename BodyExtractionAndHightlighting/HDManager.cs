@@ -25,13 +25,13 @@ namespace BodyExtractionAndHightlighting
 
         protected Dictionary<JointType, ColorSpacePoint> GetRightArmJointsColorSpace()
         {
-            return this.convertBodyJoints(base.GetRightArmCameraSpace());
+            return this.convertBodyJointsToImageSpace(base.GetRightArmCameraSpace());
         }
 
         /*
          * Example: call convertBodyJoints(base.GetRightArmJoints())
          * */
-        protected override Dictionary<JointType, ColorSpacePoint> convertBodyJoints(Dictionary<JointType, CameraSpacePoint> bodyJoints)
+        protected override Dictionary<JointType, ColorSpacePoint> convertBodyJointsToImageSpace(Dictionary<JointType, CameraSpacePoint> bodyJoints)
         {
             Dictionary<JointType, ColorSpacePoint> bodyJointsColorSpace = new Dictionary<JointType,ColorSpacePoint>();
 
@@ -228,10 +228,10 @@ namespace BodyExtractionAndHightlighting
                     continue;
                 }
 
-                int idx = (int)(bodyIndexSensorBufferWidth * (ptrColorToDepthSpaceMapper + i)->Y + (ptrColorToDepthSpaceMapper + i)->X); //2D to 1D
+                int idxDepthSpace = (int)(bodyIndexSensorBufferWidth * (ptrColorToDepthSpaceMapper + i)->Y + (ptrColorToDepthSpaceMapper + i)->X); //2D to 1D
 
                 // bodyIndex can be 0, 1, 2, 3, 4, or 5
-                if (*(ptrBodyIndexSensorBuffer + idx) != 0xff)
+                if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
                 {
                     ptrImgBufferPixelInt = ptrBackbuffer + i;
 
