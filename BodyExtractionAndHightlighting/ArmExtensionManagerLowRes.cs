@@ -25,7 +25,7 @@ namespace BodyExtractionAndHightlighting
         private Helper helper;
 
         public ArmExtensionManagerLowRes(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, Point pTouch)
-            : base(ptrBackbuffer, bodyJoints, userTransparency)
+            : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
             this.bodyIndexSensorBuffer = bodyIndexSensorBuffer;
             this.colorSensorBuffer = colorSensorBuffer;

@@ -47,6 +47,11 @@ namespace BodyExtractionAndHightlighting
         protected abstract void drawFullBody();
 
         /*
+         * @ return: depth in millimeters
+         * */
+        protected abstract int getDepth(T point);
+
+        /*
          * Source: http://www.codeproject.com/Articles/6017/QuickFill-An-efficient-flood-fill-algorithm
          * http://www.crbond.com/papers/fldfill_v2.pdf
          * */

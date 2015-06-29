@@ -15,7 +15,7 @@ namespace BodyExtractionAndHightlighting
         private ColorSpacePoint[] depthToColorSpaceMapper = null;
 
         public StandardManagerLowRes(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
-            : base(ptrBackbuffer, bodyJoints, userTransparency)
+            : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
             this.bodyIndexSensorBuffer = bodyIndexSensorBuffer;
             this.colorSensorBuffer = colorSensorBuffer;

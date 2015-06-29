@@ -18,7 +18,7 @@ namespace BodyExtractionAndHightlighting
         private System.Windows.Controls.Image guiSymbol;
 
         public SymbolManagerHD(IntPtr ptrBackbuffer, byte[] bodyIndexSensorBuffer, byte[] colorSensorBuffer, ushort[] depthDataSource, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, Point pTouch, System.Windows.Controls.Image guiPointerSymbol)
-            : base(ptrBackbuffer, bodyJoints, userTransparency)
+            : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
             this.bodyIndexSensorBuffer = bodyIndexSensorBuffer;
             this.colorSensorBuffer = colorSensorBuffer;

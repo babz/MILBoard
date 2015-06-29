@@ -13,11 +13,12 @@ namespace BodyExtractionAndHightlighting
     public abstract class LowResManager : BasicManager<DepthSpacePoint>
     {
         protected unsafe volatile ColorSpacePoint* ptrDepthToColorSpaceMapper;
+        protected ushort[] depthDataSource;
 
-        public LowResManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
+        public LowResManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency)
         {
-            //empty on purpose
+            this.depthDataSource = depthDataSource;
         }
 
         protected Dictionary<JointType, DepthSpacePoint> GetRightArmJointsDepthSpace()
@@ -42,6 +43,12 @@ namespace BodyExtractionAndHightlighting
                 bodyJointsDepthSpace[entry.Key] = coordinateMapper.MapCameraPointToDepthSpace(tmpCamSpacePoint);
             }
             return bodyJointsDepthSpace;
+        }
+
+        protected override int getDepth(DepthSpacePoint point)
+        {
+            int idxDepthSpace = (int)(point.Y * bodyIndexSensorBufferWidth + point.X + 0.5);
+            return depthDataSource[idxDepthSpace];
         }
 
         /*

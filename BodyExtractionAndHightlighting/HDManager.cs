@@ -14,13 +14,13 @@ namespace BodyExtractionAndHightlighting
     public abstract class HDManager : BasicManager<ColorSpacePoint>
     {
         protected unsafe volatile DepthSpacePoint* ptrColorToDepthSpaceMapper;
-
+        protected ushort[] depthDataSource;
         FloodFillRangeQueue ranges;
 
-        public HDManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
+        public HDManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency)
         {
-            //empty on purpose
+            this.depthDataSource = depthDataSource;
         }
 
         protected Dictionary<JointType, ColorSpacePoint> GetRightArmJointsColorSpace()
@@ -45,6 +45,12 @@ namespace BodyExtractionAndHightlighting
                 bodyJointsColorSpace[entry.Key] = coordinateMapper.MapCameraPointToColorSpace(tmpCamSpacePoint);
             }
             return bodyJointsColorSpace;
+        }
+
+        protected override int getDepth(ColorSpacePoint point)
+        {
+            int idxColorSpace = (int)(point.Y * colorSensorBufferWidth + point.X + 0.5);
+            return depthDataSource[idxColorSpace];
         }
 
         /*
