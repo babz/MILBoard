@@ -1,0 +1,29 @@
+geraets_efficient filling for counting regions
+
+abstract:
+seed filling more general but slower
+
+2.4
+Albert and Slaaf [26] describe
+and compare four different recursive algorithms for
+seed filling.
+T.A. Albert, D.W. Slaaf, A rapid regional filling technique
+for complex binary images, Comput. Graph. 19 (1995) 541—
+549.
+
+levoy_area flooding algorithms
+
+p137:
+soft area flooders are designed to operate on anti-aliased region boundaries
+
+p138:
+benchmarking flooding algorithms strongly depends on hardware
+
+p139:
+explanation of basic fill, boundary fill and tint fill
+
+p140 unten: stack besser als queue für mein szenario
+
+ref 3: alvy ray smith: "tint fill" (soft fill)
+
+
