@@ -181,6 +181,8 @@ namespace BodyExtractionAndHightlighting
                     //values have stepwidth 1, try boundary of stepwidth = 5
             //3) improve efficiency of floodfill
 
+            // => check depth for floodfill hand and arm, not body
+
             MultiSourceFrame reference = args.FrameReference.AcquireFrame();
 
             if (reference == null)

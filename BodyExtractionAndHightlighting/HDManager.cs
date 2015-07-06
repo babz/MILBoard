@@ -14,13 +14,14 @@ namespace BodyExtractionAndHightlighting
     public abstract class HDManager : BasicManager<ColorSpacePoint>
     {
         protected unsafe volatile DepthSpacePoint* ptrColorToDepthSpaceMapper;
-        protected ushort[] depthDataSource;
         FloodFillRangeQueue ranges;
 
+        private int depthThreshold = 10;
+
         public HDManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
-            : base(ptrBackbuffer, bodyJoints, userTransparency)
+            : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
-            this.depthDataSource = depthDataSource;
+            // Empty on purpose
         }
 
         protected Dictionary<JointType, ColorSpacePoint> GetRightArmJointsColorSpace()
@@ -47,10 +48,26 @@ namespace BodyExtractionAndHightlighting
             return bodyJointsColorSpace;
         }
 
-        protected override int getDepth(ColorSpacePoint point)
+        protected unsafe override bool isDepthDifferent(int idxCurrDepthPoint, int xNext, int yNext)
         {
-            int idxColorSpace = (int)(point.Y * colorSensorBufferWidth + point.X + 0.5);
-            return depthDataSource[idxColorSpace];
+            int depthCurrent = base.getDepth(idxCurrDepthPoint);
+
+            int idxColorSpace = (int)(yNext * colorSensorBufferWidth + xNext + 0.5);
+            float xDepthPoint = (ptrColorToDepthSpaceMapper + idxColorSpace)->X;
+            float yDepthPoint = (ptrColorToDepthSpaceMapper + idxColorSpace)->Y;
+            int idxDepthPoint = (int)(((int)(yDepthPoint + 0.5)) * bodyIndexSensorBufferWidth + xDepthPoint + 0.5);
+
+            int depthNext = base.getDepth(idxDepthPoint);
+            
+            //TODO adapt threshold
+            if (((depthCurrent + depthThreshold) < depthNext) || ((depthCurrent + depthThreshold) > depthNext))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /*
@@ -68,10 +85,10 @@ namespace BodyExtractionAndHightlighting
             {
                 ColorSpacePoint bodyPoint = coordinateMapper.MapCameraPointToColorSpace(base.GetAnyBodyPoint());
                 //thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_HD);
-                //thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
+                thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
                 //thread.Start();
                 //thread.Join();
-                linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                //linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
             }
             else
             {

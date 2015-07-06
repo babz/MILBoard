@@ -13,12 +13,11 @@ namespace BodyExtractionAndHightlighting
     public abstract class LowResManager : BasicManager<DepthSpacePoint>
     {
         protected unsafe volatile ColorSpacePoint* ptrDepthToColorSpaceMapper;
-        protected ushort[] depthDataSource;
 
         public LowResManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
-            : base(ptrBackbuffer, bodyJoints, userTransparency)
+            : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
-            this.depthDataSource = depthDataSource;
+            // Empty on purpose
         }
 
         protected Dictionary<JointType, DepthSpacePoint> GetRightArmJointsDepthSpace()
@@ -45,10 +44,22 @@ namespace BodyExtractionAndHightlighting
             return bodyJointsDepthSpace;
         }
 
-        protected override int getDepth(DepthSpacePoint point)
+        protected override bool isDepthDifferent(int idxCurrDepthPoint, int xNext, int yNext)
         {
-            int idxDepthSpace = (int)(point.Y * bodyIndexSensorBufferWidth + point.X + 0.5);
-            return depthDataSource[idxDepthSpace];
+            int depthCurrent = base.getDepth(idxCurrDepthPoint);
+
+            int idxDepthSpace = (int)(yNext * bodyIndexSensorBufferWidth + xNext + 0.5);
+            int depthNext = base.getDepth(idxDepthSpace);
+            int boundary = 10;
+
+            if (((depthCurrent + boundary) < depthNext) || ((depthCurrent + boundary) > depthNext))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /*
@@ -61,10 +72,10 @@ namespace BodyExtractionAndHightlighting
         
         protected override void drawFullBody()
         {
-            bool BFS = true;
+            bool BFS = false;
             bool DFS = false;
             bool linefill = false;
-            bool floodfill = false;
+            bool floodfill = true;
             Thread thread;
             if (base.IsAnyJointTracked())
             {

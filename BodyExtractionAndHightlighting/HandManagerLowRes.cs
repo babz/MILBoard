@@ -135,6 +135,9 @@ namespace BodyExtractionAndHightlighting
             }
         }
 
+        /*
+         * @params: xStart, yStart in DepthSpace
+         * */
         private unsafe void translateHand(int xStart, int yStart)
         {
             if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
@@ -181,10 +184,40 @@ namespace BodyExtractionAndHightlighting
             }
 
             //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.translateHand((xStart + 1), yStart);
-            this.translateHand((xStart - 1), yStart);
-            this.translateHand(xStart, (yStart + 1));
-            this.translateHand(xStart, (yStart - 1));
+            //check if next pixel has similar depth
+            if (isDepthDifferent(depthLookup, xStart + 1, yStart))
+            {
+                return;
+            } else {
+                this.translateHand((xStart + 1), yStart);
+            }
+
+            if (isDepthDifferent(depthLookup, xStart - 1, yStart))
+            {
+                return;
+            }
+            else
+            {
+                this.translateHand((xStart - 1), yStart);
+            }
+
+            if (isDepthDifferent(depthLookup, xStart, yStart + 1))
+            {
+                return;
+            }
+            else
+            {
+                this.translateHand(xStart, (yStart + 1));
+            }
+
+            if (isDepthDifferent(depthLookup, xStart, yStart - 1))
+            {
+                return;
+            }
+            else
+            {
+                this.translateHand(xStart, (yStart - 1));
+            }
         }
     }
 }

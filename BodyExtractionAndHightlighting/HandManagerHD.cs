@@ -197,10 +197,42 @@ namespace BodyExtractionAndHightlighting
             }
 
             //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.translateHand((xStart + 1), yStart);
-            this.translateHand((xStart - 1), yStart);
-            this.translateHand(xStart, (yStart + 1));
-            this.translateHand(xStart, (yStart - 1));
+            //check if next pixel has similar depth
+            if (isDepthDifferent(idxDepthPixel, xStart + 1, yStart))
+            {
+                return;
+            }
+            else
+            {
+                this.translateHand((xStart + 1), yStart);
+            }
+
+            if (isDepthDifferent(idxDepthPixel, xStart - 1, yStart))
+            {
+                return;
+            }
+            else
+            {
+                this.translateHand((xStart - 1), yStart);
+            }
+
+            if (isDepthDifferent(idxDepthPixel, xStart, yStart + 1))
+            {
+                return;
+            }
+            else
+            {
+                this.translateHand(xStart, (yStart + 1));
+            }
+
+            if (isDepthDifferent(idxDepthPixel, xStart, yStart - 1))
+            {
+                return;
+            }
+            else
+            {
+                this.translateHand(xStart, (yStart - 1));
+            }
         }
     }
 }

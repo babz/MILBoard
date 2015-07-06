@@ -21,14 +21,16 @@ namespace BodyExtractionAndHightlighting
         protected volatile unsafe byte* ptrBodyIndexSensorBuffer;
         protected volatile unsafe uint* ptrBackbuffer, ptrColorSensorBufferInt; //unmanaged
 
+        private ushort[] depthDataSource;
         private CameraSpacePoint anyBodyJoint;
         private Dictionary<JointType, CameraSpacePoint> rightArmJoints;
         private IReadOnlyDictionary<JointType, Joint> bodyJoints;
 
-        public BasicManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency)
+        public BasicManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
         {
             this.SetBackbuffer(ptrBackbuffer);
             this.coordinateMapper = Constants.GetCoordinateMapper();
+            this.depthDataSource = depthDataSource;
 
             this.bodyIndexSensorBufferWidth = Constants.GetBodyIndexSensorBufferWidth();
             this.bodyIndexSensorBufferHeight = Constants.GetBodyIndexSensorBufferHeight();
@@ -46,10 +48,16 @@ namespace BodyExtractionAndHightlighting
 
         protected abstract void drawFullBody();
 
+        protected abstract bool isDepthDifferent(int idxCurrPoint, int xNext, int yNext);
+
         /*
+         * values have stepwidth 1
          * @ return: depth in millimeters
          * */
-        protected abstract int getDepth(T point);
+        protected int getDepth(int idxDepthPoint)
+        {
+            return depthDataSource[idxDepthPoint];
+        }
 
         /*
          * Source: http://www.codeproject.com/Articles/6017/QuickFill-An-efficient-flood-fill-algorithm
