@@ -16,8 +16,6 @@ namespace BodyExtractionAndHightlighting
         protected unsafe volatile DepthSpacePoint* ptrColorToDepthSpaceMapper;
         FloodFillRangeQueue ranges;
 
-        private int depthThreshold = 10;
-
         public HDManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
@@ -48,6 +46,9 @@ namespace BodyExtractionAndHightlighting
             return bodyJointsColorSpace;
         }
 
+        /*
+         * determines if hand and body overlap
+         * */
         protected unsafe override bool isDepthDifferent(int idxCurrDepthPoint, int xNext, int yNext)
         {
             int depthCurrent = base.getDepth(idxCurrDepthPoint);
@@ -59,8 +60,7 @@ namespace BodyExtractionAndHightlighting
 
             int depthNext = base.getDepth(idxDepthPoint);
             
-            //TODO adapt threshold
-            if (((depthCurrent + depthThreshold) < depthNext) || ((depthCurrent + depthThreshold) > depthNext))
+            if (Math.Abs(depthCurrent - depthNext) > depthThreshold)
             {
                 return true;
             }

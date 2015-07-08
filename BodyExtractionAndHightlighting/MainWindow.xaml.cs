@@ -333,14 +333,19 @@ namespace BodyExtractionAndHightlighting
 
         private Point GetKinectCoordinates(Point touchpoint)
         {
+            //TODO modify code so touch point is no longer static
+
             if (armRotateOnly || armScaleOnly || (guiPointerType == GUIPointerType.Hand))
             {
-                touchpoint = new Point(1200.0, 550.0);
+                //touchpoint = new Point(1200.0, 550.0);
+                touchpoint = Mouse.GetPosition(imageCanvas);
             }
 
             if (guiPointerType == GUIPointerType.Symbol)
             {
-                return new Point(1200.0, 550.0);
+                //touchpoint = new Point(1200.0, 550.0);
+                touchpoint = Mouse.GetPosition(imageCanvas);
+                return touchpoint;
             }
 
             //considers the discrepancy btw position of canvas and actual image;
@@ -444,7 +449,7 @@ namespace BodyExtractionAndHightlighting
         private void GUIHandPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Hand;
-            hasTouchOccurred = true;
+            //hasTouchOccurred = true;
             if (pointerSymbol != null)
             {
                 pointerSymbol.Visibility = Visibility.Hidden;
@@ -454,7 +459,7 @@ namespace BodyExtractionAndHightlighting
         private void GUISymbolPtr_Checked(object sender, RoutedEventArgs e)
         {
             guiPointerType = GUIPointerType.Symbol;
-            hasTouchOccurred = true;
+            //hasTouchOccurred = true;
         }
 
         private void checkBoxShowFps_Unchecked(object sender, RoutedEventArgs e)
@@ -513,8 +518,8 @@ namespace BodyExtractionAndHightlighting
 
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            Console.Out.WriteLine("Canvas Pos: " + Mouse.GetPosition(imageCanvas).ToString());
-            Console.Out.WriteLine("RightButtonDown: " + e.GetPosition(this).ToString());
+            //Console.Out.WriteLine("Canvas Pos: " + Mouse.GetPosition(imageCanvas).ToString());
+            //Console.Out.WriteLine("RightButtonDown: " + e.GetPosition(this).ToString());
             hasTouchOccurred = true;
             //touchPosition = e.GetPosition(this);
             touchPosition = Mouse.GetPosition(imageCanvas);
@@ -523,6 +528,10 @@ namespace BodyExtractionAndHightlighting
         private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             hasTouchOccurred = false;
+            if (pointerSymbol.Visibility == Visibility.Visible)
+            {
+                pointerSymbol.Visibility = Visibility.Hidden;
+            }
         }
 
         #endregion

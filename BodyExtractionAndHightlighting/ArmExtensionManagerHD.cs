@@ -523,11 +523,42 @@ namespace BodyExtractionAndHightlighting
                 }
             }
 
-            //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.drawTranslatedRightHand((xStart + 1), yStart);
-            this.drawTranslatedRightHand((xStart - 1), yStart);
-            this.drawTranslatedRightHand(xStart, (yStart + 1));
-            this.drawTranslatedRightHand(xStart, (yStart - 1));
+            //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
+            if (isDepthDifferent(idxDepthPixel, xStart + 1, yStart))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand((xStart + 1), yStart);
+            }
+
+            if (isDepthDifferent(idxDepthPixel, xStart - 1, yStart))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand((xStart - 1), yStart);
+            }
+
+            if (isDepthDifferent(idxDepthPixel, xStart, yStart + 1))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand(xStart, (yStart + 1));
+            }
+
+            if (isDepthDifferent(idxDepthPixel, xStart, yStart - 1))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand(xStart, (yStart - 1));
+            }
         }
 
 

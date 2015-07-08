@@ -50,9 +50,8 @@ namespace BodyExtractionAndHightlighting
 
             int idxDepthSpace = (int)(yNext * bodyIndexSensorBufferWidth + xNext + 0.5);
             int depthNext = base.getDepth(idxDepthSpace);
-            int boundary = 10;
 
-            if (((depthCurrent + boundary) < depthNext) || ((depthCurrent + boundary) > depthNext))
+            if (Math.Abs(depthCurrent - depthNext) > depthThreshold)
             {
                 return true;
             }

@@ -539,11 +539,42 @@ namespace BodyExtractionAndHightlighting
                 }
             }
 
-            //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.drawTranslatedRightHand((xStart + 1), yStart);
-            this.drawTranslatedRightHand((xStart - 1), yStart);
-            this.drawTranslatedRightHand(xStart, (yStart + 1));
-            this.drawTranslatedRightHand(xStart, (yStart - 1));
+            //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
+            if (isDepthDifferent(depthLookup, xStart + 1, yStart))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand((xStart + 1), yStart);
+            }
+
+            if (isDepthDifferent(depthLookup, xStart - 1, yStart))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand((xStart - 1), yStart);
+            }
+
+            if (isDepthDifferent(depthLookup, xStart, yStart + 1))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand(xStart, (yStart + 1));
+            }
+
+            if (isDepthDifferent(depthLookup, xStart, yStart - 1))
+            {
+                return;
+            }
+            else
+            {
+                this.drawTranslatedRightHand(xStart, (yStart - 1));
+            }
         }
 
         //private unsafe void transform_LowRes_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, uint* ptrImageBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper, float xElbow, float yElbow, float xWrist, float yWrist, float xTouch, float yTouch)

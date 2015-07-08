@@ -11,7 +11,7 @@ namespace BodyExtractionAndHightlighting
     public abstract class BasicManager<T>
     {
         protected float InferredZPositionClamp = 0.1f;
-
+        protected int depthThreshold = 10;
         protected CoordinateMapper coordinateMapper;
 
         protected int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
@@ -52,7 +52,7 @@ namespace BodyExtractionAndHightlighting
 
         /*
          * values have stepwidth 1
-         * @ return: depth in millimeters
+         * @return: depth in millimeters
          * */
         protected int getDepth(int idxDepthPoint)
         {
