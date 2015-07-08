@@ -10,8 +10,8 @@ namespace BodyExtractionAndHightlighting
     {
         unsafe void processImage();
 
-        //unsafe void processImage_rotationOnly();
+        unsafe void processImage_rotationOnly();
 
-        //unsafe void processImage_scaleOnly();
+        unsafe void processImage_scaleOnly();
     }
 }

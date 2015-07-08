@@ -50,8 +50,7 @@ namespace BodyExtractionAndHightlighting
                 base.SetRequiredBuffers(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt);
                 base.SetCoordinateMapper(ptrColorToDepthSpaceMapper);
 
-                bool rightArmTracked = base.isRightArmTracked();
-                if (rightArmTracked)
+                if (base.isRightArmTracked())
                 {
                     Dictionary<JointType, ColorSpacePoint> rightArmJoints = base.GetRightArmJointsColorSpace();
 
@@ -106,64 +105,59 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        //public unsafe void processImage_rotationOnly()
-        //{
-        //    coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
-        //    coordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
+        public unsafe void processImage_rotationOnly()
+        {
+            //coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
+            coordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
 
-        //    fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
-        //    fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-        //    fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
-        //    fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
-        //    {
-        //        this.ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
-        //        base.SetRequiredBuffers(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt);
-        //        base.SetCoordinateMapper(ptrColorToDepthSpaceMapper);
+            fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
+            fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
+            fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
+            {
+                //float xElbow = (float)pElbow.X;
+                //float yElbow = (float)pElbow.Y;
+                //float xWrist = (float)pWrist.X;
+                //float yWrist = (float)pWrist.Y;
+                //float xHandTip = (float)pHandTip.X;
+                //float yHandTip = (float)pHandTip.Y;
+                //float xTouch = (float)pTouch.X;
+                //float yTouch = (float)pTouch.Y;
 
-        //        float xElbow = (float)pElbow.X;
-        //        float yElbow = (float)pElbow.Y;
-        //        float xWrist = (float)pWrist.X;
-        //        float yWrist = (float)pWrist.Y;
-        //        float xHandTip = (float)pHandTip.X;
-        //        float yHandTip = (float)pHandTip.Y;
-        //        float xTouch = (float)pTouch.X;
-        //        float yTouch = (float)pTouch.Y;
+                //uint* ptrImageBufferHDInt = (uint*)ptrBackbuffer;
+                //uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-        //        uint* ptrImageBufferHDInt = (uint*)ptrBackbuffer;
-        //        uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
+                //this.transform_HD_rotationOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
-        //        this.transform_HD_rotationOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
+            } //end fixed
+        }
 
-        //    } //end fixed
-        //}
+        public unsafe void processImage_scaleOnly()
+        {
+            //coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
+            //coordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
 
-        //public unsafe void processImage_scaleOnly()
-        //{
-        //    coordinateMapper.MapDepthFrameToColorSpace(depthDataSource, depthToColorSpaceMapper);
-        //    coordinateMapper.MapColorFrameToDepthSpace(depthDataSource, colorToDepthSpaceMapper);
+            //fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
+            //fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
+            //fixed (byte* ptrImageBufferHD = imageBufferHD)
+            //fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
+            //fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
+            //{
+            //    float xElbow = (float)pElbow.X;
+            //    float yElbow = (float)pElbow.Y;
+            //    float xWrist = (float)pWrist.X;
+            //    float yWrist = (float)pWrist.Y;
+            //    float xHandTip = (float)pHandTip.X;
+            //    float yHandTip = (float)pHandTip.Y;
+            //    float xTouch = (float)pTouch.X;
+            //    float yTouch = (float)pTouch.Y;
 
-        //    fixed (byte* ptrBodyIndexSensorBuffer = bodyIndexSensorBuffer)
-        //    fixed (byte* ptrColorSensorBuffer = colorSensorBuffer)
-        //    fixed (byte* ptrImageBufferHD = imageBufferHD)
-        //    fixed (ColorSpacePoint* ptrDepthToColorSpaceMapper = depthToColorSpaceMapper)
-        //    fixed (DepthSpacePoint* ptrColorToDepthSpaceMapper = colorToDepthSpaceMapper)
-        //    {
-        //        float xElbow = (float)pElbow.X;
-        //        float yElbow = (float)pElbow.Y;
-        //        float xWrist = (float)pWrist.X;
-        //        float yWrist = (float)pWrist.Y;
-        //        float xHandTip = (float)pHandTip.X;
-        //        float yHandTip = (float)pHandTip.Y;
-        //        float xTouch = (float)pTouch.X;
-        //        float yTouch = (float)pTouch.Y;
+            //    uint* ptrImageBufferHDInt = (uint*)ptrBackbuffer;
+            //    uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
 
-        //        uint* ptrImageBufferHDInt = (uint*)ptrBackbuffer;
-        //        uint* ptrColorSensorBufferInt = (uint*)ptrColorSensorBuffer;
+            //    this.transform_HD_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
 
-        //        this.transform_HD_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrImageBufferHDInt, ptrDepthToColorSpaceMapper, ptrColorToDepthSpaceMapper, xElbow, yElbow, xWrist, yWrist, xHandTip, yHandTip, xTouch, yTouch);
-
-        //    } //end fixed
-        //}
+            //} //end fixed
+        }
 
         private unsafe void bodyFloodFill(int xStart, int yStart)
         {

@@ -174,8 +174,8 @@ namespace BodyExtractionAndHightlighting
             //read wouterverweirder
             //4) re-integrate rotate only, scale only
             //5) adapt transparency
-            //2) update touch with writing (mouse drag)
-            //1) handle exc when hand overlaps body
+            //2) CHECK update touch with writing (mouse drag)
+            //1) CHECK handle exc when hand overlaps body
                     //use data from depthdatabuffer and call depthDataBuffer[x][y] to get z
                     //=> pass depthDataSource on to Managers
                     //values have stepwidth 1, try boundary of stepwidth = 5
