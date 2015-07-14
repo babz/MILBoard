@@ -1,2 +1,7 @@
 brown improving the efficiency of scanline algorithms full text
+http://www.sciencedirect.com/science/article/pii/0010448586901569
+
 burtsev an efficient flood-filling algorithm
+http://www.sciencedirect.com/science/article/pii/009784939390006U
+
+silvela Breadth-first search and its application to image processing problems
