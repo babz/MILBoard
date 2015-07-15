@@ -613,7 +613,7 @@ namespace BodyExtractionAndHightlighting
             int xDepthSpace = 0;
             int yDepthSpace = 0;
             uint* ptrColorSensorBufferPixelInt = null;
-            uint* ptrImgBufferPixelInt = ptrImageBufferInt;
+            uint* ptrImgBufferPixelInt = ptrBackbuffer;
             int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
 
             for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; ++idxDepthSpace)
@@ -713,14 +713,14 @@ namespace BodyExtractionAndHightlighting
                         if ((rotatedY < bodyIndexSensorBufferHeight) && (rotatedX < bodyIndexSensorBufferWidth) &&
                             (rotatedY >= 0) && (rotatedX >= 0))
                         {
-                            ptrImgBufferPixelInt = ptrImageBufferInt + (rotatedY * bodyIndexSensorBufferWidth + rotatedX);
+                            ptrImgBufferPixelInt = ptrBackbuffer + (rotatedY * bodyIndexSensorBufferWidth + rotatedX);
                         }
                     }
                     #endregion // lower arm
                     else
                     {
                         // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrImageBufferInt + idxDepthSpace;
+                        ptrImgBufferPixelInt = ptrBackbuffer + idxDepthSpace;
                     }
 
                     if (ptrImgBufferPixelInt != null)
