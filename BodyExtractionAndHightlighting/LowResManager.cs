@@ -14,6 +14,9 @@ namespace BodyExtractionAndHightlighting
     {
         protected unsafe volatile ColorSpacePoint* ptrDepthToColorSpaceMapper;
 
+        private LinkedList<int> queue = new LinkedList<int>();
+        private Stack<int> stack = new Stack<int>();
+
         public LowResManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
@@ -252,7 +255,47 @@ namespace BodyExtractionAndHightlighting
             }
         }
 
-        private unsafe void floodfill_BreathFirst(int xStart, int yStart)
+        private unsafe void floodfill_BreadthFirst(int xStart, int yStart)
+        {
+            queue.AddFirst(xStart);
+            queue.AddFirst(yStart);
+
+            int maxQueueSize = 0;
+
+            int idxDepthSpace;
+            while (queue.Count != 0)
+            {
+                int lastY = queue.Last();
+                queue.RemoveLast();
+                int lastX = queue.Last();
+                queue.RemoveLast();
+                if ((lastX >= 0) && (lastX < bodyIndexSensorBufferWidth) && (lastY >= 0) && (lastY < bodyIndexSensorBufferHeight))
+                {
+                    idxDepthSpace = (int)(lastY * bodyIndexSensorBufferWidth + lastX);
+                    if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
+                    {
+                        this.drawColorPixel(idxDepthSpace);
+                        *(ptrBodyIndexSensorBuffer + idxDepthSpace) = 0xff; //do not visit same pixel twice
+                        queue.AddFirst(lastX + 1);
+                        queue.AddFirst(lastY);
+                        queue.AddFirst(lastX - 1);
+                        queue.AddFirst(lastY);
+                        queue.AddFirst(lastX);
+                        queue.AddFirst(lastY + 1);
+                        queue.AddFirst(lastX);
+                        queue.AddFirst(lastY - 1);
+                    }
+                }
+
+                if (queue.Count > maxQueueSize)
+                {
+                    maxQueueSize = queue.Count();
+                }
+            }
+            Console.Out.Write("Breath first queue size:" + maxQueueSize);
+        }
+
+        private unsafe void floodfill_BreathFirst_Point(int xStart, int yStart)
         {
             LinkedList<Point> queue = new LinkedList<Point>();
             queue.AddFirst(new Point(xStart, yStart));
@@ -286,6 +329,43 @@ namespace BodyExtractionAndHightlighting
         }
 
         private unsafe void floodfill_DepthFirst(int x, int y)
+        {
+            stack.Push(x);
+            stack.Push(y);
+
+            int maxStackSize = 0;
+
+            int idxDepthSpace;
+            while (stack.Count != 0)
+            {
+                int lastY = stack.Pop();
+                int lastX = stack.Pop();
+                if ((lastX >= 0) && (lastX < bodyIndexSensorBufferWidth) && (lastY >= 0) && (lastY < bodyIndexSensorBufferHeight))
+                {
+                    idxDepthSpace = (int)(lastY * bodyIndexSensorBufferWidth + lastX);
+                    if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
+                    {
+                        this.drawColorPixel(idxDepthSpace);
+                        *(ptrBodyIndexSensorBuffer + idxDepthSpace) = 0xff; //do not visit same pixel twice
+                        stack.Push(lastX + 1);
+                        stack.Push(lastY);
+                        stack.Push(lastX - 1);
+                        stack.Push(lastY);
+                        stack.Push(lastX);
+                        stack.Push(lastY + 1);
+                        stack.Push(lastX);
+                        stack.Push(lastY - 1);
+                    }
+                }
+                if (stack.Count > maxStackSize)
+                {
+                    maxStackSize = stack.Count;
+                }
+            }
+            Console.Out.Write("Depth first stack size:" + maxStackSize);
+        }
+
+        private unsafe void floodfill_DepthFirst_Point(int x, int y)
         {
             Stack<Point> stack = new Stack<Point>();
             stack.Push(new Point(x, y));
