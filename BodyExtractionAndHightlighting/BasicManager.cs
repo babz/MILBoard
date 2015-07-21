@@ -63,11 +63,11 @@ namespace BodyExtractionAndHightlighting
          * Source: http://www.codeproject.com/Articles/6017/QuickFill-An-efficient-flood-fill-algorithm
          * http://www.crbond.com/papers/fldfill_v2.pdf
          * */
-        protected void quickFillBody()
-        {
+        protected void quickFillBody() {}
 
-        }
-
+        /*
+         * @return true if any joint of the body is tracked
+         * */
         protected bool IsAnyJointTracked()
         {
             if (bodyJoints == null)
@@ -85,6 +85,14 @@ namespace BodyExtractionAndHightlighting
             return false;
         }
 
+        /*
+         * @return true if all of the following right arm joints are tracked:
+         *          - shoulder
+         *          - elbow
+         *          - wrist
+         *          - hand
+         *          - handtip
+         * */
         protected bool isRightArmTracked()
         {
             if (bodyJoints == null)

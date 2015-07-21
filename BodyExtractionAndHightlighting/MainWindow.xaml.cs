@@ -516,6 +516,21 @@ namespace BodyExtractionAndHightlighting
             hasTouchOccurred = true;
         }
 
+        private void rbFFBFS_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.floodfillType = Constants.FloodfillType.BFS;
+        }
+
+        private void rbFFDFS_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.floodfillType = Constants.FloodfillType.DFS;
+        }
+
+        private void rbFFclassic_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.floodfillType = Constants.FloodfillType.floodfillRec;
+        }
+
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             //Console.Out.WriteLine("Canvas Pos: " + Mouse.GetPosition(imageCanvas).ToString());

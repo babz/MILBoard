@@ -16,6 +16,9 @@ namespace BodyExtractionAndHightlighting
         protected unsafe volatile DepthSpacePoint* ptrColorToDepthSpaceMapper;
         FloodFillRangeQueue ranges;
 
+        private LinkedList<int> queue = new LinkedList<int>();
+        private Stack<int> stack = new Stack<int>();
+
         public HDManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
@@ -84,11 +87,27 @@ namespace BodyExtractionAndHightlighting
             if (base.IsAnyJointTracked())
             {
                 ColorSpacePoint bodyPoint = coordinateMapper.MapCameraPointToColorSpace(base.GetAnyBodyPoint());
-                //thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_HD);
-                thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
-                //thread.Start();
-                //thread.Join();
-                //linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                if (Constants.floodfillType == Constants.FloodfillType.BFS)
+                {
+                    floodfill_BreadthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                }
+                else if (Constants.floodfillType == Constants.FloodfillType.DFS)
+                {
+                    floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                }
+                else if (Constants.floodfillType == Constants.FloodfillType.linefillRec)
+                {
+                    //linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_HD);
+                    thread.Start();
+                    thread.Join();
+                }
+                else if (Constants.floodfillType == Constants.FloodfillType.floodfillRec)
+                {
+                    thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
+                    thread.Start();
+                    thread.Join();
+                }
             }
             else
             {
@@ -96,11 +115,64 @@ namespace BodyExtractionAndHightlighting
                 thread.Start();
                 thread.Join();
             }
-            //thread.Start();
-            //thread.Join();
         }
 
+        /*
+         * call:
+            1) check boundaries
+
+            2) check pixel already visited
+
+            3) if not visited:
+	            a) set visited
+	            b) draw color at color index (low = depth, hd = color)
+	
+            4) proceed (visit other pixel)
+         * */
         private unsafe void floodfillBody(int xStart, int yStart)
+        {
+            if ((xStart >= colorSensorBufferWidth) || (xStart < 0) || (yStart >= colorSensorBufferHeight) || (yStart < 0))
+            {
+                return;
+            }
+
+            int idxCurrColorPixel = yStart * colorSensorBufferWidth + xStart;
+            if (idxCurrColorPixel >= colorImageLength)
+            {
+                return;
+            }
+
+            //pixel already visited
+            uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
+            if ((*ptrColorSensorBufferPixelInt) == 0xFF000000)
+            {
+                return;
+            }
+
+            //lookup body idx if pixel covers body and return if not
+            float xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->X;
+            float yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->Y;
+            int idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
+            if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (*(ptrBodyIndexSensorBuffer + idxDepthPixel) == 0xff))
+            {
+                return;
+            }
+            else
+            {
+                this.drawColorPixel(idxCurrColorPixel);
+
+                //do not visit same pixel twice
+                *ptrColorSensorBufferPixelInt = 0xFF000000;
+            }
+
+            //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
+            this.floodfillBody((xStart + 1), yStart);
+            this.floodfillBody((xStart - 1), yStart);
+            this.floodfillBody(xStart, (yStart + 1));
+            this.floodfillBody(xStart, (yStart - 1));
+        }
+
+        private unsafe void floodfill_BreadthFirst(int xStart, int yStart)
         {
             if ((xStart >= colorSensorBufferWidth) || (xStart < 0) || (yStart >= colorSensorBufferHeight) || (yStart < 0))
             {
@@ -122,31 +194,158 @@ namespace BodyExtractionAndHightlighting
 
             float xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->X;
             float yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->Y;
+            int idxDepthSpace = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
+            if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff))
+            {
+                return;
+            }
+
+            queue.AddFirst(xStart);
+            queue.AddFirst(yStart);
+
+            int maxQueueSize = 0;
+
+            while (queue.Count != 0)
+            {
+                int lastX = queue.Last();
+                queue.RemoveLast();
+                int lastY = queue.Last();
+                queue.RemoveLast();
+
+                if ((lastX >= 0) && (lastX < colorSensorBufferWidth) && (lastY >= 0) && (lastY < colorSensorBufferHeight))
+                {
+                    idxCurrColorPixel = lastY * colorSensorBufferWidth + lastX;
+                    if (idxCurrColorPixel < colorImageLength)
+                    {
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
+                        if ((*ptrColorSensorBufferPixelInt) != 0xFF000000)
+                        {
+                            xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->X;
+                            yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->Y;
+                            idxDepthSpace = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
+                            if (!Single.IsInfinity(xDepthPixel) && !Single.IsInfinity(yDepthPixel) && (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff))
+                            {
+                                this.drawColorPixel(idxCurrColorPixel);
+
+                                //do not visit same pixel twice
+                                *ptrColorSensorBufferPixelInt = 0xFF000000;
+
+                                queue.AddFirst(lastX + 1);
+                                queue.AddFirst(lastY);
+                                queue.AddFirst(lastX - 1);
+                                queue.AddFirst(lastY);
+                                queue.AddFirst(lastX);
+                                queue.AddFirst(lastY + 1);
+                                queue.AddFirst(lastX);
+                                queue.AddFirst(lastY - 1);
+                            }
+                        }
+                    }
+                }
+                if (queue.Count > maxQueueSize)
+                {
+                    maxQueueSize = queue.Count();
+                }
+            }
+            Console.Out.Write("Breath first queue size:" + maxQueueSize);
+        }
+
+        private unsafe void floodfill_DepthFirst(int x, int y)
+        {
+            if ((x >= colorSensorBufferWidth) || (x < 0) || (y >= colorSensorBufferHeight) || (y < 0))
+            {
+                return;
+            }
+
+            int idxCurrColorPixel = y * colorSensorBufferWidth + x;
+            if (idxCurrColorPixel >= colorImageLength)
+            {
+                return;
+            }
+
+            //pixel already visited
+            uint* ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
+            if ((*ptrColorSensorBufferPixelInt) == 0xFF000000)
+            {
+                return;
+            }
+
+            float xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->X;
+            float yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->Y;
             int idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
             if (Single.IsInfinity(xDepthPixel) || Single.IsInfinity(yDepthPixel) || (*(ptrBodyIndexSensorBuffer + idxDepthPixel) == 0xff))
             {
                 return;
             }
-            else
+
+            stack.Push(x);
+            stack.Push(y);
+
+            int maxStackSize = 0;
+            while (stack.Count != 0)
             {
-                // point to current pixel in image buffer
-                uint* ptrImgBufferPixelInt = ptrBackbuffer + (yStart * colorSensorBufferWidth + xStart);
+                int lastY = stack.Pop();
+                int lastX = stack.Pop();
+                if ((lastX >= 0) && (lastX < colorSensorBufferWidth) && (lastY >= 0) && (lastY < colorSensorBufferHeight))
+                {
+                    idxCurrColorPixel = lastY * colorSensorBufferWidth + lastX;
+                    if (idxCurrColorPixel < colorImageLength)
+                    {
+                        ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxCurrColorPixel;
+                        if ((*ptrColorSensorBufferPixelInt) != 0xFF000000)
+                        {
+                            xDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->X;
+                            yDepthPixel = (ptrColorToDepthSpaceMapper + idxCurrColorPixel)->Y;
+                            idxDepthPixel = (int)(((int)(yDepthPixel + 0.5)) * bodyIndexSensorBufferWidth + xDepthPixel + 0.5);
+                            if (!Single.IsInfinity(xDepthPixel) && !Single.IsInfinity(yDepthPixel) && (*(ptrBodyIndexSensorBuffer + idxDepthPixel) != 0xff))
+                            {
+                                this.drawColorPixel(idxCurrColorPixel);
 
-                // assign color value (4 bytes)
-                *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                // overwrite the alpha value (last byte)
-                *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
+                                //do not visit same pixel twice
+                                *ptrColorSensorBufferPixelInt = 0xFF000000;
 
-                //do not visit same pixel twice
-                *ptrColorSensorBufferPixelInt = 0xFF000000;
+                                stack.Push(lastX + 1);
+                                stack.Push(lastY);
+                                stack.Push(lastX - 1);
+                                stack.Push(lastY);
+                                stack.Push(lastX);
+                                stack.Push(lastY + 1);
+                                stack.Push(lastX);
+                                stack.Push(lastY - 1);
+                            }
+                        }
+                    }
+                }
+                if (stack.Count > maxStackSize)
+                {
+                    maxStackSize = stack.Count;
+                }
             }
-
-            //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.floodfillBody((xStart + 1), yStart);
-            this.floodfillBody((xStart - 1), yStart);
-            this.floodfillBody(xStart, (yStart + 1));
-            this.floodfillBody(xStart, (yStart - 1));
+            Console.Out.Write("Depth first stack size:" + maxStackSize);
         }
+
+        /*
+         * call:
+         * 1) set buffers
+         * 2) choose pixel position to write to in colorbuffer
+         * 3) draw into backbuffer
+         * */
+        private unsafe void drawColorPixel(int idxColorSpace)
+        {
+            //pixel target
+            uint* ptrBackbufferPixelInt = null;
+            uint* ptrColorSensorBufferPixelInt = null;
+
+            // point to current pixel in image buffer
+            uint* ptrImgBufferPixelInt = ptrBackbuffer + idxColorSpace;
+
+            //TODO System.NullReferenceException
+            // assign color value (4 bytes)
+            *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+            // overwrite the alpha value (last byte)
+            *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
+        }
+
         /*
         private unsafe void linefillBody(int xStart, int yStart)
         {

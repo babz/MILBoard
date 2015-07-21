@@ -24,15 +24,17 @@
             <ColumnDefinition Width="300" />
             <ColumnDefinition Width="244" />
             <ColumnDefinition Width="362"/>
-            <ColumnDefinition Width="491"/>
+            <ColumnDefinition Width="222"/>
+            <ColumnDefinition Width="269"/>
         </Grid.ColumnDefinitions>
-        <Border Grid.Row="0" Background="White" Grid.ColumnSpan="5"/>
-        <Border Grid.Row="1" Background="White" Grid.ColumnSpan="5"/>
+        <Border Grid.Row="0" Background="White" Grid.ColumnSpan="6"/>
+        <Border Grid.Row="1" Background="White" Grid.ColumnSpan="6"/>
 
         <Label Grid.Row="0" Grid.Column="0" Content="Resolution:" />
         <Label Grid.Row="0" Grid.Column="1" Content="Transparency of user:" />
         <Label Grid.Row="0" Grid.Column="2" Content="Background:" />
         <Label Grid.Row="0" Grid.Column="3" Content="Mode:" Grid.ColumnSpan="2" />
+        <Label Grid.Row="0" Grid.Column="5" Content="Floodfill type:" />
 
         <!--Dynamic Content-->
         <RadioButton Name="fullHD" Grid.Column="0" Content="1080p" GroupName="Resolution" Checked="fullHD_Checked" Margin="10,23,59,5" Grid.RowSpan="2" />
@@ -48,17 +50,21 @@
         <RadioButton Name="GUIHandPtr" Grid.Row="1" Grid.Column="3" Content="Hand Pointer" GroupName="Mode" Checked="GUIHandPtr_Checked" Margin="105,0,166,7" />
         <RadioButton Name="GUISymbolPtr" Grid.Row="1" Grid.Column="3" Content="Symbol Pointer" GroupName="Mode" Checked="GUISymbolPtr_Checked" Margin="212,0,10,0" />
 
-        <CheckBox x:Name="checkBoxRotateOnly" Content="Rotate only" Grid.Column="4" Margin="0,6,248,0" Unchecked="checkBoxRotateOnly_Unchecked" Checked="checkBoxRotateOnly_Checked"/>
-        <CheckBox x:Name="checkBoxScaleOnly" Content="Scale only" Grid.Column="4" Grid.Row="1" Margin="0,0,248,0" Unchecked="checkBoxScaleOnly_Unchecked" Checked="checkBoxScaleOnly_Checked"/>
-        <CheckBox x:Name="checkBoxShowFps" Content="Log fps" Grid.Column="4" HorizontalAlignment="Right" Margin="0,6,290,0" Unchecked="checkBoxShowFps_Unchecked" Checked="checkBoxShowFps_Checked" Width="59" />
-        <CheckBox x:Name="checkBoxSkeleton" Content="Show skeleton" Grid.Column="4" Grid.Row="1" HorizontalAlignment="Right" Margin="0,0,248,0" Unchecked="checkBoxSkeleton_Unchecked" Checked="checkBoxSkeleton_Checked" Width="101" />
+        <CheckBox x:Name="checkBoxRotateOnly" Content="Rotate only" Grid.Column="4" Margin="0,6,108,0" Unchecked="checkBoxRotateOnly_Unchecked" Checked="checkBoxRotateOnly_Checked"/>
+        <CheckBox x:Name="checkBoxScaleOnly" Content="Scale only" Grid.Column="4" Grid.Row="1" Margin="0,0,108,0" Unchecked="checkBoxScaleOnly_Unchecked" Checked="checkBoxScaleOnly_Checked"/>
+        <CheckBox x:Name="checkBoxShowFps" Content="Log fps" Grid.Column="4" HorizontalAlignment="Right" Margin="0,6,60,0" Unchecked="checkBoxShowFps_Unchecked" Checked="checkBoxShowFps_Checked" Width="59" />
+        <CheckBox x:Name="checkBoxSkeleton" Content="Show skeleton" Grid.Column="4" Grid.Row="1" HorizontalAlignment="Right" Margin="0,0,18,0" Unchecked="checkBoxSkeleton_Unchecked" Checked="checkBoxSkeleton_Checked" Width="101" />
 
-        <Canvas Name="imageCanvas" Grid.Row="2" Grid.ColumnSpan="5" Grid.ZIndex="1" Margin="0,0,-58,1" >
+        <RadioButton x:Name="rbFFBFS" GroupName="FF" Content="BFS" Grid.Column="5" Grid.Row="1" Checked="rbFFBFS_Checked" Margin="66,0,148,0"/>
+        <RadioButton x:Name="rbFFDFS" GroupName="FF" Content="DFS" Grid.Column="5" Grid.Row="1" Checked="rbFFDFS_Checked" Margin="126,0,90,0"/>
+        <RadioButton x:Name="rbFFclassic" GroupName="FF" Content="FF rec." Grid.Column="5" Grid.Row="1" Checked="rbFFclassic_Checked" IsChecked="True"  Margin="0,0,208,0"/>
+
+        <Canvas Name="imageCanvas" Grid.Row="2" Grid.ColumnSpan="4" Grid.ZIndex="1" Margin="0,0,0,1" >
             <!--the bigger the ZIndex, the closer to the foreground-->
             <Image x:Name="imageCombi" Canvas.Left="0" Canvas.Top="0" Width="1575" Height="820" Canvas.ZIndex="0" />
             <!--<Image x:Name="imageBody"  Canvas.Left="0" Canvas.Top="0" Width="1575" Height="820" Canvas.ZIndex="1" />-->
             <Image x:Name="pointerSymbol" Canvas.Left="0" Canvas.Top="0" Height="46" Width="60" Source="Resources\pencil_blue_96dpi.png" Visibility="Hidden" />
-            
+
             <!--<Button Content="Button6" Canvas.Left="800" Canvas.Top="550" Height="20" Width="30" />
             <Button Content="Button2" Canvas.Left="900" Canvas.Top="400" Height="20" Width="55"/>
             <Button Content="Button3" Canvas.Left="600" Canvas.Top="600" Height="20" Width="55"/>

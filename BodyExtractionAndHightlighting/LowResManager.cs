@@ -74,30 +74,28 @@ namespace BodyExtractionAndHightlighting
         
         protected override void drawFullBody()
         {
-            bool BFS = false;
-            bool DFS = true;
-            bool linefill = false;
-            bool floodfill = false;
             Thread thread;
             if (base.IsAnyJointTracked())
             {
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
-                if (BFS)
+                if (Constants.floodfillType == Constants.FloodfillType.BFS)
                 {
-                    floodfill_BreadthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    floodfill_BreadthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    //floodfill_BreadthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 }
-                else if (DFS)
+                else if (Constants.floodfillType == Constants.FloodfillType.DFS)
                 {
-                    floodfill_DepthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    //floodfill_DepthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 }
-                else if (linefill)
+                else if (Constants.floodfillType == Constants.FloodfillType.linefillRec)
                 {
                     //this.linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                     thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
                     thread.Start();
                     thread.Join();
                 }
-                else if (floodfill)
+                else if (Constants.floodfillType == Constants.FloodfillType.floodfillRec)
                 {
                     thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
                     thread.Start();
@@ -110,9 +108,20 @@ namespace BodyExtractionAndHightlighting
                 thread.Start();
                 thread.Join();
             }
-            
         }
 
+        /*
+         * call:
+            1) check boundaries
+
+            2) check pixel already visited
+
+            3) if not visited:
+	            a) set visited
+	            b) draw color at color index (low = depth, hd = color)
+	
+            4) proceed (visit other pixel)
+         * */
         private unsafe void floodfillBody(int xStart, int yStart)
         {
             if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
@@ -134,6 +143,7 @@ namespace BodyExtractionAndHightlighting
 
             //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
             this.floodfillBody((xStart + 1), yStart);
+            //TODO check values of next pixel
             this.floodfillBody((xStart - 1), yStart);
             this.floodfillBody(xStart, (yStart + 1));
             this.floodfillBody(xStart, (yStart - 1));
@@ -232,12 +242,22 @@ namespace BodyExtractionAndHightlighting
                 }
             }
         }
-        
+
+        /*
+         * call:
+         * 1) set buffers
+         * 2) choose pixel position to write to in colorbuffer
+         * 3) check color value boundaries (lookups from mapper)
+         * 4) draw into backbuffer
+         * */
         private unsafe void drawColorPixel(int idxDepthSpace)  {
             //pixel target
             uint* ptrBackbufferPixelInt = null;
             uint* ptrColorSensorBufferPixelInt = null;
 
+            //lookup color pixel from color stream at body index position
+            //first, depth index is incremented by param, then mapper gets color value
+            //TODO what is depth space? = 512x424 body index
             int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
             int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
 

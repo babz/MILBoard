@@ -15,6 +15,13 @@ namespace BodyExtractionAndHightlighting
         public const int LINEFILL_HD = 1024 * 1024 * 5;
         public const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
+        public static FloodfillType floodfillType = FloodfillType.floodfillRec;
+
+        public enum FloodfillType
+        {
+            BFS, DFS, linefillRec, floodfillRec
+        }
+
         private static int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
         private static CoordinateMapper coordinateMapper;
         private static bool showSkeleton = false;
