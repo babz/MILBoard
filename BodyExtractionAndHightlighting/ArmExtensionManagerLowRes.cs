@@ -83,6 +83,7 @@ namespace BodyExtractionAndHightlighting
                     //vHalfShoulderWrist.Normalize();
                     this.vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X);
 
+                    //TODO stack overflow; why is this called and why without extra thread??
                     this.drawBodyfloodfill(xShoulder, yShoulder);
                     //sequential approach
                     //this.drawBodyWithoutRightHand();

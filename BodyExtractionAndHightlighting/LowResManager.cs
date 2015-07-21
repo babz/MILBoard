@@ -75,20 +75,20 @@ namespace BodyExtractionAndHightlighting
         protected override void drawFullBody()
         {
             bool BFS = false;
-            bool DFS = false;
+            bool DFS = true;
             bool linefill = false;
-            bool floodfill = true;
+            bool floodfill = false;
             Thread thread;
             if (base.IsAnyJointTracked())
             {
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
                 if (BFS)
                 {
-                    floodfill_BreathFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    floodfill_BreadthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 }
                 else if (DFS)
                 {
-                    floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    floodfill_DepthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 }
                 else if (linefill)
                 {
@@ -265,9 +265,9 @@ namespace BodyExtractionAndHightlighting
             int idxDepthSpace;
             while (queue.Count != 0)
             {
-                int lastY = queue.Last();
-                queue.RemoveLast();
                 int lastX = queue.Last();
+                queue.RemoveLast();
+                int lastY = queue.Last();
                 queue.RemoveLast();
                 if ((lastX >= 0) && (lastX < bodyIndexSensorBufferWidth) && (lastY >= 0) && (lastY < bodyIndexSensorBufferHeight))
                 {
@@ -295,7 +295,7 @@ namespace BodyExtractionAndHightlighting
             Console.Out.Write("Breath first queue size:" + maxQueueSize);
         }
 
-        private unsafe void floodfill_BreathFirst_Point(int xStart, int yStart)
+        private unsafe void floodfill_BreadthFirst_Point(int xStart, int yStart)
         {
             LinkedList<Point> queue = new LinkedList<Point>();
             queue.AddFirst(new Point(xStart, yStart));
