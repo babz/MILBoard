@@ -290,11 +290,11 @@ namespace BodyExtractionAndHightlighting
 
                         if (armScaleOnly)
                         {
-                            //armExtensionManager.processImage_scaleOnly(writeableBitmap.BackBuffer);
+                            armExtensionManager.processImage_scaleOnly();
                         }
                         else if (armRotateOnly)
                         {
-                            //armExtensionManager.processImage_rotationOnly(writeableBitmap.BackBuffer);
+                            armExtensionManager.processImage_rotationOnly();
                         }
                         else
                         {

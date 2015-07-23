@@ -156,7 +156,7 @@ namespace BodyExtractionAndHightlighting
                     this.xWrist = (int)(rightArmJoints[JointType.WristRight].X + 0.5);
                     this.yWrist = (int)(rightArmJoints[JointType.WristRight].Y + 0.5);
 
-                    this.transform_scaleOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+                    this.transform_scaleOnly();
                 }
                 else
                 {
@@ -593,7 +593,7 @@ namespace BodyExtractionAndHightlighting
             }
         }
 
-        private unsafe void transform_scaleOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
+        private unsafe void transform_scaleOnly()
         {
             double absAngle = helper.CalculateAbsoluteAngleInDegreeToXaxis(xElbow, yElbow, xWrist, yWrist) / 180.0 * Math.PI;
             double factorX = Math.Cos(absAngle);
@@ -607,18 +607,13 @@ namespace BodyExtractionAndHightlighting
 
             uint transparencyMask = (0xffffff00u | this.userTransparency);
 
-            int unsafecolorSensorBufferWidth = this.colorSensorBufferWidth;
-            int unsafecolorSensorBufferHeight = this.colorSensorBufferHeight;
-
             //save computing power by incrementing x, y without division/modulo
             int xDepthSpace = 0;
             int yDepthSpace = 0;
-            uint* ptrColorSensorBufferPixelInt = null;
-            uint* ptrImgBufferPixelInt = ptrBackbuffer;
-            int depthSpaceSize = bodyIndexSensorBufferHeight * bodyIndexSensorBufferWidth;
 
-            for (int idxDepthSpace = 0; idxDepthSpace < depthSpaceSize; ++idxDepthSpace)
+            for (int idxDepthSpace = 0; idxDepthSpace < bodyIndexImageLength; ++idxDepthSpace)
             {
+                ptrBackbufferPixelInt = null;
                 ptrColorSensorBufferPixelInt = null;
 
                 if (xDepthSpace > xElbow) // handle right arm
@@ -632,15 +627,15 @@ namespace BodyExtractionAndHightlighting
 
                     int idxStretchedDepthSpace = bodyIndexSensorBufferWidth * lookupYdepthSpace + lookupXdepthSpace;
 
-                    if ((idxStretchedDepthSpace < depthSpaceSize) && (*(ptrBodyIndexSensorBuffer + idxStretchedDepthSpace) != 0xff))
+                    if ((idxStretchedDepthSpace < bodyIndexImageLength) && (*(ptrBodyIndexSensorBuffer + idxStretchedDepthSpace) != 0xff))
                     {
                         int colorPointXstretched = (int)((ptrDepthToColorSpaceMapper + idxStretchedDepthSpace)->X + 0.5);
                         int colorPointYstretched = (int)((ptrDepthToColorSpaceMapper + idxStretchedDepthSpace)->Y + 0.5);
 
-                        if ((colorPointYstretched < unsafecolorSensorBufferHeight) && (colorPointXstretched < unsafecolorSensorBufferWidth) &&
+                        if ((colorPointYstretched < colorSensorBufferHeight) && (colorPointXstretched < colorSensorBufferWidth) &&
                                 (colorPointYstretched >= 0) && (colorPointXstretched >= 0))
                         {
-                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointYstretched * unsafecolorSensorBufferWidth + colorPointXstretched);
+                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointYstretched * colorSensorBufferWidth + colorPointXstretched);
                         }
                     }
                 }
@@ -651,23 +646,25 @@ namespace BodyExtractionAndHightlighting
                         int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
                         int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
 
-                        if ((colorPointY < unsafecolorSensorBufferHeight) && (colorPointX < unsafecolorSensorBufferWidth) &&
+                        if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
                         (colorPointY >= 0) && (colorPointX >= 0))
                         {
-                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * unsafecolorSensorBufferWidth + colorPointX);
+                            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
                         }
                     }
                 }
 
                 if (ptrColorSensorBufferPixelInt != null)
                 {
+                    // point to current pixel in image buffer
+                    ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpace;
+
                     // assign color value (4 bytes); dereferencing + assigning writes into imgBuffer
                     // mask the last byte which contains the alpha value
-                    *ptrImgBufferPixelInt = (*ptrColorSensorBufferPixelInt) & transparencyMask;
+                    *ptrBackbufferPixelInt = (*ptrColorSensorBufferPixelInt)&transparencyMask;
                 }
 
                 // increment counter
-                ++ptrImgBufferPixelInt;
                 if (++xDepthSpace == bodyIndexSensorBufferWidth)
                 {
                     xDepthSpace = 0;
