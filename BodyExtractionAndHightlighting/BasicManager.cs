@@ -10,6 +10,9 @@ namespace BodyExtractionAndHightlighting
 {
     public abstract class BasicManager<T>
     {
+        protected static LinkedList<int> queue = new LinkedList<int>();
+        protected static Stack<int> stack = new Stack<int>();
+
         protected float InferredZPositionClamp = 0.1f;
         protected int depthThreshold = 7;
         protected CoordinateMapper coordinateMapper;
@@ -20,6 +23,7 @@ namespace BodyExtractionAndHightlighting
 
         protected volatile unsafe byte* ptrBodyIndexSensorBuffer;
         protected volatile unsafe uint* ptrBackbuffer, ptrColorSensorBufferInt; //unmanaged
+        protected volatile unsafe uint* ptrBackbufferPixelInt, ptrColorSensorBufferPixelInt;
 
         private ushort[] depthDataSource;
         private CameraSpacePoint anyBodyJoint;

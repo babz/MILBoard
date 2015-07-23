@@ -16,9 +16,6 @@ namespace BodyExtractionAndHightlighting
         protected unsafe volatile DepthSpacePoint* ptrColorToDepthSpaceMapper;
         FloodFillRangeQueue ranges;
 
-        private LinkedList<int> queue = new LinkedList<int>();
-        private Stack<int> stack = new Stack<int>();
-
         public HDManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
@@ -84,7 +81,7 @@ namespace BodyExtractionAndHightlighting
         protected override void drawFullBody()
         {
             Thread thread;
-            if (base.IsAnyJointTracked())
+            if ((Constants.floodfillType != Constants.FloodfillType.NoFF) && base.IsAnyJointTracked())
             {
                 ColorSpacePoint bodyPoint = coordinateMapper.MapCameraPointToColorSpace(base.GetAnyBodyPoint());
                 if (Constants.floodfillType == Constants.FloodfillType.BFS)
@@ -95,14 +92,14 @@ namespace BodyExtractionAndHightlighting
                 {
                     floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 }
-                else if (Constants.floodfillType == Constants.FloodfillType.linefillRec)
+                else if (Constants.floodfillType == Constants.FloodfillType.LinefillRec)
                 {
                     //linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                     thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_HD);
                     thread.Start();
                     thread.Join();
                 }
-                else if (Constants.floodfillType == Constants.FloodfillType.floodfillRec)
+                else if (Constants.floodfillType == Constants.FloodfillType.FloodfillRec)
                 {
                     thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_HD);
                     thread.Start();
@@ -204,12 +201,12 @@ namespace BodyExtractionAndHightlighting
             queue.AddFirst(yStart);
 
             int maxQueueSize = 0;
-
+            int lastX, lastY;
             while (queue.Count != 0)
             {
-                int lastX = queue.Last();
+                lastX = queue.Last.Value;
                 queue.RemoveLast();
-                int lastY = queue.Last();
+                lastY = queue.Last.Value;
                 queue.RemoveLast();
 
                 if ((lastX >= 0) && (lastX < colorSensorBufferWidth) && (lastY >= 0) && (lastY < colorSensorBufferHeight))
@@ -282,10 +279,11 @@ namespace BodyExtractionAndHightlighting
             stack.Push(y);
 
             int maxStackSize = 0;
+            int lastX, lastY;
             while (stack.Count != 0)
             {
-                int lastY = stack.Pop();
-                int lastX = stack.Pop();
+                lastY = stack.Pop();
+                lastX = stack.Pop();
                 if ((lastX >= 0) && (lastX < colorSensorBufferWidth) && (lastY >= 0) && (lastY < colorSensorBufferHeight))
                 {
                     idxCurrColorPixel = lastY * colorSensorBufferWidth + lastX;
@@ -333,17 +331,19 @@ namespace BodyExtractionAndHightlighting
         private unsafe void drawColorPixel(int idxColorSpace)
         {
             //pixel target
-            uint* ptrBackbufferPixelInt = null;
-            uint* ptrColorSensorBufferPixelInt = null;
+            ptrBackbufferPixelInt = null;
+            ptrColorSensorBufferPixelInt = null;
 
             // point to current pixel in image buffer
-            uint* ptrImgBufferPixelInt = ptrBackbuffer + idxColorSpace;
+            ptrBackbufferPixelInt = ptrBackbuffer + idxColorSpace;
 
-            //TODO System.NullReferenceException
+            // point to according pixel in color buffer
+            ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + idxColorSpace;
+            
             // assign color value (4 bytes)
-            *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+            *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
             // overwrite the alpha value (last byte)
-            *(((byte*)ptrImgBufferPixelInt) + 3) = (byte)(this.userTransparency);
+            *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
         }
 
         /*

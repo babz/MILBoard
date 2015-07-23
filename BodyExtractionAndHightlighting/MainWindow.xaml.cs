@@ -182,6 +182,8 @@ namespace BodyExtractionAndHightlighting
             //3) improve efficiency of floodfill
 
             // => check depth for floodfill hand and arm, not body
+            //http://stackoverflow.com/questions/995766/comparison-of-collection-datatypes-in-c-sharp
+            //http://stackoverflow.com/questions/13211277/performance-differences-so-dramatic
 
             MultiSourceFrame reference = args.FrameReference.AcquireFrame();
 
@@ -516,6 +518,11 @@ namespace BodyExtractionAndHightlighting
             hasTouchOccurred = true;
         }
 
+        private void rbFFclassic_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.floodfillType = Constants.FloodfillType.FloodfillRec;
+        }
+
         private void rbFFBFS_Checked(object sender, RoutedEventArgs e)
         {
             Constants.floodfillType = Constants.FloodfillType.BFS;
@@ -526,9 +533,9 @@ namespace BodyExtractionAndHightlighting
             Constants.floodfillType = Constants.FloodfillType.DFS;
         }
 
-        private void rbFFclassic_Checked(object sender, RoutedEventArgs e)
+        private void rbFFNo_Checked(object sender, RoutedEventArgs e)
         {
-            Constants.floodfillType = Constants.FloodfillType.floodfillRec;
+            Constants.floodfillType = Constants.FloodfillType.NoFF;
         }
 
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)

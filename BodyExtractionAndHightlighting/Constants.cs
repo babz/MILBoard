@@ -15,11 +15,11 @@ namespace BodyExtractionAndHightlighting
         public const int LINEFILL_HD = 1024 * 1024 * 5;
         public const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
 
-        public static FloodfillType floodfillType = FloodfillType.floodfillRec;
+        public static FloodfillType floodfillType = FloodfillType.FloodfillRec;
 
         public enum FloodfillType
         {
-            BFS, DFS, linefillRec, floodfillRec
+            BFS, DFS, LinefillRec, FloodfillRec, NoFF
         }
 
         private static int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;

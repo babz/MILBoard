@@ -125,7 +125,7 @@ namespace BodyExtractionAndHightlighting
                     int xHandTip = (int)(rightArmJoints[JointType.HandTipRight].X + 0.5);
                     int yHandTip = (int)(rightArmJoints[JointType.HandTipRight].Y + 0.5);
 
-                    this.transform_rotationOnly(ptrBodyIndexSensorBuffer, ptrColorSensorBufferInt, ptrDepthToColorSpaceMapper);
+                    this.transform_rotationOnly();
                 }
                 else
                 {
@@ -676,14 +676,14 @@ namespace BodyExtractionAndHightlighting
             } // end for each pixel in depth space
         }
 
-        private unsafe void transform_rotationOnly(byte* ptrBodyIndexSensorBuffer, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)
+        private unsafe void transform_rotationOnly()
         {
             double rotationAngleInRad = helper.CalculateRotationAngle(float.Parse(xElbow.ToString()), float.Parse(yElbow.ToString()), float.Parse(xWrist.ToString()), float.Parse(yWrist.ToString()), (float)(this.pTouch.X), (float)(this.pTouch.Y));
             double cos = Math.Cos(rotationAngleInRad);
             double sin = Math.Sin(rotationAngleInRad);
 
-            uint* ptrImgBufferPixelInt = null; // this is where we want to write the pixel
-            uint* ptrColorSensorBufferPixelInt = null;
+            ptrBackbufferPixelInt = null; // this is where we want to write the pixel
+            ptrColorSensorBufferPixelInt = null;
 
             Vector areaOffset = new Vector((xWrist - xElbow), (yWrist - yElbow));
             int handOffset = (int)areaOffset.Length / 3;
@@ -701,7 +701,7 @@ namespace BodyExtractionAndHightlighting
 
                 if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) != 0xff)
                 {
-                    ptrImgBufferPixelInt = null;
+                    ptrBackbufferPixelInt = null;
 
                     #region --- Region of lower arm
                     //TODO determine region of hand with floodfill (start: xWrist/yWrist until xElbow)
@@ -714,17 +714,17 @@ namespace BodyExtractionAndHightlighting
                         if ((rotatedY < bodyIndexSensorBufferHeight) && (rotatedX < bodyIndexSensorBufferWidth) &&
                             (rotatedY >= 0) && (rotatedX >= 0))
                         {
-                            ptrImgBufferPixelInt = ptrBackbuffer + (rotatedY * bodyIndexSensorBufferWidth + rotatedX);
+                            ptrBackbufferPixelInt = ptrBackbuffer + (rotatedY * bodyIndexSensorBufferWidth + rotatedX);
                         }
                     }
                     #endregion // lower arm
                     else
                     {
                         // point to current pixel in image buffer
-                        ptrImgBufferPixelInt = ptrBackbuffer + idxDepthSpace;
+                        ptrBackbufferPixelInt = ptrBackbuffer + idxDepthSpace;
                     }
 
-                    if (ptrImgBufferPixelInt != null)
+                    if (ptrBackbufferPixelInt != null)
                     {
                         int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
                         int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
@@ -735,9 +735,9 @@ namespace BodyExtractionAndHightlighting
                         {
                             ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
                             // assign color value (4 bytes)
-                            *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
+                            *ptrBackbufferPixelInt = *ptrColorSensorBufferPixelInt;
                             // overwrite the alpha value (last byte)
-                            *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
+                            *(((byte*)ptrBackbufferPixelInt) + 3) = this.userTransparency;
                         }
                     }
                 } //if body
