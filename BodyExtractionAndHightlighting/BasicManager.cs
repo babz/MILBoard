@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Diagnostics;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -13,6 +14,7 @@ namespace BodyExtractionAndHightlighting
         protected static LinkedList<int> queue = new LinkedList<int>();
         protected static Stack<int> stack = new Stack<int>();
 
+        protected Stopwatch stopwatch;
         protected float InferredZPositionClamp = 0.1f;
         protected int depthThreshold = 7;
         protected CoordinateMapper coordinateMapper;

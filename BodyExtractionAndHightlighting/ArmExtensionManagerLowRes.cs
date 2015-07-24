@@ -84,9 +84,10 @@ namespace BodyExtractionAndHightlighting
                     this.vHalfShoulderWrist_NormRight = new Vector(-vHalfShoulderWrist.Y, vHalfShoulderWrist.X);
 
                     //TODO stack overflow; why is this called and why without extra thread??
-                    this.drawBodyfloodfill(xShoulder, yShoulder);
+                    //draw full body to see original hand
+                    //base.drawFullBody();
                     //sequential approach
-                    //this.drawBodyWithoutRightHand();
+                    this.drawBodyWithoutRightLowerArm();
 
                     this.drawStretchedRightLowerArm();
 
@@ -96,6 +97,7 @@ namespace BodyExtractionAndHightlighting
                 {
                     //==write-through
                     base.drawFullBody();
+                    
                 }
                 
             } //end fixed
@@ -166,7 +168,7 @@ namespace BodyExtractionAndHightlighting
             } //end fixed
         }
 
-        private unsafe void drawBodyWithoutRightHand()
+        private unsafe void drawBodyWithoutRightLowerArm()
         {
             //pixel target
             uint* ptrImgBufferPixelInt = null;
@@ -224,56 +226,6 @@ namespace BodyExtractionAndHightlighting
                     yDepthSpace++;
                 }
             } //for loop
-        }
-
-        private unsafe void drawBodyfloodfill(int xStart, int yStart)
-        {
-            if ((xStart >= xElbow) || (xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
-            {
-                return;
-            }
-
-            //pixel target
-            uint* ptrImgBufferPixelInt = null;
-            uint* ptrColorSensorBufferPixelInt = null;
-            bool isColorPixelInValidRange = false;
-
-            //pixel already visited
-            int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStart;
-            if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff)
-            {
-                return;
-            }
-            else
-            {
-                *(ptrBodyIndexSensorBuffer + idxDepthSpace) = 0xff; //do not visit same pixel twice
-                int colorPointX = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->X + 0.5);
-                int colorPointY = (int)((ptrDepthToColorSpaceMapper + idxDepthSpace)->Y + 0.5);
-
-                if ((colorPointY < colorSensorBufferHeight) && (colorPointX < colorSensorBufferWidth) &&
-                        (colorPointY >= 0) && (colorPointX >= 0))
-                {
-                    isColorPixelInValidRange = true;
-                }
-
-                if (isColorPixelInValidRange)
-                {
-                    // point to current pixel in image buffer
-                    ptrImgBufferPixelInt = ptrBackbuffer + idxDepthSpace;
-
-                    ptrColorSensorBufferPixelInt = ptrColorSensorBufferInt + (colorPointY * colorSensorBufferWidth + colorPointX);
-                    // assign color value (4 bytes)
-                    *ptrImgBufferPixelInt = *ptrColorSensorBufferPixelInt;
-                    // overwrite the alpha value (last byte)
-                    *(((byte*)ptrImgBufferPixelInt) + 3) = this.userTransparency;
-                }
-            }
-
-            //8-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.drawBodyfloodfill((xStart + 1), yStart);
-            this.drawBodyfloodfill((xStart - 1), yStart);
-            this.drawBodyfloodfill(xStart, (yStart + 1));
-            this.drawBodyfloodfill(xStart, (yStart - 1));
         }
 
         private unsafe void detectRightLowerArm(int xStart, int yStart, Vector vElbowWristOrig, int xElbow, int yElbow, int xWrist, int yWrist, byte* ptrBodyIndexSensorBuffer, uint* ptrImageBufferInt, uint* ptrColorSensorBufferInt, ColorSpacePoint* ptrDepthToColorSpaceMapper)

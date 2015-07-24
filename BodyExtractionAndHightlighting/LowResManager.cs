@@ -7,6 +7,7 @@ using Microsoft.Kinect;
 using System.Windows;
 using System.Threading;
 using System.Collections;
+using System.Diagnostics;
 
 namespace BodyExtractionAndHightlighting
 {
@@ -77,12 +78,16 @@ namespace BodyExtractionAndHightlighting
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
                 if (Constants.floodfillType == Constants.FloodfillType.BFS)
                 {
+                    stopwatch = Stopwatch.StartNew();
                     floodfill_BreadthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    stopwatch.Stop();
                     //floodfill_BreadthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 }
                 else if (Constants.floodfillType == Constants.FloodfillType.DFS)
                 {
+                    stopwatch = Stopwatch.StartNew();
                     floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
+                    stopwatch.Stop();
                     //floodfill_DepthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
                 }
                 else if (Constants.floodfillType == Constants.FloodfillType.LinefillRec)
@@ -95,16 +100,23 @@ namespace BodyExtractionAndHightlighting
                 else if (Constants.floodfillType == Constants.FloodfillType.FloodfillRec)
                 {
                     thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
+                    stopwatch = Stopwatch.StartNew();
                     thread.Start();
                     thread.Join();
+                    stopwatch.Stop();
                 }
             }
             else
             {
                 thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE_LOWRES);
+                stopwatch = Stopwatch.StartNew();
                 thread.Start();
                 thread.Join();
+                stopwatch.Stop();
             }
+            Constants.NUMBEROFCALLS++;
+            Constants.TOTALELAPSEDTIME += stopwatch.ElapsedMilliseconds;
+            //Console.WriteLine("Elapsed time for {0}: {1}ms", Constants.floodfillType, stopwatch.ElapsedMilliseconds);
         }
 
         /*
@@ -310,7 +322,7 @@ namespace BodyExtractionAndHightlighting
                     maxQueueSize = queue.Count();
                 }
             }
-            Console.Out.Write("Breath first queue size:" + maxQueueSize.ToString() + "\n");
+            //Console.WriteLine("Breath first queue size: {0}", maxQueueSize);
         }
 
         private unsafe void floodfill_BreadthFirst_Point(int xStart, int yStart)
@@ -384,7 +396,7 @@ namespace BodyExtractionAndHightlighting
                     maxStackSize = stack.Count;
                 }
             }
-            Console.Out.Write("Depth first stack size:" + maxStackSize.ToString() + "\n");
+            //Console.WriteLine("Depth first stack size: {0}", maxStackSize);
         }
 
         private unsafe void floodfill_DepthFirst_Point(int x, int y)
