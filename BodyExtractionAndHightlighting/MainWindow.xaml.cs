@@ -182,6 +182,8 @@ namespace BodyExtractionAndHightlighting
             //3) improve efficiency of floodfill
 
             // => check depth for floodfill hand and arm, not body
+            //http://stackoverflow.com/questions/995766/comparison-of-collection-datatypes-in-c-sharp
+            //http://stackoverflow.com/questions/13211277/performance-differences-so-dramatic
 
             MultiSourceFrame reference = args.FrameReference.AcquireFrame();
 
@@ -288,11 +290,11 @@ namespace BodyExtractionAndHightlighting
 
                         if (armScaleOnly)
                         {
-                            //armExtensionManager.processImage_scaleOnly(writeableBitmap.BackBuffer);
+                            armExtensionManager.processImage_scaleOnly();
                         }
                         else if (armRotateOnly)
                         {
-                            //armExtensionManager.processImage_rotationOnly(writeableBitmap.BackBuffer);
+                            armExtensionManager.processImage_rotationOnly();
                         }
                         else
                         {
@@ -490,6 +492,8 @@ namespace BodyExtractionAndHightlighting
 
         private void checkBoxRotateOnly_Checked(object sender, RoutedEventArgs e)
         {
+            Console.WriteLine("Mean fps of {1}: {0}", Constants.TOTALELAPSEDTIME / Constants.NUMBEROFCALLS, Constants.floodfillType.ToString());
+            Constants.ResetFpsCount();
             if (armScaleOnly)
             {
                 checkBoxScaleOnly.IsChecked = false;
@@ -507,6 +511,8 @@ namespace BodyExtractionAndHightlighting
 
         private void checkBoxScaleOnly_Checked(object sender, RoutedEventArgs e)
         {
+            Constants.PrintMeanTimeOfFloodfill();
+            Constants.ResetFpsCount();
             if (armRotateOnly)
             {
                 checkBoxRotateOnly.IsChecked = false;
@@ -514,6 +520,34 @@ namespace BodyExtractionAndHightlighting
             }
             armScaleOnly = true;
             hasTouchOccurred = true;
+        }
+
+        private void rbFFclassic_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.PrintMeanTimeOfFloodfill();
+            Constants.ResetFpsCount();
+            Constants.floodfillType = Constants.FloodfillType.FloodfillRec;
+        }
+
+        private void rbFFBFS_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.PrintMeanTimeOfFloodfill();
+            Constants.ResetFpsCount();
+            Constants.floodfillType = Constants.FloodfillType.BFS;
+        }
+
+        private void rbFFDFS_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.PrintMeanTimeOfFloodfill();
+            Constants.ResetFpsCount();
+            Constants.floodfillType = Constants.FloodfillType.DFS;
+        }
+
+        private void rbFFNo_Checked(object sender, RoutedEventArgs e)
+        {
+            Constants.PrintMeanTimeOfFloodfill();
+            Constants.ResetFpsCount();
+            Constants.floodfillType = Constants.FloodfillType.NoFF;
         }
 
         private void Window_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -543,6 +577,7 @@ namespace BodyExtractionAndHightlighting
         /// <param name="e">event arguments</param>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
+            Constants.PrintMeanTimeOfFloodfill();
             Console.Out.WriteLine("mean fps:" + (sumFps / (double)counter));
 
             if (this.sensor != null)

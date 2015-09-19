@@ -5,11 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Diagnostics;
 
 namespace BodyExtractionAndHightlighting
 {
     public abstract class BasicManager<T>
     {
+        protected static LinkedList<int> queue = new LinkedList<int>();
+        protected static Stack<int> stack = new Stack<int>();
+
+        protected Stopwatch stopwatch;
         protected float InferredZPositionClamp = 0.1f;
         protected int depthThreshold = 7;
         protected CoordinateMapper coordinateMapper;
@@ -20,6 +25,7 @@ namespace BodyExtractionAndHightlighting
 
         protected volatile unsafe byte* ptrBodyIndexSensorBuffer;
         protected volatile unsafe uint* ptrBackbuffer, ptrColorSensorBufferInt; //unmanaged
+        protected volatile unsafe uint* ptrBackbufferPixelInt, ptrColorSensorBufferPixelInt;
 
         private ushort[] depthDataSource;
         private CameraSpacePoint anyBodyJoint;
@@ -63,11 +69,11 @@ namespace BodyExtractionAndHightlighting
          * Source: http://www.codeproject.com/Articles/6017/QuickFill-An-efficient-flood-fill-algorithm
          * http://www.crbond.com/papers/fldfill_v2.pdf
          * */
-        protected void quickFillBody()
-        {
+        protected void quickFillBody() {}
 
-        }
-
+        /*
+         * @return true if any joint of the body is tracked
+         * */
         protected bool IsAnyJointTracked()
         {
             if (bodyJoints == null)
@@ -85,6 +91,14 @@ namespace BodyExtractionAndHightlighting
             return false;
         }
 
+        /*
+         * @return true if all of the following right arm joints are tracked:
+         *          - shoulder
+         *          - elbow
+         *          - wrist
+         *          - hand
+         *          - handtip
+         * */
         protected bool isRightArmTracked()
         {
             if (bodyJoints == null)

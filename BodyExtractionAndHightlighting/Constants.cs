@@ -14,6 +14,15 @@ namespace BodyExtractionAndHightlighting
         public const int LINEFILL_LOWRES = 1024 * 1024 * 2;
         public const int LINEFILL_HD = 1024 * 1024 * 5;
         public const double HAND_TRANSLATED_ALPHAFACTOR = 0.75;
+        public static int NUMBEROFCALLS = 0;
+        public static long TOTALELAPSEDTIME = 0;
+
+        public static FloodfillType floodfillType = FloodfillType.FloodfillRec;
+
+        public enum FloodfillType
+        {
+            BFS, DFS, LinefillRec, FloodfillRec, NoFF
+        }
 
         private static int bodyIndexSensorBufferWidth, bodyIndexSensorBufferHeight, colorSensorBufferWidth, colorSensorBufferHeight;
         private static CoordinateMapper coordinateMapper;
@@ -68,6 +77,24 @@ namespace BodyExtractionAndHightlighting
             set
             {
                 Constants.showSkeleton = value;
+            }
+        }
+
+        public static void ResetFpsCount()
+        {
+            NUMBEROFCALLS = 0;
+            TOTALELAPSEDTIME = 0;
+        }
+
+        public static void PrintMeanTimeOfFloodfill()
+        {
+            if (NUMBEROFCALLS != 0)
+            {
+                Console.WriteLine("Mean fps of {1}: {0}", Constants.TOTALELAPSEDTIME / Constants.NUMBEROFCALLS, Constants.floodfillType.ToString());
+            }
+            else
+            {
+                Console.WriteLine("Mean fps of {0}: Zero", Constants.floodfillType.ToString());
             }
         }
     }
