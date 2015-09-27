@@ -76,10 +76,7 @@ namespace BodyExtractionAndHightlighting
         //byte[] imageBufferLowRes;
         WriteableBitmap writeableBitmapLowRes;
 
-        //check performance in ticks
-        const long TICKS_PER_SECOND = 10000000; //according to msdn
-        double fps = 0;
-        long prevTick = 0, ticksNow = 0;
+
 
         //gui logic
         enum BackgroundType { Black, White, Custom };
@@ -102,9 +99,11 @@ namespace BodyExtractionAndHightlighting
         private bool hasTouchOccurred = false;
         private Point touchPosition = new Point(0, 0);
 
-        private double sumFps = 0;
-        private int counter = 0;
-
+        //check performance in ticks
+        const long TICKS_PER_SECOND = 10000000; //according to msdn
+        long prevTick = 0;
+        private double sumFps = 0.0;
+        private long counter = 0;
         
 
         public MainWindow()
@@ -202,13 +201,7 @@ namespace BodyExtractionAndHightlighting
                     return;
                 }
 
-                //showFps = true;
-                //check performance
-                if (showFps)
-                {
-                    this.calculateFps();
-                    //return;
-                }
+                
 
                 // writes depth values from frame into an array
                 dFrame.CopyFrameDataToArray(depthSensorBuffer);
@@ -329,6 +322,12 @@ namespace BodyExtractionAndHightlighting
                 //bodyFrame.Dispose();
 
             } // using Frames
+
+            // Compute FPS at the end of the frame
+            if (showFps)
+            {
+                this.CalculateFps();
+            }
         }
 
         #region private Methods
@@ -364,17 +363,23 @@ namespace BodyExtractionAndHightlighting
             return new Point(Kx, Ky);
         }
 
-        private void calculateFps()
+        private void CalculateFps()
         {
-            ticksNow = DateTime.Now.Ticks;
-            fps = ((float)TICKS_PER_SECOND) / (DateTime.Now.Ticks - prevTick); // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
-            //Console.Out.WriteLine("fps: " + fps);
-            Console.Out.WriteLine("fps: " + (int)(fps + 0.5));
+            if (prevTick == 0)
+            {
+                prevTick = DateTime.Now.Ticks;
+                return;
+            }
+            long ticksNow = DateTime.Now.Ticks;
+            long deltaTicks = (ticksNow - prevTick);
+            double fps = ((double)TICKS_PER_SECOND) / deltaTicks; // 1 / ((ticksNow - prevTick) / TICKS_PER_SECOND);
             prevTick = ticksNow;
 
             //calc mean
-            sumFps += fps;
-            counter++;
+            //sumFps += fps;
+            //counter++;
+
+            Console.Out.WriteLine("fps;" + fps + ";");
         }
 
         private bool CreateBodyJoints()
@@ -577,9 +582,12 @@ namespace BodyExtractionAndHightlighting
         /// <param name="e">event arguments</param>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
+<<<<<<< Updated upstream
             Constants.PrintMeanTimeOfFloodfill();
             Console.Out.WriteLine("mean fps:" + (sumFps / (double)counter));
 
+=======
+>>>>>>> Stashed changes
             if (this.sensor != null)
             {
                 this.sensor.Close();

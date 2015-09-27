@@ -15,6 +15,31 @@ namespace BodyExtractionAndHightlighting
     {
         protected unsafe volatile ColorSpacePoint* ptrDepthToColorSpaceMapper;
 
+<<<<<<< Updated upstream
+=======
+        private LinkedList<int> queue = new LinkedList<int>();
+        private Stack<int> stack = new Stack<int>();
+
+        private long recursiveCount = 0;
+
+        enum BodyFillVariant
+        {
+            sequentialFill,
+            recursiveFloodfill,
+            DFSfloodfill,
+            BFSfloodfill
+        };
+
+
+        // todo: change variant for performance tests
+        //#########################################################################
+        BodyFillVariant bodyFillVariant = BodyFillVariant.BFSfloodfill;
+        //#########################################################################
+
+
+        private static bool isInitialized = false;
+
+>>>>>>> Stashed changes
         public LowResManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
@@ -75,6 +100,7 @@ namespace BodyExtractionAndHightlighting
             Thread thread;
             if ((Constants.floodfillType != Constants.FloodfillType.NoFF) && base.IsAnyJointTracked())
             {
+<<<<<<< Updated upstream
                 DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
                 if (Constants.floodfillType == Constants.FloodfillType.BFS)
                 {
@@ -105,9 +131,45 @@ namespace BodyExtractionAndHightlighting
                     thread.Join();
                     stopwatch.Stop();
                 }
+=======
+                if (!isInitialized)
+                {
+                    isInitialized = true;
+                    Console.WriteLine("Variant: " + bodyFillVariant);
+                }
+
+                DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
+
+                switch (bodyFillVariant)
+                {
+                    case BodyFillVariant.BFSfloodfill:
+                        thread = new Thread(() => floodfill_BreadthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)));
+                        thread.Start();
+                        thread.Join();
+                        break;
+                    case BodyFillVariant.DFSfloodfill:
+                        thread = new Thread(() => floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)));
+                        thread.Start();
+                        thread.Join();
+                        break;
+                    case BodyFillVariant.recursiveFloodfill:
+                        recursiveCount = 0;
+                        thread = new Thread(() => recursiveFloodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
+                        thread.Start();
+                        thread.Join();
+                        Console.Out.Write("Recursive;" + recursiveCount + ";");
+                        break;
+                    case BodyFillVariant.sequentialFill:
+                        thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE_LOWRES);
+                        thread.Start();
+                        thread.Join();
+                        break;
+                }               
+>>>>>>> Stashed changes
             }
             else
             {
+                Console.Out.WriteLine("No Joint tracked!");
                 thread = new Thread(() => sequentialFillBody(), Constants.STACK_SIZE_LOWRES);
                 stopwatch = Stopwatch.StartNew();
                 thread.Start();
@@ -119,6 +181,7 @@ namespace BodyExtractionAndHightlighting
             //Console.WriteLine("Elapsed time for {0}: {1}ms", Constants.floodfillType, stopwatch.ElapsedMilliseconds);
         }
 
+<<<<<<< Updated upstream
         /*
          * call:
             1) check boundaries
@@ -132,7 +195,11 @@ namespace BodyExtractionAndHightlighting
             4) proceed (visit other pixel)
          * */
         private unsafe void floodfillBody(int xStart, int yStart)
+=======
+        private unsafe void recursiveFloodfillBody(int xStart, int yStart)
+>>>>>>> Stashed changes
         {
+            ++recursiveCount;
             if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
             {
                 return;
@@ -151,10 +218,10 @@ namespace BodyExtractionAndHightlighting
             }
 
             //4-way neighbourhood to visit all pixels of hand (can have background pixel btw fingers)
-            this.floodfillBody((xStart + 1), yStart);
-            this.floodfillBody((xStart - 1), yStart);
-            this.floodfillBody(xStart, (yStart + 1));
-            this.floodfillBody(xStart, (yStart - 1));
+            this.recursiveFloodfillBody((xStart + 1), yStart);
+            this.recursiveFloodfillBody((xStart - 1), yStart);
+            this.recursiveFloodfillBody(xStart, (yStart + 1));
+            this.recursiveFloodfillBody(xStart, (yStart - 1));
         }
 
         //python floodfill
@@ -322,9 +389,15 @@ namespace BodyExtractionAndHightlighting
                     maxQueueSize = queue.Count();
                 }
             }
+<<<<<<< Updated upstream
             //Console.WriteLine("Breath first queue size: {0}", maxQueueSize);
+=======
+            Console.Out.Write("BFSmaxQueueSize;" + maxQueueSize + ";");
+>>>>>>> Stashed changes
         }
 
+        // Slower compared to floodfill_BreadthFirst
+        /*
         private unsafe void floodfill_BreadthFirst_Point(int xStart, int yStart)
         {
             LinkedList<Point> queue = new LinkedList<Point>();
@@ -356,8 +429,13 @@ namespace BodyExtractionAndHightlighting
                     maxQueueSize = queue.Count();
                 }
             }
+<<<<<<< Updated upstream
             Console.Out.Write("Breath first queue size:" + maxQueueSize.ToString() + "\n");
+=======
+            //Console.Out.Write("Breath first queue size:" + maxQueueSize);
+>>>>>>> Stashed changes
         }
+         * */
 
         private unsafe void floodfill_DepthFirst(int x, int y)
         {
@@ -396,9 +474,15 @@ namespace BodyExtractionAndHightlighting
                     maxStackSize = stack.Count;
                 }
             }
+<<<<<<< Updated upstream
             //Console.WriteLine("Depth first stack size: {0}", maxStackSize);
+=======
+            Console.Out.Write("DFSmaxStackSize;" + maxStackSize + ";");
+>>>>>>> Stashed changes
         }
 
+        // Slower compared to floodfill_DepthFirst
+        /*
         private unsafe void floodfill_DepthFirst_Point(int x, int y)
         {
             Stack<Point> stack = new Stack<Point>();
@@ -429,8 +513,13 @@ namespace BodyExtractionAndHightlighting
                     maxStackSize = stack.Count;
                 }
             }
+<<<<<<< Updated upstream
             Console.Out.Write("Depth first stack size:" + maxStackSize.ToString() + "\n");
+=======
+            //Console.Out.Write("Depth first stack size:" + maxStackSize);
+>>>>>>> Stashed changes
         }
+         * */
 
         private unsafe void sequentialFillBody()
         {
@@ -464,6 +553,7 @@ namespace BodyExtractionAndHightlighting
                     *(((byte*)ptrBackbufferPixelInt) + 3) = userTransparency;
                 }
             } //end for
+            Console.Write("Sequential;" + bodyIndexImageLength + ";");
         }
     }
 }
