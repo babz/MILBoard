@@ -582,12 +582,9 @@ namespace BodyExtractionAndHightlighting
         /// <param name="e">event arguments</param>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-<<<<<<< Updated upstream
             Constants.PrintMeanTimeOfFloodfill();
             Console.Out.WriteLine("mean fps:" + (sumFps / (double)counter));
 
-=======
->>>>>>> Stashed changes
             if (this.sensor != null)
             {
                 this.sensor.Close();

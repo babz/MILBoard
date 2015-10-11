@@ -15,8 +15,6 @@ namespace BodyExtractionAndHightlighting
     {
         protected unsafe volatile ColorSpacePoint* ptrDepthToColorSpaceMapper;
 
-<<<<<<< Updated upstream
-=======
         private LinkedList<int> queue = new LinkedList<int>();
         private Stack<int> stack = new Stack<int>();
 
@@ -39,7 +37,6 @@ namespace BodyExtractionAndHightlighting
 
         private static bool isInitialized = false;
 
->>>>>>> Stashed changes
         public LowResManager(IntPtr ptrBackbuffer, IReadOnlyDictionary<JointType, Joint> bodyJoints, byte userTransparency, ushort[] depthDataSource)
             : base(ptrBackbuffer, bodyJoints, userTransparency, depthDataSource)
         {
@@ -100,38 +97,6 @@ namespace BodyExtractionAndHightlighting
             Thread thread;
             if ((Constants.floodfillType != Constants.FloodfillType.NoFF) && base.IsAnyJointTracked())
             {
-<<<<<<< Updated upstream
-                DepthSpacePoint bodyPoint = coordinateMapper.MapCameraPointToDepthSpace(base.GetAnyBodyPoint());
-                if (Constants.floodfillType == Constants.FloodfillType.BFS)
-                {
-                    stopwatch = Stopwatch.StartNew();
-                    floodfill_BreadthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
-                    stopwatch.Stop();
-                    //floodfill_BreadthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
-                }
-                else if (Constants.floodfillType == Constants.FloodfillType.DFS)
-                {
-                    stopwatch = Stopwatch.StartNew();
-                    floodfill_DepthFirst((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
-                    stopwatch.Stop();
-                    //floodfill_DepthFirst_Point((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
-                }
-                else if (Constants.floodfillType == Constants.FloodfillType.LinefillRec)
-                {
-                    //this.linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5));
-                    thread = new Thread(() => linefillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.LINEFILL_LOWRES);
-                    thread.Start();
-                    thread.Join();
-                }
-                else if (Constants.floodfillType == Constants.FloodfillType.FloodfillRec)
-                {
-                    thread = new Thread(() => floodfillBody((int)(bodyPoint.X + 0.5), (int)(bodyPoint.Y + 0.5)), Constants.STACK_SIZE_LOWRES);
-                    stopwatch = Stopwatch.StartNew();
-                    thread.Start();
-                    thread.Join();
-                    stopwatch.Stop();
-                }
-=======
                 if (!isInitialized)
                 {
                     isInitialized = true;
@@ -165,7 +130,6 @@ namespace BodyExtractionAndHightlighting
                         thread.Join();
                         break;
                 }               
->>>>>>> Stashed changes
             }
             else
             {
@@ -181,23 +145,7 @@ namespace BodyExtractionAndHightlighting
             //Console.WriteLine("Elapsed time for {0}: {1}ms", Constants.floodfillType, stopwatch.ElapsedMilliseconds);
         }
 
-<<<<<<< Updated upstream
-        /*
-         * call:
-            1) check boundaries
-
-            2) check pixel already visited
-
-            3) if not visited:
-	            a) set visited
-	            b) draw color at color index (low = depth, hd = color)
-	
-            4) proceed (visit other pixel)
-         * */
-        private unsafe void floodfillBody(int xStart, int yStart)
-=======
         private unsafe void recursiveFloodfillBody(int xStart, int yStart)
->>>>>>> Stashed changes
         {
             ++recursiveCount;
             if ((xStart >= bodyIndexSensorBufferWidth) || (xStart < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
@@ -222,100 +170,6 @@ namespace BodyExtractionAndHightlighting
             this.recursiveFloodfillBody((xStart - 1), yStart);
             this.recursiveFloodfillBody(xStart, (yStart + 1));
             this.recursiveFloodfillBody(xStart, (yStart - 1));
-        }
-
-        //python floodfill
-        //unsafe floodfill: http://www.codeproject.com/Articles/5133/Flood-Fill-Algorithms-in-C-and-GDI
-        private unsafe void linefillBody(int xStartLeft, int xStartRight, int yStart)
-        {
-            if ((xStartLeft >= bodyIndexSensorBufferWidth) || (xStartLeft < 0) || (xStartRight >= bodyIndexSensorBufferWidth) || (xStartRight < 0) || (yStart >= bodyIndexSensorBufferHeight) || (yStart < 0))
-            {
-                return;
-            }
-
-            //pixel already visited
-            int idxDepthSpace = yStart * bodyIndexSensorBufferWidth + xStartLeft;
-            if (*(ptrBodyIndexSensorBuffer + idxDepthSpace) == 0xff)
-            {
-                return;
-            }
-
-            int xLeft, xRight;
-
-            // ===scan left side
-            int idxDepthSpaceLeft = idxDepthSpace;
-            for (xLeft = xStartLeft; xLeft >= 0; --xLeft)
-            {
-                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceLeft) == 0xff)
-                {
-                    break;
-                }
-
-                *(ptrBodyIndexSensorBuffer + idxDepthSpaceLeft) = 0xff; //do not visit same pixel twice
-                this.drawColorPixel(idxDepthSpaceLeft);
-                
-                idxDepthSpaceLeft--;
-            }
-            //fill children
-            if (xLeft < xStartLeft)
-            {
-                this.linefillBody(xLeft, xStartLeft, (yStart + 1));
-                this.linefillBody(xLeft, xStartLeft, (yStart - 1));
-                ++xStartLeft;
-            }
-
-            // ===scan right side
-            int idxDepthSpaceRight = idxDepthSpace + 1;
-            for (xRight = xStartRight; xRight < bodyIndexSensorBufferWidth; ++xRight)
-            {
-                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) == 0xff)
-                {
-                    break;
-                }
-
-                *(ptrBodyIndexSensorBuffer + idxDepthSpaceRight) = 0xff; //do not visit same pixel twice
-                this.drawColorPixel(idxDepthSpaceRight);
-
-                idxDepthSpaceRight++;
-            }
-            //fill children
-            if (xRight > xStartRight)
-            {
-                this.linefillBody(xStartRight, xRight, (yStart + 1));
-                this.linefillBody(xStartRight, xRight, (yStart - 1));
-                --xStartRight;
-            }
-
-            // ===scan betweens
-            int idxDepthSpaceBetween = idxDepthSpace;
-            for (xRight = xStartLeft; xRight <= xStartRight && xRight < bodyIndexSensorBufferWidth; ++xRight)
-            {
-                if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) != 0xff)
-                {
-                    *(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) = 0xff; //do not visit same pixel twice
-                    this.drawColorPixel(idxDepthSpaceBetween);
-                    idxDepthSpaceBetween++;
-                }
-                else
-                {
-                    //fill children
-                    if (xStartLeft < xRight)
-                    {
-                        this.linefillBody(xStartLeft, xRight-1, (yStart + 1));
-                        this.linefillBody(xStartLeft, xRight-1, (yStart - 1));
-                        xStartLeft = xRight;
-                    }
-
-                    for (; xRight <= xStartRight && xRight < bodyIndexSensorBufferWidth; ++xRight)
-                    {
-                        if (*(ptrBodyIndexSensorBuffer + idxDepthSpaceBetween) != 0xff)
-                        {
-                            xStartLeft = xRight--;
-                            break;
-                        }
-                    }
-                }
-            }
         }
 
         /*
@@ -389,11 +243,7 @@ namespace BodyExtractionAndHightlighting
                     maxQueueSize = queue.Count();
                 }
             }
-<<<<<<< Updated upstream
-            //Console.WriteLine("Breath first queue size: {0}", maxQueueSize);
-=======
             Console.Out.Write("BFSmaxQueueSize;" + maxQueueSize + ";");
->>>>>>> Stashed changes
         }
 
         // Slower compared to floodfill_BreadthFirst
@@ -429,11 +279,7 @@ namespace BodyExtractionAndHightlighting
                     maxQueueSize = queue.Count();
                 }
             }
-<<<<<<< Updated upstream
-            Console.Out.Write("Breath first queue size:" + maxQueueSize.ToString() + "\n");
-=======
             //Console.Out.Write("Breath first queue size:" + maxQueueSize);
->>>>>>> Stashed changes
         }
          * */
 
@@ -474,11 +320,7 @@ namespace BodyExtractionAndHightlighting
                     maxStackSize = stack.Count;
                 }
             }
-<<<<<<< Updated upstream
-            //Console.WriteLine("Depth first stack size: {0}", maxStackSize);
-=======
             Console.Out.Write("DFSmaxStackSize;" + maxStackSize + ";");
->>>>>>> Stashed changes
         }
 
         // Slower compared to floodfill_DepthFirst
@@ -513,11 +355,7 @@ namespace BodyExtractionAndHightlighting
                     maxStackSize = stack.Count;
                 }
             }
-<<<<<<< Updated upstream
-            Console.Out.Write("Depth first stack size:" + maxStackSize.ToString() + "\n");
-=======
             //Console.Out.Write("Depth first stack size:" + maxStackSize);
->>>>>>> Stashed changes
         }
          * */
 
